@@ -54,6 +54,7 @@
       {% if v.has_short %}
       <a href="/video/{{ channel.channel_id }}/{{ v.dir_name }}/short.mp4" class="btn btn-sm btn-secondary" target="_blank">📱 Short</a>
       {% endif %}
+      <a href="/channel/{{ channel.channel_id }}/regenerate/{{ v.dir_name }}" class="btn btn-sm btn-secondary" title="Re-generate this video">🔄</a>
     </div>
   </div>
 {% endfor %}

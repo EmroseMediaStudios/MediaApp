@@ -3,7 +3,8 @@
 {% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> <span>›</span> <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> <span>›</span> Script</div>{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h2>Script Editor</h2>
+  <h2>{% if regenerating %}🔄 Regenerate Video{% else %}Script Editor{% endif %}</h2>
+  {% if regenerating %}<p style="color: #f59e0b;">Editing the original script. Modify scenes as needed, then re-generate.</p>{% endif %}
 </div>
 
 {% if not script %}

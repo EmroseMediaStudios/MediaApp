@@ -144,5 +144,29 @@ def youtube_toggle():
     return jsonify({"ok": True})
 
 
+@app.route("/channel/<channel_id>/regenerate/<dir_name>")
+def regenerate_page(channel_id, dir_name):
+    ch = generator.load_channel(channel_id)
+    if not ch:
+        return "Channel not found", 404
+
+    # Load the original plan
+    plan_path = generator.OUTPUT_DIR / channel_id / dir_name / "plan.json"
+    if not plan_path.exists():
+        return "Original plan not found — cannot regenerate", 404
+
+    plan = json.loads(plan_path.read_text())
+    script = {
+        "title": plan["title"],
+        "subject": plan.get("subject", ""),
+        "scenes": plan["scenes"],
+    }
+
+    return render_template(
+        "script.html", channel=ch, script=script,
+        topic=plan.get("subject", ""), regenerating=True,
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=7749, host="0.0.0.0")
