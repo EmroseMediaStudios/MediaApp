@@ -1,29 +1,8 @@
 #!/bin/zsh
 
-# Get the real script location (resolve symlinks)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_DIR="$HOME/Desktop/MediaApp"
-
-cd "$APP_DIR"
-
-# Homebrew path (Apple Silicon Mac)
-eval "$(/opt/homebrew/bin/brew shellenv zsh)" 2>/dev/null
-
-# Load API keys
-if [ -f .env ]; then
-    set -a
-    source .env
-    set +a
-else
-    osascript -e 'display dialog "Missing .env file in MediaApp folder.\nAdd your API keys there." with title "Emrose Media Studio" buttons {"OK"} default button "OK" with icon caution'
-    exit 1
-fi
-
-# Activate venv
-source .venv/bin/activate
-
-# Open browser
-(sleep 2 && open "http://localhost:7749") &
-
-# Launch
-python -m app.app 2>&1
+osascript -e '
+tell application "Terminal"
+    activate
+    do script "cd ~/Desktop/MediaApp && eval \"$(/opt/homebrew/bin/brew shellenv zsh)\" 2>/dev/null && set -a && source .env && set +a && source .venv/bin/activate && echo \"\" && echo \"⬡ Emrose Media Studio\" && echo \"  http://localhost:7749\" && echo \"  Press Ctrl+C to stop\" && echo \"\" && (sleep 2 && open http://localhost:7749) & && python -m app.app"
+end tell
+'
