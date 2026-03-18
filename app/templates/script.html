@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Script — {{ channel.channel_name }}{% endblock %}
-{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> / <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> / Script</div>{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> <span>›</span> <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> <span>›</span> Script</div>{% endblock %}
 {% block content %}
-<h2 style="margin-bottom: 20px;">✍️ Script Editor</h2>
+<div class="page-header">
+  <h2>Script Editor</h2>
+</div>
 
 {% if not script %}
 <form method="POST">
@@ -10,7 +12,7 @@
     <label>Topic / Prompt</label>
     <textarea name="topic" rows="3" placeholder="Enter your topic or paste from the idea generator...">{{ topic }}</textarea>
   </div>
-  <button type="submit" name="generate" value="1" class="btn btn-primary" onclick="this.innerHTML='<span class=spinner></span> Generating script...';">Generate Script</button>
+  <button type="submit" name="generate" value="1" class="btn btn-primary btn-lg" onclick="this.innerHTML='<span class=spinner></span> Generating script...';">Generate Script</button>
 </form>
 
 {% else %}
@@ -28,8 +30,8 @@
   {% for scene in script.scenes %}
   <div class="card">
     <div class="flex flex-between flex-center mb-8">
-      <strong>Scene {{ loop.index }}</strong>
-      <span class="badge badge-accent">{{ scene.narration.split(' ')|length }} words</span>
+      <h4 style="font-size: 0.9em;">Scene {{ loop.index }}</h4>
+      <span class="badge badge-gold">{{ scene.narration.split(' ')|length }} words</span>
     </div>
     <div class="form-group">
       <label>Narration</label>
@@ -42,12 +44,14 @@
   </div>
   {% endfor %}
 
+  <hr class="divider">
+
   <div class="flex gap-16 mt-24 flex-center">
     <label class="checkbox-label">
       <input type="checkbox" name="generate_short">
       Also generate YouTube Short
     </label>
-    <button type="submit" class="btn btn-primary" style="font-size: 1em; padding: 14px 28px;"
+    <button type="submit" class="btn btn-primary btn-lg"
       onclick="buildScenesJson(); this.innerHTML='<span class=spinner></span> Starting generation...';">
       🚀 Approve & Generate Video
     </button>

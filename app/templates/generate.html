@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Generating — {{ title }}{% endblock %}
-{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> / <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> / Generating</div>{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> <span>›</span> <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> <span>›</span> Generating</div>{% endblock %}
 {% block content %}
-<h2 style="margin-bottom: 8px;">🎬 Generating: {{ title }}</h2>
-<p style="color: var(--text2); margin-bottom: 24px;">This will take several minutes. Do not close this tab.</p>
+<div class="page-header">
+  <h2>{{ title }}</h2>
+  <p>Generating video. This will take several minutes.</p>
+</div>
 
 <div class="progress-log" id="log">
   <div class="step active"><span class="spinner"></span> Starting pipeline...</div>
 </div>
 
 <div id="result" style="display: none;" class="mt-24">
-  <div class="card" style="border-color: var(--success);">
+  <div class="card card-highlight">
     <h3 style="color: var(--success);">✓ Video Complete</h3>
     <div id="result-meta" class="meta mt-16"></div>
     <div id="result-paths" class="mt-16" style="font-size: 0.85em; color: var(--text2); line-height: 1.8;"></div>
