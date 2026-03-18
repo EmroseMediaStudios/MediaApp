@@ -141,10 +141,10 @@ def _save_topic_to_bank(channel_id, topic_title):
 # Defaults
 TARGET_FPS = 30
 TARGET_RESOLUTION = (1920, 1080)
-IMAGE_GEN_WIDTH = 2048
-IMAGE_GEN_HEIGHT = 1365
-KB_ZOOM_RANGE = (1.05, 1.18)
-KB_PAN_RANGE = 0.08
+IMAGE_GEN_WIDTH = 3072
+IMAGE_GEN_HEIGHT = 2048
+KB_ZOOM_RANGE = (1.02, 1.08)
+KB_PAN_RANGE = 0.04
 CROSSFADE_DURATION = 1.5
 FLUX_SPACES = [
     os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
@@ -459,7 +459,7 @@ def generate_ambient_drone(duration, out_path):
 
 # --- Image generation ---
 
-def _generate_image_flux(prompt, out_path, hf_token, width=2048, height=1365):
+def _generate_image_flux(prompt, out_path, hf_token, width=3072, height=2048):
     from gradio_client import Client
     for space in FLUX_SPACES:
         for attempt in range(2):
@@ -511,7 +511,7 @@ def _generate_image_flux(prompt, out_path, hf_token, width=2048, height=1365):
     return False
 
 
-def _generate_fallback_image(out_path, scene_index, width=2048, height=1365):
+def _generate_fallback_image(out_path, scene_index, width=3072, height=2048):
     img = np.zeros((height, width, 3), dtype=np.float32)
     for y in range(height):
         v = 0.02 + 0.03 * math.exp(-((y - height * 0.4) ** 2) / (2 * (height * 0.3) ** 2))
@@ -547,6 +547,13 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
     if img_w < img_h:
         target_w, target_h = 1080, 1920
 
+    # Ensure source image is large enough for quality cropping
+    min_dim = max(target_w, target_h) * 1.5
+    if img_w < min_dim or img_h < min_dim:
+        scale = min_dim / min(img_w, img_h)
+        img = img.resize((int(img_w * scale), int(img_h * scale)), Image.LANCZOS)
+        img_w, img_h = img.size
+
     motion = random.choice(["zoom_in", "zoom_out", "pan_left", "pan_right", "drift"])
     zoom_start = 1.0
     zoom_end = random.uniform(*KB_ZOOM_RANGE)
@@ -571,19 +578,32 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
 
     total_frames = int(duration * TARGET_FPS)
     img_array = np.array(img)
+
     writer = imageio.get_writer(
-        str(out_path), fps=TARGET_FPS, codec="libx264", quality=8,
+        str(out_path), fps=TARGET_FPS, codec="libx264",
+        quality=None,
         macro_block_size=1,
-        output_params=["-preset", "medium", "-pix_fmt", "yuv420p"],
+        output_params=[
+            "-preset", "medium",
+            "-pix_fmt", "yuv420p",
+            "-crf", "18",
+            "-g", str(TARGET_FPS * 2),
+        ],
     )
     for frame_idx in range(total_frames):
         t = frame_idx / max(total_frames - 1, 1)
-        t_smooth = 0.5 - 0.5 * math.cos(math.pi * t)
+        # Smooth easing
+        t_smooth = t * t * (3.0 - 2.0 * t)  # smoothstep
         zoom = zoom_start + (zoom_end - zoom_start) * t_smooth
         pan_x = start_x + (end_x - start_x) * t_smooth
         pan_y = start_y + (end_y - start_y) * t_smooth
         crop_w = int(target_w / zoom)
         crop_h = int(target_h / zoom)
+
+        # Clamp crop size to image bounds
+        crop_w = min(crop_w, img_w)
+        crop_h = min(crop_h, img_h)
+
         cx = img_w // 2 + int(pan_x)
         cy = img_h // 2 + int(pan_y)
         x1 = max(0, min(cx - crop_w // 2, img_w - crop_w))
@@ -779,12 +799,12 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         ok = _generate_image_flux(
             scene["image_prompt"], str(img_path),
             api_keys.get("hf_token", ""),
-            width=2048, height=1365,
+            width=IMAGE_GEN_WIDTH, height=IMAGE_GEN_HEIGHT,
         )
         if not ok:
             fallback_count += 1
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
-            _generate_fallback_image(str(img_path), i, width=2048, height=1365)
+            _generate_fallback_image(str(img_path), i, width=IMAGE_GEN_WIDTH, height=IMAGE_GEN_HEIGHT)
         scene["image_path"] = str(img_path)
 
     if fallback_count > 0:
@@ -797,7 +817,9 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     emit("kenburns", "Applying Ken Burns animation...")
     for i, scene in enumerate(scenes):
         emit("kenburns", f"Animating scene {i+1}/{len(scenes)}...")
-        duration = scene.get("audio_duration", 10) + 1.5
+        # Make the animation longer than the audio to ensure no cutoff
+        audio_dur = scene.get("audio_duration", 10)
+        duration = audio_dur + 3.0  # extra 3s buffer beyond narration
         kb_path = work_dir / f"kb_{i:03d}.mp4"
         apply_ken_burns(scene["image_path"], duration, str(kb_path), target_res=res)
         scene["video_path"] = str(kb_path)
@@ -821,13 +843,9 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         clip = VideoFileClip(scene["video_path"])
         if scene.get("audio_path") and scene.get("audio_duration", 0) > 0:
             audio = AudioFileClip(scene["audio_path"])
-            target_dur = scene["audio_duration"] + 1.5
-            if clip.duration < target_dur:
-                sf = clip.duration / target_dur
-                if sf > 0.4:
-                    clip = clip.with_effects([vfx.MultiplySpeed(sf)])
-                else:
-                    clip = clip.with_effects([vfx.Loop(duration=target_dur)])
+            # Scene duration = narration + 2s breathing room
+            target_dur = scene["audio_duration"] + 2.0
+            # Trim video to match (video is always longer due to buffer)
             clip = clip.subclipped(0, min(target_dur, clip.duration))
             clip = clip.with_audio(audio)
         clip = clip.with_effects([vfx.Resize(res)])
