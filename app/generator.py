@@ -146,7 +146,11 @@ IMAGE_GEN_HEIGHT = 1365
 KB_ZOOM_RANGE = (1.05, 1.18)
 KB_PAN_RANGE = 0.08
 CROSSFADE_DURATION = 1.5
-FLUX_SPACE = os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged")
+FLUX_SPACES = [
+    os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
+    "black-forest-labs/FLUX.1-schnell",
+    "stabilityai/stable-diffusion-3.5-large-turbo",
+]
 FLUX_STEPS = int(os.environ.get("FLUX_STEPS", "8"))
 FLUX_GUIDANCE = float(os.environ.get("FLUX_GUIDANCE", "3.5"))
 
@@ -427,35 +431,53 @@ def generate_ambient_drone(duration, out_path):
 
 def _generate_image_flux(prompt, out_path, hf_token, width=2048, height=1365):
     from gradio_client import Client
-    for attempt in range(3):
-        try:
-            # gradio_client versions vary: try token=, then hf_token=, then no auth
-            client = None
-            if hf_token:
-                try:
-                    client = Client(FLUX_SPACE, hf_token=hf_token)
-                except TypeError:
+    for space in FLUX_SPACES:
+        for attempt in range(2):
+            try:
+                # gradio_client versions vary: try hf_token=, then token=, then no auth
+                client = None
+                if hf_token:
                     try:
-                        client = Client(FLUX_SPACE, token=hf_token)
+                        client = Client(space, hf_token=hf_token)
                     except TypeError:
-                        client = Client(FLUX_SPACE)
-            else:
-                client = Client(FLUX_SPACE)
-            result = client.predict(
-                prompt=prompt, seed=0, randomize_seed=True,
-                width=width, height=height,
-                guidance_scale=FLUX_GUIDANCE, num_inference_steps=FLUX_STEPS,
-                api_name="/infer",
-            )
-            img_result = result[0] if isinstance(result, tuple) else result
-            src = img_result.get("path", img_result.get("url", "")) if isinstance(img_result, dict) else str(img_result)
-            img = Image.open(src)
-            img.save(str(out_path), "PNG")
-            return True
-        except Exception as e:
-            log.warning(f"FLUX attempt {attempt+1}/3 failed: {e}")
-            if attempt < 2:
-                time.sleep(5 * (attempt + 1))
+                        try:
+                            client = Client(space, token=hf_token)
+                        except TypeError:
+                            client = Client(space)
+                else:
+                    client = Client(space)
+
+                # Different spaces have different API signatures
+                try:
+                    result = client.predict(
+                        prompt=prompt, seed=0, randomize_seed=True,
+                        width=width, height=height,
+                        guidance_scale=FLUX_GUIDANCE, num_inference_steps=FLUX_STEPS,
+                        api_name="/infer",
+                    )
+                except Exception:
+                    # Some spaces use different param names or api_name
+                    result = client.predict(
+                        prompt, 0, True,
+                        width, height,
+                        FLUX_GUIDANCE, FLUX_STEPS,
+                    )
+
+                img_result = result[0] if isinstance(result, tuple) else result
+                src = img_result.get("path", img_result.get("url", "")) if isinstance(img_result, dict) else str(img_result)
+                img = Image.open(src)
+                img.save(str(out_path), "PNG")
+                log.info(f"Image generated via {space}")
+                return True
+            except Exception as e:
+                err = str(e)
+                log.warning(f"FLUX {space} attempt {attempt+1}/2 failed: {err}")
+                if "quota" in err.lower() or "limit" in err.lower():
+                    log.info(f"Quota exhausted on {space}, trying next space...")
+                    break  # Skip remaining attempts for this space
+                if attempt < 1:
+                    time.sleep(3)
+    log.warning("All FLUX spaces exhausted, will use fallback image")
     return False
 
 
