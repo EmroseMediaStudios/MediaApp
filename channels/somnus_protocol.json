@@ -87,7 +87,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.25,
+    "volume": 0.3,
     "style": "Very low, warm drone. Almost imperceptible. Gentle sine waves with slow modulation."
   },
   "shorts": {

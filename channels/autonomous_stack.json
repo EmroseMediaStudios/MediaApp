@@ -87,7 +87,7 @@
   },
   "ambient_audio": {
     "enabled": false,
-    "volume": 0.0,
+    "volume": 0.3,
     "style": "None \u2014 clean audio only"
   },
   "shorts": {

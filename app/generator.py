@@ -866,26 +866,25 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     all_clips = [title_clip] + scene_clips
     final = concatenate_videoclips(all_clips, method="compose")
 
-    # Ambient drone
+    # Ambient drone — generate and mix into the final video
     if ambient_cfg.get("enabled", True):
         emit("assembly", "Mixing ambient audio...")
         drone_path = work_dir / "ambient.wav"
-        generate_ambient_drone(final.duration, str(drone_path))
-        ambient = AudioFileClip(str(drone_path))
+        generate_ambient_drone(final.duration + 2, str(drone_path))
+        drone_clip = AudioFileClip(str(drone_path)).subclipped(0, final.duration)
         vol = ambient_cfg.get("volume", 0.20)
-        # moviepy v2 compatibility: try multiple volume methods
-        try:
-            ambient = ambient.with_volume_scaled(vol)
-        except AttributeError:
-            try:
-                ambient = ambient.multiply_volume(vol)
-            except AttributeError:
-                ambient = ambient.with_effects([vfx.MultiplySpeed(1.0)])  # keep as-is if no volume method
-                log.warning("Could not adjust ambient volume — using raw level")
+        drone_clip = drone_clip.with_volume_scaled(vol)
+
+        # Collect all audio: narration from video + ambient drone
         if final.audio is not None:
-            final = final.with_audio(CompositeAudioClip([final.audio, ambient]))
+            mixed = CompositeAudioClip([final.audio, drone_clip])
+            log.info(f"Mixing ambient ({drone_clip.duration:.1f}s at vol {vol}) with narration ({final.audio.duration:.1f}s)")
         else:
-            final = final.with_audio(ambient)
+            mixed = drone_clip
+            log.info(f"No narration audio found — using ambient only")
+        final = final.with_audio(mixed)
+    else:
+        log.info("Ambient audio disabled for this channel")
 
     video_path = out_dir / "video.mp4"
     emit("assembly", "Rendering final video...")
