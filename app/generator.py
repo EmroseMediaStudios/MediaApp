@@ -836,35 +836,46 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
 
     # Step 5: Assemble with fade-to-black transitions
     emit("assembly", "Assembling final video...")
-    scene_clips = []
-    black_frame = ColorClip(res, color=(0, 0, 0))
+
+    # Build each scene clip with its audio
+    assembled_clips = []
+
+    # Title card first (no audio, just visual)
+    assembled_clips.append(title_clip)
 
     for i, scene in enumerate(scenes):
         clip = VideoFileClip(scene["video_path"])
+
         if scene.get("audio_path") and scene.get("audio_duration", 0) > 0:
             audio = AudioFileClip(scene["audio_path"])
             # Scene duration = narration + 2s breathing room
             target_dur = scene["audio_duration"] + 2.0
-            # Trim video to match (video is always longer due to buffer)
             clip = clip.subclipped(0, min(target_dur, clip.duration))
+            # Ensure audio matches clip duration
+            if audio.duration > clip.duration:
+                audio = audio.subclipped(0, clip.duration)
             clip = clip.with_audio(audio)
+            log.info(f"Scene {i}: video={clip.duration:.1f}s, audio={audio.duration:.1f}s")
+        else:
+            log.warning(f"Scene {i}: NO AUDIO")
+
         clip = clip.with_effects([vfx.Resize(res)])
-        # Fade in and out each scene for smooth transitions
         clip = clip.with_effects([vfx.FadeIn(0.8), vfx.FadeOut(0.8)])
-        scene_clips.append(clip)
 
-        # Add brief black gap between scenes (except after last)
-        if i < len(scenes) - 1:
-            gap = black_frame.with_duration(0.4)
-            scene_clips.append(gap)
+        # Add brief black gap before this scene (except first)
+        if i > 0:
+            gap = ColorClip(res, color=(0, 0, 0)).with_duration(0.4)
+            assembled_clips.append(gap)
 
-    # Overall fade in/out
-    scene_clips[0] = scene_clips[0].with_effects([vfx.FadeIn(fade_in)])
-    scene_clips[-1] = scene_clips[-1].with_effects([vfx.FadeOut(fade_out)])
+        assembled_clips.append(clip)
 
-    # Combine: title card + scenes
-    all_clips = [title_clip] + scene_clips
-    final = concatenate_videoclips(all_clips, method="compose")
+    # Overall fade in/out on first and last scene clips
+    assembled_clips[1] = assembled_clips[1].with_effects([vfx.FadeIn(fade_in)])
+    assembled_clips[-1] = assembled_clips[-1].with_effects([vfx.FadeOut(fade_out)])
+
+    # Use method="chain" to avoid audio issues with "compose"
+    final = concatenate_videoclips(assembled_clips, method="chain")
+    log.info(f"Final video duration: {final.duration:.1f}s, has audio: {final.audio is not None}")
 
     # Ambient drone — generate and mix into the final video
     if ambient_cfg.get("enabled", True):
@@ -872,16 +883,15 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         drone_path = work_dir / "ambient.wav"
         generate_ambient_drone(final.duration + 2, str(drone_path))
         drone_clip = AudioFileClip(str(drone_path)).subclipped(0, final.duration)
-        vol = ambient_cfg.get("volume", 0.20)
+        vol = ambient_cfg.get("volume", 0.30)
         drone_clip = drone_clip.with_volume_scaled(vol)
 
-        # Collect all audio: narration from video + ambient drone
         if final.audio is not None:
             mixed = CompositeAudioClip([final.audio, drone_clip])
             log.info(f"Mixing ambient ({drone_clip.duration:.1f}s at vol {vol}) with narration ({final.audio.duration:.1f}s)")
         else:
             mixed = drone_clip
-            log.info(f"No narration audio found — using ambient only")
+            log.warning("No narration audio found — using ambient only")
         final = final.with_audio(mixed)
     else:
         log.info("Ambient audio disabled for this channel")
@@ -895,7 +905,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     )
 
     video_duration = final.duration
-    for c in scene_clips:
+    for c in assembled_clips:
         try:
             c.close()
         except Exception:
