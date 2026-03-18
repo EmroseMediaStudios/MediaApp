@@ -25,7 +25,7 @@ fi
 
 echo ""
 echo "⬡ Emrose Media Studios"
-echo "  Open http://localhost:5000 in your browser"
+echo "  Open http://localhost:7749 in your browser"
 echo ""
 
 python -m app.app
