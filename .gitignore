@@ -4,3 +4,4 @@ __pycache__/
 output/
 *.egg-info/
 .DS_Store
+.env
