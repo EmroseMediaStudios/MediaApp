@@ -429,7 +429,18 @@ def _generate_image_flux(prompt, out_path, hf_token, width=2048, height=1365):
     from gradio_client import Client
     for attempt in range(3):
         try:
-            client = Client(FLUX_SPACE, token=hf_token if hf_token else None)
+            # gradio_client versions vary: try token=, then hf_token=, then no auth
+            client = None
+            if hf_token:
+                try:
+                    client = Client(FLUX_SPACE, hf_token=hf_token)
+                except TypeError:
+                    try:
+                        client = Client(FLUX_SPACE, token=hf_token)
+                    except TypeError:
+                        client = Client(FLUX_SPACE)
+            else:
+                client = Client(FLUX_SPACE)
             result = client.predict(
                 prompt=prompt, seed=0, randomize_seed=True,
                 width=width, height=height,
