@@ -11,12 +11,17 @@
 <div class="grid">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
-    <div class="card">
-      <h3>{{ ch.channel_name }}</h3>
-      <p>{{ ch.description[:140] }}{% if ch.description|length > 140 %}...{% endif %}</p>
-      <div class="meta mt-16">
-        <span class="badge badge-gold">{{ ch.narrator.name }}</span>
-        <span style="margin-left: 8px; color: var(--text3);">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
+    <div class="card" style="display: flex; gap: 16px; align-items: flex-start;">
+      <img src="/static/img/{{ ch.channel_id }}.png" alt="{{ ch.channel_name }}"
+           style="width: 72px; height: 72px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border2);"
+           onerror="this.style.display='none'">
+      <div style="flex: 1; min-width: 0;">
+        <h3 style="font-size: 1em;">{{ ch.channel_name }}</h3>
+        <p style="margin-top: 4px;">{{ ch.description[:120] }}{% if ch.description|length > 120 %}...{% endif %}</p>
+        <div class="meta mt-8">
+          <span class="badge badge-gold">{{ ch.narrator.name }}</span>
+          <span style="color: var(--text3);">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
+        </div>
       </div>
     </div>
   </a>
