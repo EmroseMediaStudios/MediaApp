@@ -13,6 +13,7 @@
   <div class="card" style="border-color: var(--success);">
     <h3 style="color: var(--success);">✓ Video Complete</h3>
     <div id="result-meta" class="meta mt-16"></div>
+    <div id="result-paths" class="mt-16" style="font-size: 0.85em; color: var(--text2); line-height: 1.8;"></div>
   </div>
   <div class="video-player mt-16">
     <video id="videoPlayer" controls></video>
@@ -65,6 +66,12 @@ function showResult(result) {
     document.getElementById('result-meta').innerHTML =
       (m.duration / 60).toFixed(1) + ' min · ' + m.scenes_count + ' scenes' +
       (m.has_short ? ' · YouTube Short included' : '');
+
+    let paths = '📁 <strong>Video:</strong> ~/Desktop/EmroseMedia/' + m.channel_name + '/';
+    if (m.has_short) {
+      paths += '<br>📱 <strong>Short:</strong> ~/Desktop/EmroseMedia/' + m.channel_name + '_Shorts/';
+    }
+    document.getElementById('result-paths').innerHTML = paths;
 
     const videoUrl = '/video/' + channelId + '/' + result.dir_name + '/video.mp4';
     document.getElementById('videoPlayer').src = videoUrl;

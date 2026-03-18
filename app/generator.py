@@ -35,6 +35,23 @@ CHANNELS_DIR = Path(__file__).parent.parent / "channels"
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
 TOPIC_BANK_PATH = Path(__file__).parent.parent / "topic_bank.json"
 
+# Desktop output — videos land here for easy YouTube upload
+DESKTOP_BASE = Path.home() / "Desktop" / "EmroseMedia"
+
+
+def _get_desktop_channel_dir(channel_name):
+    """Get the desktop output folder for a channel's full videos."""
+    d = DESKTOP_BASE / channel_name
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _get_desktop_shorts_dir(channel_name):
+    """Get the desktop output folder for a channel's Shorts."""
+    d = DESKTOP_BASE / f"{channel_name}_Shorts"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
 # Channel-specific focus areas for topic generation
 CHANNEL_FOCUS = {
     "zero_trace_archive": {
@@ -686,12 +703,33 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     }
     (out_dir / "metadata.json").write_text(json.dumps(meta, indent=2))
 
+    # Copy to Desktop folders
+    channel_name = channel["channel_name"]
+    desktop_video_name = f"{safe_title}_{timestamp}.mp4"
+
+    desktop_vid_dir = _get_desktop_channel_dir(channel_name)
+    desktop_vid_path = desktop_vid_dir / desktop_video_name
+    shutil.copy2(str(video_path), str(desktop_vid_path))
+    emit("export", f"Video saved to Desktop/EmroseMedia/{channel_name}/")
+    meta["desktop_video_path"] = str(desktop_vid_path)
+
+    if short_meta is not None and (out_dir / "short.mp4").exists():
+        desktop_short_dir = _get_desktop_shorts_dir(channel_name)
+        desktop_short_path = desktop_short_dir / f"{safe_title}_{timestamp}_short.mp4"
+        shutil.copy2(str(out_dir / "short.mp4"), str(desktop_short_path))
+        emit("export", f"Short saved to Desktop/EmroseMedia/{channel_name}_Shorts/")
+        meta["desktop_short_path"] = str(desktop_short_path)
+
+    # Re-save metadata with desktop paths
+    (out_dir / "metadata.json").write_text(json.dumps(meta, indent=2))
+
     # Cleanup work dir
     shutil.rmtree(work_dir, ignore_errors=True)
 
-    emit("done", f"Complete! Video saved to {video_path}")
+    emit("done", f"Complete! Video saved to Desktop/EmroseMedia/{channel_name}/")
     return {
         "video_path": str(video_path),
+        "desktop_video_path": str(desktop_vid_path),
         "output_dir": str(out_dir),
         "dir_name": out_dir.name,
         "metadata": meta,
