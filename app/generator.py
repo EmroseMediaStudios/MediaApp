@@ -756,6 +756,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
 
     # Step 2: Generate images
     emit("images", "Generating scene images...")
+    fallback_count = 0
     for i, scene in enumerate(scenes):
         emit("images", f"Generating image for scene {i+1}/{len(scenes)}...")
         img_path = images_dir / f"scene_{i:03d}.png"
@@ -765,11 +766,16 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             width=2048, height=1365,
         )
         if not ok:
-            emit("images", f"Scene {i+1}: Using fallback image")
+            fallback_count += 1
+            emit("images", f"⚠ Scene {i+1}: Using fallback image")
             _generate_fallback_image(str(img_path), i, width=2048, height=1365)
         scene["image_path"] = str(img_path)
 
-    emit("images", "All images complete")
+    if fallback_count > 0:
+        emit("images", f"⚠ {fallback_count}/{len(scenes)} scenes used fallback images — consider re-generating when image quota resets")
+    else:
+        emit("images", "All images generated successfully via FLUX")
+    used_fallback = fallback_count > 0
 
     # Step 3: Ken Burns animation
     emit("kenburns", "Applying Ken Burns animation...")
@@ -856,8 +862,12 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     )
 
     video_duration = final.duration
-    for c in clips:
-        c.close()
+    for c in scene_clips:
+        try:
+            c.close()
+        except Exception:
+            pass
+    title_clip.close()
     final.close()
 
     emit("assembly", f"Video complete: {video_duration:.0f}s")
@@ -883,6 +893,8 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         "youtube_uploaded": False,
         "has_short": short_meta is not None,
         "short": short_meta,
+        "used_fallback_images": used_fallback,
+        "fallback_image_count": fallback_count,
         "created_at": datetime.now().isoformat(),
     }
     (out_dir / "metadata.json").write_text(json.dumps(meta, indent=2))
@@ -910,6 +922,9 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     # Cleanup work dir
     shutil.rmtree(work_dir, ignore_errors=True)
 
+    if used_fallback:
+        emit("warning", f"⚠ {fallback_count} of {len(scenes)} scenes used fallback images. Consider re-generating this video when image quota resets.")
+
     emit("done", f"Complete! Video saved to Desktop/EmroseMedia/{channel_name}/")
     return {
         "video_path": str(video_path),
@@ -917,6 +932,8 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         "output_dir": str(out_dir),
         "dir_name": out_dir.name,
         "metadata": meta,
+        "used_fallback": used_fallback,
+        "fallback_count": fallback_count,
     }
 
 

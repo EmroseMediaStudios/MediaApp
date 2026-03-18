@@ -39,6 +39,7 @@
       <div class="meta">
         {{ v.created_at[:10] if v.created_at else v.timestamp }} · {{ (v.duration / 60)|round(1) }} min · {{ v.file_size_mb|default('?') }} MB
         {% if v.has_short %} · <span class="badge badge-gold">Short</span>{% endif %}
+        {% if v.used_fallback_images %} · <span class="badge badge-rose">⚠ Fallback Images</span>{% endif %}
       </div>
     </div>
     <div class="actions">
