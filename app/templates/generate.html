@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Generating — {{ title }}{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> / <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> / Generating</div>{% endblock %}
+{% block content %}
+<h2 style="margin-bottom: 8px;">🎬 Generating: {{ title }}</h2>
+<p style="color: var(--text2); margin-bottom: 24px;">This will take several minutes. Do not close this tab.</p>
+
+<div class="progress-log" id="log">
+  <div class="step active"><span class="spinner"></span> Starting pipeline...</div>
+</div>
+
+<div id="result" style="display: none;" class="mt-24">
+  <div class="card" style="border-color: var(--success);">
+    <h3 style="color: var(--success);">✓ Video Complete</h3>
+    <div id="result-meta" class="meta mt-16"></div>
+  </div>
+  <div class="video-player mt-16">
+    <video id="videoPlayer" controls></video>
+  </div>
+  <div class="flex gap-16 mt-16">
+    <a id="downloadLink" class="btn btn-primary" download>⬇ Download Video</a>
+    <a id="shortLink" class="btn btn-secondary" style="display:none;" download>📱 Download Short</a>
+    <a href="/channel/{{ channel.channel_id }}" class="btn btn-secondary">← Back to Channel</a>
+  </div>
+</div>
+
+<script>
+const jobId = "{{ job_id }}";
+const channelId = "{{ channel.channel_id }}";
+const logEl = document.getElementById('log');
+
+const source = new EventSource('/progress/' + jobId);
+source.onmessage = function(e) {
+  const data = JSON.parse(e.data);
+  if (data.step === 'heartbeat') return;
+
+  if (data.step === 'complete') {
+    source.close();
+    logEl.innerHTML += '<div class="step done">✓ ' + data.message + '</div>';
+    logEl.scrollTop = logEl.scrollHeight;
+    showResult(data.result);
+    return;
+  }
+
+  if (data.step === 'error') {
+    source.close();
+    logEl.innerHTML += '<div class="step error">✗ Error: ' + data.message + '</div>';
+    logEl.scrollTop = logEl.scrollHeight;
+    return;
+  }
+
+  logEl.innerHTML += '<div class="step active"><span class="spinner"></span> ' + data.message + '</div>';
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+source.onerror = function() {
+  logEl.innerHTML += '<div class="step error">Connection lost. Check terminal for status.</div>';
+  source.close();
+};
+
+function showResult(result) {
+  document.getElementById('result').style.display = 'block';
+  if (result && result.metadata) {
+    const m = result.metadata;
+    document.getElementById('result-meta').innerHTML =
+      (m.duration / 60).toFixed(1) + ' min · ' + m.scenes_count + ' scenes' +
+      (m.has_short ? ' · YouTube Short included' : '');
+
+    const videoUrl = '/video/' + channelId + '/' + result.dir_name + '/video.mp4';
+    document.getElementById('videoPlayer').src = videoUrl;
+    document.getElementById('downloadLink').href = videoUrl;
+
+    if (m.has_short) {
+      const shortUrl = '/video/' + channelId + '/' + result.dir_name + '/short.mp4';
+      const shortLink = document.getElementById('shortLink');
+      shortLink.href = shortUrl;
+      shortLink.style.display = 'inline-block';
+    }
+  }
+}
+</script>
+{% endblock %}

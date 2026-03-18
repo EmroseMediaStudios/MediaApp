@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ channel.channel_name }}{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> / {{ channel.channel_name }}</div>{% endblock %}
+{% block content %}
+<div class="card" style="border-color: var(--accent);">
+  <h2>{{ channel.channel_name }}</h2>
+  <p style="margin-top: 8px;">{{ channel.description }}</p>
+  <div class="meta mt-16">
+    <span class="badge badge-accent">{{ channel.narrator.name }}</span>
+    <span style="margin-left: 8px;">🎙 {{ channel.voice.elevenlabs_voice_name }} ({{ channel.voice.speed }}x)</span>
+    <span style="margin-left: 8px;">🎬 {{ channel.video_settings.target_duration_min }}-{{ channel.video_settings.target_duration_max }} min</span>
+  </div>
+</div>
+
+<div class="flex gap-16 mt-24">
+  <a href="/channel/{{ channel.channel_id }}/idea" class="btn btn-primary" style="font-size: 1em; padding: 14px 28px;">💡 Generate Topic Idea</a>
+  <a href="/channel/{{ channel.channel_id }}/script" class="btn btn-secondary" style="font-size: 1em; padding: 14px 28px;">✍️ Create Video</a>
+</div>
+
+<div class="section-title">Previous Videos</div>
+
+{% if videos %}
+<div class="video-list">
+{% for v in videos %}
+  <div class="video-item">
+    <div class="info">
+      <h4>{{ v.title }}</h4>
+      <div class="meta">
+        {{ v.created_at[:10] if v.created_at else v.timestamp }} · {{ (v.duration / 60)|round(1) }} min · {{ v.file_size_mb|default('?') }} MB
+        {% if v.has_short %} · <span class="badge badge-accent">Short</span>{% endif %}
+      </div>
+    </div>
+    <div class="actions">
+      <label class="checkbox-label">
+        <input type="checkbox" {% if v.youtube_uploaded %}checked{% endif %}
+          onchange="toggleYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this.checked)">
+        YouTube
+      </label>
+      {% if v.has_video %}
+      <a href="/video/{{ channel.channel_id }}/{{ v.dir_name }}/video.mp4" class="btn btn-sm btn-primary" target="_blank">▶ Play</a>
+      {% endif %}
+      {% if v.has_short %}
+      <a href="/video/{{ channel.channel_id }}/{{ v.dir_name }}/short.mp4" class="btn btn-sm btn-secondary" target="_blank">📱 Short</a>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="icon">🎬</div>
+  <p>No videos yet. Generate your first one!</p>
+</div>
+{% endif %}
+
+<script>
+function toggleYouTube(channelId, dirName, uploaded) {
+  fetch('/api/youtube_toggle', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({channel_id: channelId, dir_name: dirName, uploaded: uploaded})
+  });
+}
+</script>
+{% endblock %}

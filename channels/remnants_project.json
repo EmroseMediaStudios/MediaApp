@@ -1,0 +1,104 @@
+{
+  "channel_id": "remnants_project",
+  "channel_name": "RemnantsProject",
+  "description": "Explores a world after humanity is gone. Each entry observes what remains — structures, systems, and environments — as they evolve without human presence.",
+
+  "narrator": {
+    "name": "The Observer",
+    "description": "An observer documenting the state of a post-human world. Quiet, observational, detached. Reflective but not emotional.",
+    "rules": [
+      "Quiet, observational, detached tone",
+      "Reflective but not emotional",
+      "No urgency or action",
+      "Feels like a record of a world continuing without us",
+      "Factual descriptions of environments and changes",
+      "No mourning or sentimentality — pure observation"
+    ]
+  },
+
+  "voice": {
+    "elevenlabs_voice_id": "pNInz6obpgDQGcFmaJgB",
+    "elevenlabs_voice_name": "Adam",
+    "model_id": "eleven_multilingual_v2",
+    "settings": {
+      "stability": 0.90,
+      "similarity_boost": 0.85,
+      "style": 0.00,
+      "use_speaker_boost": false
+    },
+    "speed": 0.90
+  },
+
+  "opening_format": {
+    "template": "No humans remain.\n\n{subject}",
+    "notes": "Always opens with 'No humans remain.' Followed by a brief description of what this entry observes."
+  },
+
+  "closing_format": {
+    "templates": [
+      "The world does not wait.",
+      "Nothing here requires us.",
+      "Time continues without record."
+    ],
+    "notes": "Detached closing observation. No hope, no despair — just continuation."
+  },
+
+  "visual_theme": {
+    "style": "Post-apocalyptic documentary, nature reclaiming civilization",
+    "palette": ["muted green", "rust", "concrete gray", "overgrown brown", "overcast sky"],
+    "lighting": "Overcast natural light, diffused, no direct sun. Dawn or dusk tones.",
+    "elements": [
+      "Abandoned cities and buildings",
+      "Nature reclaiming structures (vines, trees, moss)",
+      "Empty roads and infrastructure",
+      "Decay and weathering",
+      "Still water, overgrown fields",
+      "Rusting machinery"
+    ],
+    "environment": "Abandoned urban and suburban spaces. Nature overtaking human structures. Wide empty landscapes. No humans, no active life visible.",
+    "avoid": [
+      "Humans or active life",
+      "Post-apocalyptic action or violence",
+      "Bright or cheerful imagery",
+      "Sci-fi or futuristic elements",
+      "Text or signage"
+    ],
+    "camera": "Wide shots, slow movement. Static compositions with subtle drift. Observational distance.",
+    "mood": "Still, vast, indifferent, quietly powerful",
+    "image_prompt_suffix": "abandoned world, nature reclaiming, post-human, overgrown, cinematic photography, muted tones, 4k, desolate beauty"
+  },
+
+  "video_settings": {
+    "target_duration_min": 5,
+    "target_duration_max": 7,
+    "scene_count_min": 10,
+    "scene_count_max": 14,
+    "target_word_count_min": 700,
+    "target_word_count_max": 900,
+    "resolution": [1920, 1080],
+    "fps": 30,
+    "crossfade_seconds": 2.0,
+    "fade_in_seconds": 2.5,
+    "fade_out_seconds": 4.0
+  },
+
+  "ambient_audio": {
+    "enabled": true,
+    "volume": 0.18,
+    "style": "Wind, distant birds, environmental room tone — no music, pure atmosphere"
+  },
+
+  "shorts": {
+    "enabled": true,
+    "duration_min": 20,
+    "duration_max": 40,
+    "aspect_ratio": "9:16",
+    "resolution": [1080, 1920]
+  },
+
+  "youtube": {
+    "category": "Education",
+    "default_tags": ["post-human", "abandoned", "nature", "documentary", "remnants", "after humanity", "solarpunk"],
+    "uploaded": false
+  }
+}

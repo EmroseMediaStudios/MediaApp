@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Topic Ideas — {{ channel.channel_name }}{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> <span>/</span> <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> <span>/</span> Topic Ideas</div>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>💡 Topic Idea Generator</h2>
+  <p>Generate a unique content idea for <strong>{{ channel.channel_name }}</strong>.</p>
+</div>
+
+<form method="POST" id="ideaForm">
+  <button type="submit" class="btn btn-primary btn-lg" id="genBtn" onclick="this.innerHTML='<span class=spinner></span> Thinking...';">Generate Topic Idea</button>
+</form>
+
+{% if idea %}
+<div class="card card-highlight mt-24 idea-card">
+  <h3 style="font-size: 1.15em; margin-bottom: 20px;">{{ idea.title }}</h3>
+
+  <div class="field">
+    <div class="field-label">Core Concept</div>
+    <div class="field-value">{{ idea.core_concept }}</div>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Hook</div>
+    <div class="field-value hook">"{{ idea.hook }}"</div>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Why It Works</div>
+    <div class="field-value">{{ idea.why_it_works }}</div>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Visual Direction</div>
+    <div class="field-value">{{ idea.visual_direction }}</div>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Series Potential</div>
+    <div class="field-value">{{ idea.series_potential }}</div>
+  </div>
+
+  <div class="flex gap-12 mt-24">
+    <a href="/channel/{{ channel.channel_id }}/script?topic={{ idea.title }}: {{ idea.core_concept }}" class="btn btn-teal btn-lg">✍️ Use This Topic</a>
+    <form method="POST" style="display: inline;">
+      <button type="submit" class="btn btn-secondary btn-lg" onclick="this.innerHTML='<span class=spinner></span> Generating...';">🔄 Generate Another</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

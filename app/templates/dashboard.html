@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Emrose Media Studios — Channels{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 8px;">Your Channels</h1>
+<p style="color: var(--text2); margin-bottom: 24px;">Select a channel to generate content.</p>
+<div class="grid">
+{% for ch in channels %}
+  <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
+    <div class="card">
+      <h3>{{ ch.channel_name }}</h3>
+      <p>{{ ch.description[:120] }}{% if ch.description|length > 120 %}...{% endif %}</p>
+      <div class="meta mt-16">
+        <span class="badge badge-accent">{{ ch.narrator.name }}</span>
+        <span style="margin-left: 8px;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
+      </div>
+    </div>
+  </a>
+{% endfor %}
+</div>
+{% endblock %}
