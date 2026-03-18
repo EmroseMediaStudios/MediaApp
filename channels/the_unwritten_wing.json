@@ -2,7 +2,6 @@
   "channel_id": "the_unwritten_wing",
   "channel_name": "TheUnwrittenWing",
   "description": "Original, emotionally-driven stories that feel like forgotten or unfinished narratives. Exists in a space between reality and memory, focusing on quiet human moments with subtle surreal elements.",
-
   "narrator": {
     "name": "The Storyteller",
     "description": "A gentle storyteller recalling something half-remembered. Reflective, emotional, introspective. Soft and immersive.",
@@ -15,25 +14,22 @@
       "Gentle, unhurried cadence"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "pFZP5JQG7iQjIQuC4Bku",
     "elevenlabs_voice_name": "Lily",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.78,
-      "similarity_boost": 0.80,
-      "style": 0.12,
+      "stability": 0.55,
+      "similarity_boost": 0.75,
+      "style": 0.45,
       "use_speaker_boost": true
     },
     "speed": 0.95
   },
-
   "opening_format": {
     "template": "It begins with something small...",
-    "notes": "Soft, intimate opening. Should feel like the start of a memory surfacing. Do not use a rigid format — let it flow naturally each time."
+    "notes": "Soft, intimate opening. Should feel like the start of a memory surfacing. Do not use a rigid format \u2014 let it flow naturally each time."
   },
-
   "closing_format": {
     "templates": [
       "And that was the last time anyone remembered.",
@@ -42,10 +38,15 @@
     ],
     "notes": "Quiet resolution or deliberate ambiguity. Never tie everything up neatly."
   },
-
   "visual_theme": {
     "style": "Warm, dreamlike, emotionally evocative",
-    "palette": ["golden hour tones", "warm amber", "soft blue", "cream", "faded rose"],
+    "palette": [
+      "golden hour tones",
+      "warm amber",
+      "soft blue",
+      "cream",
+      "faded rose"
+    ],
     "lighting": "Warm golden hour lighting, soft diffused light, gentle shadows",
     "elements": [
       "Empty rooms with warm light",
@@ -62,11 +63,10 @@
       "Modern technology",
       "Crowded or busy scenes"
     ],
-    "camera": "Slow motion or stillness. Gentle drift. Emotional framing — close on details, then pulling back to reveal space.",
+    "camera": "Slow motion or stillness. Gentle drift. Emotional framing \u2014 close on details, then pulling back to reveal space.",
     "mood": "Nostalgic, bittersweet, dreamlike, quietly beautiful",
     "image_prompt_suffix": "soft focus, golden hour, dreamy atmosphere, film photography, warm tones, emotional, 4k"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -74,30 +74,41 @@
     "scene_count_max": 14,
     "target_word_count_min": 700,
     "target_word_count_max": 900,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 2.0,
     "fade_in_seconds": 3.0,
     "fade_out_seconds": 4.0
   },
-
   "ambient_audio": {
     "enabled": true,
     "volume": 0.15,
     "style": "Warm ambient pad with gentle piano-like overtones"
   },
-
   "shorts": {
     "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Entertainment",
-    "default_tags": ["storytelling", "emotional", "surreal", "short story", "dreamlike", "the unwritten wing", "fiction"],
+    "default_tags": [
+      "storytelling",
+      "emotional",
+      "surreal",
+      "short story",
+      "dreamlike",
+      "the unwritten wing",
+      "fiction"
+    ],
     "uploaded": false
   }
 }

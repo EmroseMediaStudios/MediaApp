@@ -2,7 +2,6 @@
   "channel_id": "somnus_protocol",
   "channel_name": "SomnusProtocol",
   "description": "Sleep-inducing audio experiences. Reduces cognitive load and gently guides the listener into rest through calm, repetitive narration.",
-
   "narrator": {
     "name": "The Guide",
     "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity.",
@@ -16,25 +15,22 @@
       "No questions, no calls to action"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "SAz9YHcvj6GT2YYXdXww",
     "elevenlabs_voice_name": "River",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.72,
-      "similarity_boost": 0.75,
-      "style": 0.08,
-      "use_speaker_boost": false
+      "stability": 0.8,
+      "similarity_boost": 0.85,
+      "style": 0.15,
+      "use_speaker_boost": true
     },
     "speed": 0.85
   },
-
   "opening_format": {
     "template": "There is nothing you need to do...",
     "notes": "Always opens with this line or a gentle variation. No introduction, no channel name. Just immediate calm."
   },
-
   "closing_format": {
     "templates": [
       "And so it continues... softly... gently...",
@@ -43,10 +39,15 @@
     ],
     "notes": "Gradual fade. The narration should dissolve rather than end."
   },
-
   "visual_theme": {
     "style": "Calming, minimal, sleep-inducing",
-    "palette": ["deep navy", "soft indigo", "dark purple", "muted midnight blue", "very dark gray"],
+    "palette": [
+      "deep navy",
+      "soft indigo",
+      "dark purple",
+      "muted midnight blue",
+      "very dark gray"
+    ],
     "lighting": "Very low, diffused, no harsh sources. Moonlight or ambient glow only.",
     "elements": [
       "Night skies with stars",
@@ -68,7 +69,6 @@
     "mood": "Peaceful, drowsy, infinite calm, weightless",
     "image_prompt_suffix": "calming, sleep-inducing, soft gradient, night sky, minimal, peaceful, dark blue tones, 4k, ambient"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -76,30 +76,42 @@
     "scene_count_max": 12,
     "target_word_count_min": 500,
     "target_word_count_max": 700,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 3.0,
     "fade_in_seconds": 4.0,
     "fade_out_seconds": 6.0
   },
-
   "ambient_audio": {
     "enabled": true,
     "volume": 0.25,
     "style": "Very low, warm drone. Almost imperceptible. Gentle sine waves with slow modulation."
   },
-
   "shorts": {
     "enabled": false,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Entertainment",
-    "default_tags": ["sleep", "relaxation", "calm", "sleep aid", "ambient", "soothing", "somnus protocol", "ASMR"],
+    "default_tags": [
+      "sleep",
+      "relaxation",
+      "calm",
+      "sleep aid",
+      "ambient",
+      "soothing",
+      "somnus protocol",
+      "ASMR"
+    ],
     "uploaded": false
   }
 }

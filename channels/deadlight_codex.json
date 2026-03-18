@@ -2,7 +2,6 @@
   "channel_id": "deadlight_codex",
   "channel_name": "DeadlightCodex",
   "description": "A cosmic-horror archival video series. Each entry concerns an anomalous entity, event, or phenomenon.",
-
   "narrator": {
     "name": "The Keeper",
     "description": "Deep, controlled, deliberate tone. Ancient, restrained, authoritative. Speaks as though reading from an archived record.",
@@ -16,25 +15,22 @@
       "No modern or conversational phrasing"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "EXAVITQu4vr4xnSDxMaL",
     "elevenlabs_voice_name": "Victor",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.85,
-      "similarity_boost": 0.80,
-      "style": 0.15,
-      "use_speaker_boost": false
+      "stability": 0.7,
+      "similarity_boost": 0.8,
+      "style": 0.25,
+      "use_speaker_boost": true
     },
     "speed": 0.85
   },
-
   "opening_format": {
     "template": "You are listening to the DeadlightCodex.\n\nThis entry concerns {subject}.",
     "notes": "Must follow this structure exactly. The introduction should feel procedural, like accessing a recorded archive."
   },
-
   "closing_format": {
     "templates": [
       "This entry remains incomplete.",
@@ -42,10 +38,14 @@
     ],
     "notes": "End without resolution. Do not summarize. Do not explain. Leave the implication open."
   },
-
   "visual_theme": {
     "style": "Cinematic, slow-moving, atmospheric, dark cosmic-horror",
-    "palette": ["black", "deep red", "desaturated gold", "cold gray"],
+    "palette": [
+      "black",
+      "deep red",
+      "desaturated gold",
+      "cold gray"
+    ],
     "lighting": "Low, directional, moody with deep shadows",
     "elements": [
       "Abstract structures and monoliths",
@@ -66,7 +66,6 @@
     "mood": "Quiet, inevitable, observational, unsettling but controlled",
     "image_prompt_suffix": "cinematic still, 4k, film grain, atmospheric, dark cosmic horror photography"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -74,30 +73,41 @@
     "scene_count_max": 14,
     "target_word_count_min": 700,
     "target_word_count_max": 900,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
     "fade_out_seconds": 3.0
   },
-
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.20,
+    "volume": 0.2,
     "style": "Dark low-frequency drone with subtle dissonance"
   },
-
   "shorts": {
     "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Entertainment",
-    "default_tags": ["cosmic horror", "creepypasta", "dark narration", "horror", "mystery", "unexplained", "deadlight codex"],
+    "default_tags": [
+      "cosmic horror",
+      "creepypasta",
+      "dark narration",
+      "horror",
+      "mystery",
+      "unexplained",
+      "deadlight codex"
+    ],
     "uploaded": false
   }
 }

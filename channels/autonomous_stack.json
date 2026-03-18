@@ -2,7 +2,6 @@
   "channel_id": "autonomous_stack",
   "channel_name": "AutonomousStack",
   "description": "Teaches automation, AI systems, and technical workflows in a clear and practical way. Makes complex systems understandable and actionable.",
-
   "narrator": {
     "name": "The Instructor",
     "description": "A confident technical expert explaining systems clearly. Direct, professional, no fluff.",
@@ -16,25 +15,22 @@
       "Step-by-step when appropriate"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "cjVigY5qzO86Huf0OWal",
     "elevenlabs_voice_name": "Eric",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.85,
-      "similarity_boost": 0.85,
-      "style": 0.00,
+      "stability": 0.6,
+      "similarity_boost": 0.8,
+      "style": 0.35,
       "use_speaker_boost": true
     },
     "speed": 1.0
   },
-
   "opening_format": {
     "template": "{subject}",
     "notes": "Open directly with the problem or topic. No preamble, no channel introduction. Get straight to the point."
   },
-
   "closing_format": {
     "templates": [
       "That's the core of it. Build from here.",
@@ -43,10 +39,15 @@
     ],
     "notes": "Concise, actionable closing. Leave the viewer with clear next steps or confidence."
   },
-
   "visual_theme": {
     "style": "Clean, minimalist, technical",
-    "palette": ["dark charcoal", "white", "electric blue accent", "light gray", "subtle green accent"],
+    "palette": [
+      "dark charcoal",
+      "white",
+      "electric blue accent",
+      "light gray",
+      "subtle green accent"
+    ],
     "lighting": "Clean, even, professional. No dramatic shadows.",
     "elements": [
       "Clean UI mockups and interfaces",
@@ -68,7 +69,6 @@
     "mood": "Focused, efficient, empowering, professional",
     "image_prompt_suffix": "minimalist tech design, clean UI, dark mode interface, professional, modern, structured, 4k"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -76,30 +76,41 @@
     "scene_count_max": 12,
     "target_word_count_min": 800,
     "target_word_count_max": 1000,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.0,
     "fade_in_seconds": 1.5,
     "fade_out_seconds": 2.0
   },
-
   "ambient_audio": {
     "enabled": false,
     "volume": 0.0,
-    "style": "None — clean audio only"
+    "style": "None \u2014 clean audio only"
   },
-
   "shorts": {
     "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Science & Technology",
-    "default_tags": ["automation", "AI", "tech tutorial", "workflow", "systems", "programming", "autonomous stack"],
+    "default_tags": [
+      "automation",
+      "AI",
+      "tech tutorial",
+      "workflow",
+      "systems",
+      "programming",
+      "autonomous stack"
+    ],
     "uploaded": false
   }
 }

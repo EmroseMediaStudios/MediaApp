@@ -2,7 +2,6 @@
   "channel_id": "zero_trace_archive",
   "channel_name": "ZeroTraceArchive",
   "description": "A structured archive of unexplained real-world anomalies. Each entry is presented as a documented case file, grounded in realism and investigative tone.",
-
   "narrator": {
     "name": "The Archivist",
     "description": "A neutral, composed observer presenting documented findings. Calm, analytical, investigative. Professional and controlled.",
@@ -11,29 +10,26 @@
       "Professional and controlled delivery",
       "No exaggeration or theatrical language",
       "Feels like a recorded case file or documentary narration",
-      "Does not prove the supernatural — explores events that resist explanation",
+      "Does not prove the supernatural \u2014 explores events that resist explanation",
       "Grounded in realism"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "onwK4e9ZLuTAKqWW03F9",
     "elevenlabs_voice_name": "Daniel",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.90,
-      "similarity_boost": 0.85,
-      "style": 0.05,
+      "stability": 0.65,
+      "similarity_boost": 0.8,
+      "style": 0.3,
       "use_speaker_boost": true
     },
     "speed": 0.92
   },
-
   "opening_format": {
     "template": "You are listening to the ZeroTraceArchive. I am the Archivist.\n\nThis entry concerns {subject}.",
     "notes": "Procedural, documentary-like introduction. Professional and composed."
   },
-
   "closing_format": {
     "templates": [
       "This entry remains unresolved.",
@@ -42,10 +38,15 @@
     ],
     "notes": "End with unresolved status. No dramatic conclusions."
   },
-
   "visual_theme": {
     "style": "Documentary, grounded, realistic environments",
-    "palette": ["muted earth tones", "gray", "desaturated blue", "dark green", "concrete"],
+    "palette": [
+      "muted earth tones",
+      "gray",
+      "desaturated blue",
+      "dark green",
+      "concrete"
+    ],
     "lighting": "Natural lighting, overcast, low-key indoor scenes",
     "elements": [
       "Real-world locations and environments",
@@ -66,7 +67,6 @@
     "mood": "Investigative, measured, quietly unsettling, grounded",
     "image_prompt_suffix": "documentary photography, realistic, muted tones, 4k, photojournalistic, natural lighting"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -74,30 +74,41 @@
     "scene_count_max": 14,
     "target_word_count_min": 700,
     "target_word_count_max": 900,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
     "fade_out_seconds": 3.0
   },
-
   "ambient_audio": {
     "enabled": true,
     "volume": 0.12,
     "style": "Subtle room tone with distant environmental sounds"
   },
-
   "shorts": {
     "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Education",
-    "default_tags": ["unexplained", "anomaly", "documentary", "mystery", "investigation", "case file", "zero trace archive"],
+    "default_tags": [
+      "unexplained",
+      "anomaly",
+      "documentary",
+      "mystery",
+      "investigation",
+      "case file",
+      "zero trace archive"
+    ],
     "uploaded": false
   }
 }

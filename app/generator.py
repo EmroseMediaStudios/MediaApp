@@ -402,28 +402,58 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
 def generate_ambient_drone(duration, out_path):
     sr = 44100
     t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+
+    # Primary drones — deep sub-bass
     detune = np.sin(2 * np.pi * 0.03 * t) * 0.5
-    drone1 = np.sin(2 * np.pi * (38.0 + detune) * t) * 0.3
-    drone2 = np.sin(2 * np.pi * (55.0 + detune * 0.7) * t) * 0.2
+    drone1 = np.sin(2 * np.pi * (38.0 + detune) * t) * 0.25
+    drone2 = np.sin(2 * np.pi * (55.0 + detune * 0.7) * t) * 0.18
+
+    # Dissonant harmonics with slow LFO
     harm_lfo = np.sin(2 * np.pi * 0.05 * t) * 0.5 + 0.5
-    harm1 = np.sin(2 * np.pi * 82.4 * t) * 0.08 * harm_lfo
-    harm2 = np.sin(2 * np.pi * 87.3 * t) * 0.06 * (1.0 - harm_lfo) * 0.8
-    noise = np.random.randn(len(t)) * 0.015
-    ks = int(sr / 200)
+    harm1 = np.sin(2 * np.pi * 82.4 * t) * 0.07 * harm_lfo
+    harm2 = np.sin(2 * np.pi * 87.3 * t) * 0.05 * (1.0 - harm_lfo) * 0.8
+
+    # Atmospheric pad — higher register, very slow evolve
+    pad_lfo = np.sin(2 * np.pi * 0.015 * t) * 0.5 + 0.5
+    pad1 = np.sin(2 * np.pi * 110.0 * t) * 0.04 * pad_lfo
+    pad2 = np.sin(2 * np.pi * 146.8 * t) * 0.03 * (1.0 - pad_lfo)
+
+    # Subtle breath-like filtered noise
+    noise = np.random.randn(len(t)) * 0.02
+    ks = int(sr / 180)
     if ks > 1:
         noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
-    noise *= (np.sin(2 * np.pi * 0.02 * t) * 0.5 + 0.5) ** 2
-    sweep_freq = np.linspace(25, 30, len(t))
-    sweep = np.sin(2 * np.pi * sweep_freq * t / 2) * 0.1
-    sweep *= np.sin(2 * np.pi * 0.01 * t) * 0.5 + 0.5
-    ambient = drone1 + drone2 + harm1 + harm2 + noise + sweep
+    breath_lfo = (np.sin(2 * np.pi * 0.08 * t) * 0.5 + 0.5) ** 2
+    noise *= breath_lfo
+
+    # Deep sweep
+    sweep_freq = np.linspace(25, 35, len(t))
+    sweep = np.sin(2 * np.pi * sweep_freq * t / 2) * 0.08
+    sweep_lfo = np.sin(2 * np.pi * 0.01 * t) * 0.5 + 0.5
+    sweep *= sweep_lfo
+
+    # Occasional distant rumble (very subtle)
+    rumble_env = np.zeros(len(t))
+    num_rumbles = max(1, int(duration / 30))
+    for _ in range(num_rumbles):
+        pos = random.randint(int(sr * 5), len(t) - int(sr * 3))
+        width = random.randint(int(sr * 1.5), int(sr * 4))
+        end = min(pos + width, len(t))
+        rumble_env[pos:end] += np.hanning(end - pos) * 0.06
+    rumble = np.sin(2 * np.pi * 28.0 * t) * rumble_env
+
+    # Combine all layers
+    ambient = drone1 + drone2 + harm1 + harm2 + pad1 + pad2 + noise + sweep + rumble
+
+    # Fade in/out
     fi = int(sr * 4.0)
     fo = int(sr * 5.0)
     ambient[:fi] *= np.linspace(0, 1, fi) ** 2
     ambient[-fo:] *= np.linspace(1, 0, fo) ** 2
+
     peak = np.max(np.abs(ambient))
     if peak > 0:
-        ambient = ambient / peak * 0.7
+        ambient = ambient / peak * 0.75
     scipy_wav.write(str(out_path), sr, (ambient * 32767).astype(np.int16))
 
 
@@ -565,6 +595,104 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
     return str(out_path)
 
 
+# --- Title card generation ---
+
+def _generate_title_card(channel, title, duration, out_path, res=(1920, 1080)):
+    """Generate a branded title card with channel name and episode title."""
+    w, h = res
+    img = np.zeros((h, w, 3), dtype=np.uint8)
+
+    # Subtle radial gradient background
+    cy, cx = h // 2, w // 2
+    Y, X = np.ogrid[:h, :w]
+    dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
+    gradient = np.clip(0.08 - dist * 0.04, 0.01, 0.08)
+    for c_idx in range(3):
+        img[:, :, c_idx] = (gradient * 255).astype(np.uint8)
+
+    # Add some atmosphere — subtle noise
+    noise = np.random.normal(0, 3, (h, w, 3)).astype(np.int16)
+    img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+
+    pil_img = Image.fromarray(img)
+
+    # Try to draw text with PIL
+    try:
+        from PIL import ImageDraw, ImageFont
+        draw = ImageDraw.Draw(pil_img)
+
+        # Try system fonts
+        font_paths = [
+            "/System/Library/Fonts/Supplemental/Georgia.ttf",
+            "/System/Library/Fonts/Georgia.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+        ]
+        title_font = None
+        channel_font = None
+        for fp in font_paths:
+            if Path(fp).exists():
+                title_font = ImageFont.truetype(fp, 54)
+                channel_font = ImageFont.truetype(fp, 32)
+                break
+
+        if not title_font:
+            title_font = ImageFont.load_default()
+            channel_font = title_font
+
+        # Channel name — gold color
+        gold = (212, 168, 84)
+        dim_gold = (140, 110, 55)
+        white = (200, 195, 185)
+
+        channel_name = channel.get("channel_name", "")
+        # Center channel name
+        ch_bbox = draw.textbbox((0, 0), channel_name, font=channel_font)
+        ch_w = ch_bbox[2] - ch_bbox[0]
+        draw.text(((w - ch_w) // 2, h // 2 - 80), channel_name, fill=dim_gold, font=channel_font)
+
+        # Divider line
+        line_w = min(ch_w + 100, w - 200)
+        line_y = h // 2 - 30
+        draw.line([(w // 2 - line_w // 2, line_y), (w // 2 + line_w // 2, line_y)], fill=dim_gold, width=1)
+
+        # Title — wrap long titles
+        words = title.split()
+        lines = []
+        current = ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            bbox = draw.textbbox((0, 0), test, font=title_font)
+            if bbox[2] - bbox[0] > w - 300:
+                if current:
+                    lines.append(current)
+                current = word
+            else:
+                current = test
+        if current:
+            lines.append(current)
+
+        y_start = h // 2 - 10
+        for i, line in enumerate(lines):
+            bbox = draw.textbbox((0, 0), line, font=title_font)
+            lw = bbox[2] - bbox[0]
+            draw.text(((w - lw) // 2, y_start + i * 65), line, fill=gold, font=title_font)
+
+        # Narrator credit
+        narrator_name = channel.get("narrator", {}).get("name", "")
+        if narrator_name:
+            narr_text = f"Narrated by {narrator_name}"
+            n_bbox = draw.textbbox((0, 0), narr_text, font=channel_font)
+            n_w = n_bbox[2] - n_bbox[0]
+            draw.text(((w - n_w) // 2, h - 120), narr_text, fill=white, font=channel_font)
+
+    except Exception as e:
+        log.warning(f"Title card text rendering failed: {e}")
+
+    pil_img.save(str(out_path), "PNG")
+    return str(out_path)
+
+
 # --- Main video generation pipeline ---
 
 def generate_video(channel, scenes, title, topic, api_keys, generate_short=False, progress=None):
@@ -654,10 +782,20 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
 
     emit("kenburns", "All animations complete")
 
-    # Step 4: Assemble
+    # Step 4: Title card
+    emit("assembly", "Creating title card...")
+    title_img_path = work_dir / "title_card.png"
+    _generate_title_card(channel, title, 5.0, str(title_img_path), res=res)
+    title_clip = ImageClip(str(title_img_path)).with_duration(5.0)
+    title_clip = title_clip.with_effects([vfx.FadeIn(1.5), vfx.FadeOut(1.5)])
+    title_clip = title_clip.with_effects([vfx.Resize(res)])
+
+    # Step 5: Assemble with fade-to-black transitions
     emit("assembly", "Assembling final video...")
-    clips = []
-    for scene in scenes:
+    scene_clips = []
+    black_frame = ColorClip(res, color=(0, 0, 0))
+
+    for i, scene in enumerate(scenes):
         clip = VideoFileClip(scene["video_path"])
         if scene.get("audio_path") and scene.get("audio_duration", 0) > 0:
             audio = AudioFileClip(scene["audio_path"])
@@ -671,17 +809,22 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             clip = clip.subclipped(0, min(target_dur, clip.duration))
             clip = clip.with_audio(audio)
         clip = clip.with_effects([vfx.Resize(res)])
-        clips.append(clip)
+        # Fade in and out each scene for smooth transitions
+        clip = clip.with_effects([vfx.FadeIn(0.8), vfx.FadeOut(0.8)])
+        scene_clips.append(clip)
 
-    for i in range(1, len(clips)):
-        clips[i] = clips[i].with_effects([vfx.CrossFadeIn(crossfade)])
-    clips[0] = clips[0].with_effects([vfx.FadeIn(fade_in)])
-    clips[-1] = clips[-1].with_effects([vfx.FadeOut(fade_out)])
+        # Add brief black gap between scenes (except after last)
+        if i < len(scenes) - 1:
+            gap = black_frame.with_duration(0.4)
+            scene_clips.append(gap)
 
-    if len(clips) > 1:
-        final = concatenate_videoclips(clips, method="compose", padding=-crossfade)
-    else:
-        final = clips[0]
+    # Overall fade in/out
+    scene_clips[0] = scene_clips[0].with_effects([vfx.FadeIn(fade_in)])
+    scene_clips[-1] = scene_clips[-1].with_effects([vfx.FadeOut(fade_out)])
+
+    # Combine: title card + scenes
+    all_clips = [title_clip] + scene_clips
+    final = concatenate_videoclips(all_clips, method="compose")
 
     # Ambient drone
     if ambient_cfg.get("enabled", True):
@@ -690,7 +833,15 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         generate_ambient_drone(final.duration, str(drone_path))
         ambient = AudioFileClip(str(drone_path))
         vol = ambient_cfg.get("volume", 0.20)
-        ambient = ambient.with_volume_scaled(vol)
+        # moviepy v2 compatibility: try multiple volume methods
+        try:
+            ambient = ambient.with_volume_scaled(vol)
+        except AttributeError:
+            try:
+                ambient = ambient.multiply_volume(vol)
+            except AttributeError:
+                ambient = ambient.with_effects([vfx.MultiplySpeed(1.0)])  # keep as-is if no volume method
+                log.warning("Could not adjust ambient volume — using raw level")
         if final.audio is not None:
             final = final.with_audio(CompositeAudioClip([final.audio, ambient]))
         else:

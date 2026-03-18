@@ -2,7 +2,6 @@
   "channel_id": "gray_meridian",
   "channel_name": "GrayMeridian",
   "description": "Explores human behavior, psychology, and cognition. Examines how people think, react, and make decisions, often focusing on subtle or overlooked patterns.",
-
   "narrator": {
     "name": "The Thinker",
     "description": "A calm thinker guiding the listener through an idea. Thoughtful, analytical, reflective. Measured and encouraging of introspection.",
@@ -16,25 +15,22 @@
       "Treats the listener as intelligent"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "pqHfZKP75CvOlQylNhV4",
     "elevenlabs_voice_name": "Bill",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.82,
-      "similarity_boost": 0.80,
-      "style": 0.08,
+      "stability": 0.6,
+      "similarity_boost": 0.8,
+      "style": 0.35,
       "use_speaker_boost": true
     },
     "speed": 0.93
   },
-
   "opening_format": {
     "template": "{subject}",
     "notes": "Open with a question or provocative observation. Draw the listener in with curiosity. No formal introduction."
   },
-
   "closing_format": {
     "templates": [
       "The answer, as always, depends on who you ask.",
@@ -43,11 +39,16 @@
     ],
     "notes": "Open-ended conclusion. Leave the listener thinking. Never preach or conclude definitively."
   },
-
   "visual_theme": {
     "style": "Minimalist, abstract but subtle, contemplative",
-    "palette": ["neutral gray", "warm beige", "muted blue", "soft white", "charcoal"],
-    "lighting": "Soft, even, contemplative. Neither dark nor bright — balanced.",
+    "palette": [
+      "neutral gray",
+      "warm beige",
+      "muted blue",
+      "soft white",
+      "charcoal"
+    ],
+    "lighting": "Soft, even, contemplative. Neither dark nor bright \u2014 balanced.",
     "elements": [
       "Abstract geometric forms",
       "Soft gradients and transitions",
@@ -56,7 +57,7 @@
       "Subtle textures (paper, stone, fabric)",
       "Light and shadow interplay"
     ],
-    "environment": "Abstract and minimal. Not tied to any specific place. Feels like the visual equivalent of a thought — clean, undefined, open.",
+    "environment": "Abstract and minimal. Not tied to any specific place. Feels like the visual equivalent of a thought \u2014 clean, undefined, open.",
     "avoid": [
       "Literal storytelling visuals",
       "Faces or recognizable people",
@@ -68,7 +69,6 @@
     "mood": "Contemplative, curious, calm, intellectually stimulating",
     "image_prompt_suffix": "minimalist, abstract, contemplative, soft neutral tones, clean composition, 4k, thoughtful design"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -76,30 +76,41 @@
     "scene_count_max": 14,
     "target_word_count_min": 700,
     "target_word_count_max": 900,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
     "fade_out_seconds": 3.0
   },
-
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.10,
+    "volume": 0.1,
     "style": "Very subtle warm pad, barely perceptible, like thinking music"
   },
-
   "shorts": {
     "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Education",
-    "default_tags": ["psychology", "human behavior", "cognition", "decision making", "introspection", "gray meridian", "mind"],
+    "default_tags": [
+      "psychology",
+      "human behavior",
+      "cognition",
+      "decision making",
+      "introspection",
+      "gray meridian",
+      "mind"
+    ],
     "uploaded": false
   }
 }
