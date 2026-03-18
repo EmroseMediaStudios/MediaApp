@@ -881,6 +881,14 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         except Exception as e:
             emit("short", f"Short generation failed: {e}")
 
+    # Step 6: Generate YouTube metadata
+    emit("youtube_meta", "Generating YouTube description, tags & hashtags...")
+    youtube_meta = _generate_youtube_metadata(channel, title, topic, scenes, api_keys["openai"])
+
+    # Save YouTube metadata as separate file for easy copy-paste
+    (out_dir / "youtube.json").write_text(json.dumps(youtube_meta, indent=2))
+    emit("youtube_meta", "YouTube metadata ready")
+
     # Save metadata
     meta = {
         "title": title,
@@ -895,6 +903,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         "short": short_meta,
         "used_fallback_images": used_fallback,
         "fallback_image_count": fallback_count,
+        "youtube_meta": youtube_meta,
         "created_at": datetime.now().isoformat(),
     }
     (out_dir / "metadata.json").write_text(json.dumps(meta, indent=2))
@@ -935,6 +944,69 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         "used_fallback": used_fallback,
         "fallback_count": fallback_count,
     }
+
+
+def _generate_youtube_metadata(channel, title, topic, scenes, openai_key):
+    """Generate YouTube description, tags, and hashtags for the video."""
+    year = datetime.now().year
+    channel_name = channel.get("channel_name", "")
+    channel_desc = channel.get("description", "")
+    default_tags = channel.get("youtube", {}).get("default_tags", [])
+    category = channel.get("youtube", {}).get("category", "Entertainment")
+
+    full_narration = " ".join(s.get("narration", "") for s in scenes)
+    word_count = len(full_narration.split())
+
+    prompt = f"""You are writing YouTube upload metadata for a video.
+
+Channel: {channel_name}
+Channel Description: {channel_desc}
+Video Title: {title}
+Topic: {topic}
+Video length: ~{word_count} words of narration, approximately {len(scenes)} scenes
+
+Write the following in JSON format:
+
+1. "description" — A YouTube description (150-300 words) that:
+   - Opens with a compelling 1-2 sentence hook about the video
+   - Briefly describes what the viewer will experience
+   - Includes a call to subscribe and turn on notifications
+   - Matches the channel's tone perfectly
+   - Ends with exactly this copyright line: "© {year} Emrose Media Studios. All rights reserved."
+
+2. "tags" — An array of 15-25 YouTube tags (individual words or short phrases) optimized for search discovery. Include a mix of broad and specific terms.
+
+3. "hashtags" — An array of 5-8 hashtags for the video description (with # prefix). These appear above the title on YouTube.
+
+4. "category" — YouTube category (default: "{category}")
+
+Respond with ONLY valid JSON, no markdown fences:
+{{"description": "...", "tags": ["tag1", "tag2"], "hashtags": ["#tag1", "#tag2"], "category": "..."}}"""
+
+    try:
+        result = _call_openai_sync([{"role": "user", "content": prompt}], openai_key)
+        result = result.strip()
+        if result.startswith("```"):
+            result = result.split("\n", 1)[1]
+        if result.endswith("```"):
+            result = result.rsplit("```", 1)[0]
+        yt_meta = json.loads(result.strip())
+
+        # Merge default channel tags
+        existing_tags = set(t.lower() for t in yt_meta.get("tags", []))
+        for dt in default_tags:
+            if dt.lower() not in existing_tags:
+                yt_meta["tags"].append(dt)
+
+        return yt_meta
+    except Exception as e:
+        log.warning(f"YouTube metadata generation failed: {e}")
+        return {
+            "description": f"{title}\n\n© {year} Emrose Media Studios. All rights reserved.",
+            "tags": default_tags,
+            "hashtags": [f"#{channel_name}"],
+            "category": category,
+        }
 
 
 def _generate_short(channel, scenes, work_dir, out_dir, api_keys, voice_id, model_id, voice_settings, speed, emit):

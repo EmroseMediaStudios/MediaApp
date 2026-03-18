@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}YouTube Info — {{ title }}{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> <span>›</span> <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> <span>›</span> YouTube Info</div>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>YouTube Upload Info</h2>
+  <p>{{ title }}</p>
+</div>
+
+{% if yt_meta %}
+<div class="card">
+  <div class="form-group">
+    <label>Description</label>
+    <textarea rows="12" onclick="this.select();" readonly style="line-height: 1.8;">{{ yt_meta.description }}</textarea>
+  </div>
+  <div class="form-group">
+    <label>Hashtags (paste above title)</label>
+    <input type="text" value="{{ yt_meta.hashtags|join(' ') }}" onclick="this.select();" readonly>
+  </div>
+  <div class="form-group">
+    <label>Tags (paste in tag field)</label>
+    <textarea rows="3" onclick="this.select();" readonly>{{ yt_meta.tags|join(', ') }}</textarea>
+  </div>
+  <div class="form-group">
+    <label>Category</label>
+    <input type="text" value="{{ yt_meta.category }}" onclick="this.select();" readonly>
+  </div>
+</div>
+<p style="color: var(--text3); font-size: 0.82em; margin-top: 12px;">Click any field to select all — then Cmd+C to copy.</p>
+{% else %}
+<div class="empty-state">
+  <div class="icon">📋</div>
+  <p>No YouTube metadata found for this video.<br>Re-generate the video to create it.</p>
+</div>
+{% endif %}
+
+<div class="mt-24">
+  <a href="/channel/{{ channel.channel_id }}" class="btn btn-secondary">← Back to Channel</a>
+</div>
+{% endblock %}

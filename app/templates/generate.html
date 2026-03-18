@@ -28,6 +28,28 @@
     <a id="shortLink" class="btn btn-secondary" style="display:none;" download>📱 Download Short</a>
     <a href="/channel/{{ channel.channel_id }}" class="btn btn-secondary">← Back to Channel</a>
   </div>
+
+  <div id="youtube-meta" style="display: none;" class="mt-24">
+    <div class="section-title">YouTube Upload Info</div>
+    <div class="card">
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="yt-description" rows="10" onclick="this.select();" readonly></textarea>
+      </div>
+      <div class="form-group">
+        <label>Hashtags (paste above title)</label>
+        <input type="text" id="yt-hashtags" onclick="this.select();" readonly>
+      </div>
+      <div class="form-group">
+        <label>Tags (paste in tag field)</label>
+        <textarea id="yt-tags" rows="3" onclick="this.select();" readonly></textarea>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="yt-category" onclick="this.select();" readonly>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -99,6 +121,15 @@ function showResult(result) {
       const shortLink = document.getElementById('shortLink');
       shortLink.href = shortUrl;
       shortLink.style.display = 'inline-block';
+    }
+
+    if (m.youtube_meta) {
+      const yt = m.youtube_meta;
+      document.getElementById('youtube-meta').style.display = 'block';
+      document.getElementById('yt-description').value = yt.description || '';
+      document.getElementById('yt-hashtags').value = (yt.hashtags || []).join(' ');
+      document.getElementById('yt-tags').value = (yt.tags || []).join(', ');
+      document.getElementById('yt-category').value = yt.category || '';
     }
   }
 }

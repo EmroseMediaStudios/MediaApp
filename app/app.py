@@ -168,5 +168,27 @@ def regenerate_page(channel_id, dir_name):
     )
 
 
+@app.route("/channel/<channel_id>/youtube/<dir_name>")
+def youtube_meta_page(channel_id, dir_name):
+    ch = generator.load_channel(channel_id)
+    if not ch:
+        return "Channel not found", 404
+
+    yt_path = generator.OUTPUT_DIR / channel_id / dir_name / "youtube.json"
+    meta_path = generator.OUTPUT_DIR / channel_id / dir_name / "metadata.json"
+
+    yt_meta = {}
+    title = "Video"
+    if yt_path.exists():
+        yt_meta = json.loads(yt_path.read_text())
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+        title = meta.get("title", "Video")
+        if not yt_meta and meta.get("youtube_meta"):
+            yt_meta = meta["youtube_meta"]
+
+    return render_template("youtube.html", channel=ch, yt_meta=yt_meta, title=title, dir_name=dir_name)
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=7749, host="0.0.0.0")
