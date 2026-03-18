@@ -597,31 +597,58 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
 
 # --- Title card generation ---
 
-def _generate_title_card(channel, title, duration, out_path, res=(1920, 1080)):
-    """Generate a branded title card with channel name and episode title."""
+def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token, res=(1920, 1080)):
+    """Generate a cinematic title card with FLUX background image."""
     w, h = res
-    img = np.zeros((h, w, 3), dtype=np.uint8)
+    channel_name = channel.get("channel_name", "")
+    visual = channel.get("visual_theme", {})
+    palette = ", ".join(visual.get("palette", ["dark", "moody"]))
+    style = visual.get("style", "cinematic")
+    suffix = visual.get("image_prompt_suffix", "")
 
-    # Subtle radial gradient background
-    cy, cx = h // 2, w // 2
-    Y, X = np.ogrid[:h, :w]
-    dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
-    gradient = np.clip(0.08 - dist * 0.04, 0.01, 0.08)
-    for c_idx in range(3):
-        img[:, :, c_idx] = (gradient * 255).astype(np.uint8)
+    # Generate a title card background via FLUX
+    title_bg_prompt = (
+        f"Abstract cinematic title card background for a video called '{title}'. "
+        f"Style: {style}. Colors: {palette}. "
+        f"Dark, atmospheric, with space for text overlay in the center. "
+        f"No text, no letters, no words, no symbols. "
+        f"Moody, dramatic lighting with subtle depth. {suffix}"
+    )
 
-    # Add some atmosphere — subtle noise
-    noise = np.random.normal(0, 3, (h, w, 3)).astype(np.int16)
-    img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+    bg_path = str(out_path).replace(".png", "_bg.png")
+    ok = _generate_image_flux(title_bg_prompt, bg_path, hf_token, width=w, height=h)
 
-    pil_img = Image.fromarray(img)
+    if ok:
+        pil_img = Image.open(bg_path)
+        pil_img = pil_img.resize((w, h), Image.LANCZOS)
+        # Darken the image for text readability
+        img_array = np.array(pil_img).astype(np.float32)
+        img_array *= 0.35  # darken significantly
+        # Add vignette
+        cy, cx = h // 2, w // 2
+        Y, X = np.ogrid[:h, :w]
+        dist = np.sqrt(((X - cx) / (w * 0.7)) ** 2 + ((Y - cy) / (h * 0.7)) ** 2)
+        vignette = np.clip(1.0 - dist * 0.6, 0.2, 1.0)
+        img_array *= vignette[:, :, None]
+        pil_img = Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
+    else:
+        # Fallback: dark gradient
+        img = np.zeros((h, w, 3), dtype=np.uint8)
+        cy, cx = h // 2, w // 2
+        Y, X = np.ogrid[:h, :w]
+        dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
+        gradient = np.clip(0.08 - dist * 0.04, 0.01, 0.08)
+        for c_idx in range(3):
+            img[:, :, c_idx] = (gradient * 255).astype(np.uint8)
+        noise = np.random.normal(0, 3, (h, w, 3)).astype(np.int16)
+        img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+        pil_img = Image.fromarray(img)
 
-    # Try to draw text with PIL
+    # Draw text overlay
     try:
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        # Try system fonts
         font_paths = [
             "/System/Library/Fonts/Supplemental/Georgia.ttf",
             "/System/Library/Fonts/Georgia.ttf",
@@ -632,28 +659,25 @@ def _generate_title_card(channel, title, duration, out_path, res=(1920, 1080)):
         channel_font = None
         for fp in font_paths:
             if Path(fp).exists():
-                title_font = ImageFont.truetype(fp, 54)
-                channel_font = ImageFont.truetype(fp, 32)
+                title_font = ImageFont.truetype(fp, 58)
+                channel_font = ImageFont.truetype(fp, 28)
                 break
 
         if not title_font:
             title_font = ImageFont.load_default()
             channel_font = title_font
 
-        # Channel name — gold color
         gold = (212, 168, 84)
-        dim_gold = (140, 110, 55)
-        white = (200, 195, 185)
+        dim_gold = (160, 130, 70)
 
-        channel_name = channel.get("channel_name", "")
-        # Center channel name
+        # Channel name
         ch_bbox = draw.textbbox((0, 0), channel_name, font=channel_font)
         ch_w = ch_bbox[2] - ch_bbox[0]
-        draw.text(((w - ch_w) // 2, h // 2 - 80), channel_name, fill=dim_gold, font=channel_font)
+        draw.text(((w - ch_w) // 2, h // 2 - 70), channel_name, fill=dim_gold, font=channel_font)
 
-        # Divider line
-        line_w = min(ch_w + 100, w - 200)
-        line_y = h // 2 - 30
+        # Thin divider line
+        line_w = min(ch_w + 80, w - 200)
+        line_y = h // 2 - 25
         draw.line([(w // 2 - line_w // 2, line_y), (w // 2 + line_w // 2, line_y)], fill=dim_gold, width=1)
 
         # Title — wrap long titles
@@ -672,19 +696,11 @@ def _generate_title_card(channel, title, duration, out_path, res=(1920, 1080)):
         if current:
             lines.append(current)
 
-        y_start = h // 2 - 10
+        y_start = h // 2 - 5
         for i, line in enumerate(lines):
             bbox = draw.textbbox((0, 0), line, font=title_font)
             lw = bbox[2] - bbox[0]
-            draw.text(((w - lw) // 2, y_start + i * 65), line, fill=gold, font=title_font)
-
-        # Narrator credit
-        narrator_name = channel.get("narrator", {}).get("name", "")
-        if narrator_name:
-            narr_text = f"Narrated by {narrator_name}"
-            n_bbox = draw.textbbox((0, 0), narr_text, font=channel_font)
-            n_w = n_bbox[2] - n_bbox[0]
-            draw.text(((w - n_w) // 2, h - 120), narr_text, fill=white, font=channel_font)
+            draw.text(((w - lw) // 2, y_start + i * 68), line, fill=gold, font=title_font)
 
     except Exception as e:
         log.warning(f"Title card text rendering failed: {e}")
@@ -791,7 +807,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     # Step 4: Title card
     emit("assembly", "Creating title card...")
     title_img_path = work_dir / "title_card.png"
-    _generate_title_card(channel, title, 5.0, str(title_img_path), res=res)
+    _generate_title_card(channel, title, 5.0, str(title_img_path), api_keys, api_keys.get("hf_token", ""), res=res)
     title_clip = ImageClip(str(title_img_path)).with_duration(5.0)
     title_clip = title_clip.with_effects([vfx.FadeIn(1.5), vfx.FadeOut(1.5)])
     title_clip = title_clip.with_effects([vfx.Resize(res)])
