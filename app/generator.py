@@ -871,29 +871,12 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     final = concatenate_videoclips(assembled_clips, method="chain")
     log.info(f"Final video duration: {final.duration:.1f}s, has audio: {final.audio is not None}")
 
-    # Ambient drone — generate and mix into the final video
-    if ambient_cfg.get("enabled", True):
-        emit("assembly", "Mixing ambient audio...")
-        drone_path = work_dir / "ambient.wav"
-        generate_ambient_drone(final.duration + 2, str(drone_path))
-        drone_clip = AudioFileClip(str(drone_path)).subclipped(0, final.duration)
-        vol = ambient_cfg.get("volume", 0.30)
-        drone_clip = drone_clip.with_volume_scaled(vol)
-
-        if final.audio is not None:
-            mixed = CompositeAudioClip([final.audio, drone_clip])
-            log.info(f"Mixing ambient ({drone_clip.duration:.1f}s at vol {vol}) with narration ({final.audio.duration:.1f}s)")
-        else:
-            mixed = drone_clip
-            log.warning("No narration audio found — using ambient only")
-        final = final.with_audio(mixed)
-    else:
-        log.info("Ambient audio disabled for this channel")
-
+    # Render video with narration only first
+    video_path_temp = out_dir / "video_temp.mp4"
     video_path = out_dir / "video.mp4"
-    emit("assembly", "Rendering final video...")
+    emit("assembly", "Rendering video with narration...")
     final.write_videofile(
-        str(video_path), fps=fps, codec="libx264",
+        str(video_path_temp), fps=fps, codec="libx264",
         audio_codec="aac", audio_bitrate="320k", preset="slow",
         threads=4, logger=None,
     )
@@ -906,6 +889,40 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             pass
     title_clip.close()
     final.close()
+
+    # Mix ambient drone using ffmpeg (moviepy CompositeAudioClip is unreliable)
+    if ambient_cfg.get("enabled", True):
+        emit("assembly", "Mixing ambient audio via ffmpeg...")
+        drone_path = work_dir / "ambient.wav"
+        generate_ambient_drone(video_duration + 2, str(drone_path))
+        vol = ambient_cfg.get("volume", 0.30)
+
+        import subprocess
+        mix_cmd = [
+            "ffmpeg", "-y",
+            "-i", str(video_path_temp),
+            "-i", str(drone_path),
+            "-filter_complex",
+            f"[1:a]atrim=0:{video_duration:.2f},volume={vol}[drone];[0:a][drone]amix=inputs=2:duration=first:dropout_transition=3[out]",
+            "-map", "0:v",
+            "-map", "[out]",
+            "-c:v", "copy",
+            "-c:a", "aac", "-b:a", "320k",
+            str(video_path),
+        ]
+        result = subprocess.run(mix_cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            log.info(f"Ambient mixed successfully at volume {vol}")
+            video_path_temp.unlink(missing_ok=True)
+        else:
+            log.warning(f"Ambient mix failed: {result.stderr[:200]}")
+            # Fall back to the version without ambient
+            import shutil as sh
+            sh.move(str(video_path_temp), str(video_path))
+    else:
+        import shutil as sh
+        sh.move(str(video_path_temp), str(video_path))
+        log.info("Ambient audio disabled for this channel")
 
     emit("assembly", f"Video complete: {video_duration:.0f}s")
 
