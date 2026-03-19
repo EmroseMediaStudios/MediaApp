@@ -643,26 +643,38 @@ def generate_ambient_drone(duration, out_path, channel_id=None):
 # --- Image generation ---
 
 def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
-    """Generate image via FLUX. Tries HF Inference API first (most reliable),
-    then falls back to HF Spaces."""
+    """Generate image via FLUX. Tries best quality models first, falls back as needed."""
 
-    # PRIMARY: HuggingFace Inference API (most reliable, worked best in testing)
+    # Model configs with quality-appropriate settings
+    inference_configs = [
+        {
+            "model": "black-forest-labs/FLUX.1-dev",
+            "params": {"width": width, "height": height, "num_inference_steps": 20, "guidance_scale": 3.5},
+        },
+        {
+            "model": "black-forest-labs/FLUX.1-schnell",
+            "params": {"width": width, "height": height, "num_inference_steps": 8},
+        },
+        {
+            "model": "stabilityai/stable-diffusion-3.5-large-turbo",
+            "params": {"width": width, "height": height, "num_inference_steps": 8},
+        },
+    ]
+
+    # PRIMARY: HuggingFace Inference API
     if hf_token:
-        inference_models = [
-            "black-forest-labs/FLUX.1-schnell",
-            "stabilityai/stable-diffusion-3.5-large-turbo",
-        ]
-        for model in inference_models:
+        for cfg in inference_configs:
+            model = cfg["model"]
             try:
                 import httpx as hx
                 headers = {"Authorization": f"Bearer {hf_token}"}
                 payload = {
                     "inputs": prompt,
-                    "parameters": {"width": width, "height": height, "num_inference_steps": 4},
+                    "parameters": cfg["params"],
                 }
                 url = f"https://router.huggingface.co/hf-inference/models/{model}"
-                log.info(f"Trying HF Inference API: {model}")
-                r = hx.post(url, headers=headers, json=payload, timeout=120)
+                log.info(f"Trying HF Inference API: {model} (steps={cfg['params'].get('num_inference_steps', 4)})")
+                r = hx.post(url, headers=headers, json=payload, timeout=180)
                 if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
                     with open(str(out_path), "wb") as f:
                         f.write(r.content)
