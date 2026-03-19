@@ -4,10 +4,10 @@
   "description": "Sleep-inducing audio experiences. Reduces cognitive load and gently guides the listener into rest through calm, repetitive narration.",
   "narrator": {
     "name": "The Guide",
-    "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity. Speaks as if lulling someone to sleep — barely above a whisper, with long pauses between sentences.",
+    "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity. Speaks as if lulling someone to sleep \u2014 barely above a whisper, with long pauses between sentences.",
     "rules": [
-      "Extremely slow and calm delivery — as if putting someone to sleep",
-      "Soft, repetitive, soothing tone — barely above a whisper",
+      "Extremely slow and calm delivery \u2014 as if putting someone to sleep",
+      "Soft, repetitive, soothing tone \u2014 barely above a whisper",
       "No tension, no conflict, no surprises",
       "Designed to lower mental activity",
       "Gentle repetition of phrases and images",
@@ -90,7 +90,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.45,
+    "volume": 0.5,
     "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
   },
   "shorts": {

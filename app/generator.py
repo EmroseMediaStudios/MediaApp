@@ -1567,12 +1567,16 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             vol = ambient_cfg.get("volume", 0.30)
             emit("assembly", f"Mixing ambient at volume {vol}...")
 
+            # Mix using filter_complex with explicit volume control
+            # Avoid amix which normalizes/reduces volume of both streams
             mix_cmd = [
                 "ffmpeg", "-y",
                 "-i", str(video_path_with_narration),
                 "-i", str(drone_path),
                 "-filter_complex",
-                f"[1:a]atrim=0:{video_duration:.2f},volume={vol}[drone];[0:a][drone]amix=inputs=2:duration=first:dropout_transition=3[out]",
+                f"[1:a]atrim=0:{video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={vol}[drone];"
+                f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo[narr];"
+                f"[narr][drone]amerge=inputs=2,pan=stereo|c0=c0+c2|c1=c1+c3[out]",
                 "-map", "0:v",
                 "-map", "[out]",
                 "-c:v", "copy",

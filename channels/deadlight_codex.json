@@ -84,7 +84,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.4,
+    "volume": 0.5,
     "style": "Dark low-frequency drone with subtle dissonance"
   },
   "shorts": {

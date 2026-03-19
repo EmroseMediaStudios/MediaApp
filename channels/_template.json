@@ -2,7 +2,6 @@
   "channel_id": "your_channel_id",
   "channel_name": "Your Channel Name",
   "description": "Brief description of the channel's theme and purpose.",
-
   "narrator": {
     "name": "Narrator Name",
     "description": "Describe the narrator's voice, tone, and character.",
@@ -13,25 +12,22 @@
       "Add as many as needed"
     ]
   },
-
   "voice": {
     "elevenlabs_voice_id": "VOICE_ID_HERE",
     "elevenlabs_voice_name": "Voice Name",
     "model_id": "eleven_multilingual_v2",
     "settings": {
       "stability": 0.85,
-      "similarity_boost": 0.80,
+      "similarity_boost": 0.8,
       "style": 0.15,
       "use_speaker_boost": false
     },
     "speed": 0.85
   },
-
   "opening_format": {
     "template": "Your opening line template. Use {subject} for the topic placeholder.",
     "notes": "Any notes about delivery or structure of the opening."
   },
-
   "closing_format": {
     "templates": [
       "Closing line option 1.",
@@ -39,10 +35,13 @@
     ],
     "notes": "Notes about how to end entries."
   },
-
   "visual_theme": {
     "style": "Overall visual style description",
-    "palette": ["color1", "color2", "color3"],
+    "palette": [
+      "color1",
+      "color2",
+      "color3"
+    ],
     "lighting": "Lighting description",
     "elements": [
       "Visual element 1",
@@ -57,7 +56,6 @@
     "mood": "Overall mood description",
     "image_prompt_suffix": "Keywords appended to every image generation prompt"
   },
-
   "video_settings": {
     "target_duration_min": 5,
     "target_duration_max": 7,
@@ -65,30 +63,37 @@
     "scene_count_max": 14,
     "target_word_count_min": 700,
     "target_word_count_max": 900,
-    "resolution": [1920, 1080],
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
     "fade_out_seconds": 3.0
   },
-
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.20,
+    "volume": 0.5,
     "style": "Description of ambient audio style"
   },
-
   "shorts": {
     "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
-
   "youtube": {
     "category": "Entertainment",
-    "default_tags": ["tag1", "tag2", "tag3"],
+    "default_tags": [
+      "tag1",
+      "tag2",
+      "tag3"
+    ],
     "uploaded": false
   }
 }
