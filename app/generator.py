@@ -540,7 +540,38 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
                     break
                 if attempt < 1:
                     time.sleep(3)
-    log.warning("All FLUX spaces exhausted, will use fallback image")
+
+    # Fallback: HuggingFace Inference API (separate from ZeroGPU quota)
+    if hf_token:
+        inference_models = [
+            "black-forest-labs/FLUX.1-schnell",
+            "stabilityai/stable-diffusion-3.5-large-turbo",
+        ]
+        for model in inference_models:
+            try:
+                import httpx as hx
+                headers = {"Authorization": f"Bearer {hf_token}"}
+                payload = {
+                    "inputs": prompt,
+                    "parameters": {"width": width, "height": height, "num_inference_steps": 4},
+                }
+                url = f"https://router.huggingface.co/hf-inference/models/{model}"
+                log.info(f"Trying HF Inference API: {model}")
+                r = hx.post(url, headers=headers, json=payload, timeout=120)
+                if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
+                    with open(str(out_path), "wb") as f:
+                        f.write(r.content)
+                    # Verify and convert to PNG
+                    img = Image.open(str(out_path))
+                    img.save(str(out_path), "PNG")
+                    log.info(f"Image generated via HF Inference API ({model}): {img.size[0]}x{img.size[1]}")
+                    return True
+                else:
+                    log.warning(f"HF Inference {model}: {r.status_code} - {r.text[:120]}")
+            except Exception as e:
+                log.warning(f"HF Inference {model} failed: {str(e)[:120]}")
+
+    log.warning("All FLUX spaces and Inference API exhausted, will use fallback image")
     return False
 
 
