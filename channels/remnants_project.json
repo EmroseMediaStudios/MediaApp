@@ -8,12 +8,14 @@
     "rules": [
       "Slow, deliberate delivery \u2014 as if observing in real time",
       "Serious but not monotone \u2014 natural variation in tone",
-      "Reflective pauses between thoughts, especially after opening line",
+      "Reflective pauses between thoughts",
       "Speaks as someone who is THERE, not reading from a page",
       "No urgency, but not flat \u2014 quiet gravitas",
       "Feels like a field recording, not a voiceover",
       "Let the weight of each observation land before moving on",
-      "Identifies himself as The Observer"
+      "Identifies himself as The Observer in the intro only",
+      "NEVER repeat \"No humans remain\" after the opening line \u2014 it is the intro only",
+      "The body of the narration should focus on describing what is observed, not restating the premise"
     ]
   },
   "voice": {
@@ -30,7 +32,7 @@
   },
   "opening_format": {
     "template": "No humans remain.\n\n...\n\nI am The Observer.\n\n{subject}",
-    "notes": "Always opens with \"No humans remain.\" followed by a deliberate pause (ellipsis or new paragraph). Then identifies as The Observer. Then introduces the subject. The pause after the opening line is critical \u2014 let it breathe."
+    "notes": "Opens with \"No humans remain.\" followed by a long deliberate pause. Then identifies as The Observer. Then introduces the subject. \"No humans remain\" must ONLY appear once \u2014 in this opening. Never repeat it in the body or closing of the script."
   },
   "closing_format": {
     "templates": [
