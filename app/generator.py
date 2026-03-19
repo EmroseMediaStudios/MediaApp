@@ -453,180 +453,118 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
     raise RuntimeError("ElevenLabs rate limit exceeded after 5 attempts")
 
 
-def generate_ambient_drone(duration, out_path, channel_id=None):
-    """Generate channel-specific ambient audio.
+def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topic=None, api_keys=None):
+    """Generate thematic ambient audio using ElevenLabs Sound Generation API.
     
-    Each channel gets a unique sonic palette that matches its theme:
-    - deadlight_codex: dark cosmic drone with dissonance
-    - zero_trace_archive: tense investigative hum with static
-    - the_unwritten_wing: warm ambient pad with gentle piano-like overtones
-    - remnants_project: post-industrial hum with nature textures
-    - somnus_protocol: ultra-calm sleep sounds, soft green noise, gentle waves
-    - autonomous_stack: clean electronic hum, minimal digital texture
-    - gray_meridian: neutral warm pad, subtle heartbeat-like pulse
+    Creates unique ambient audio for each video based on its content and channel theme.
+    Falls back to procedural synthesis if the API is unavailable.
     """
+    
+    # Build a content-aware ambient description
+    channel_ambient_base = {
+        "deadlight_codex": "dark cosmic horror ambient soundscape, deep ominous bass drone, eerie distant whispers, subtle metallic resonance, vast empty space atmosphere",
+        "zero_trace_archive": "tense investigative ambient, low frequency hum, occasional radio static crackle, surveillance room atmosphere, muted fluorescent buzz",
+        "the_unwritten_wing": "warm nostalgic ambient, soft piano-like tones in the distance, gentle wind through old windows, dusty library atmosphere, golden hour warmth",
+        "remnants_project": "post-apocalyptic ambient, wind through abandoned structures, distant creaking metal, nature sounds slowly reclaiming, industrial decay atmosphere",
+        "somnus_protocol": "ultra calming sleep ambient, soft ocean waves in the distance, gentle warm breeze, quiet night sounds, peaceful and drowsy atmosphere, green noise",
+        "autonomous_stack": "clean futuristic ambient, soft electronic hum, minimal digital textures, data center atmosphere, cool and precise",
+        "gray_meridian": "neutral contemplative ambient, soft warm pad, subtle heartbeat-like rhythm, quiet room tone, psychological atmosphere",
+    }
+    
+    base_desc = channel_ambient_base.get(channel_id, "atmospheric ambient soundscape, cinematic, moody")
+    
+    # Add video-specific context if available
+    if title:
+        base_desc += f", themed around {title}"
+    
+    # ElevenLabs Sound Generation can do max ~22 seconds per call
+    # We'll generate segments and loop/crossfade them
+    elevenlabs_key = None
+    if api_keys:
+        elevenlabs_key = api_keys.get("elevenlabs", "")
+    if not elevenlabs_key:
+        elevenlabs_key = os.environ.get("ELEVENLABS_API_KEY", "")
+    
+    if elevenlabs_key:
+        try:
+            import httpx as hx
+            import subprocess
+            
+            # Generate a 22-second ambient clip
+            log.info(f"Generating ambient audio via ElevenLabs Sound Generation...")
+            log.info(f"  Prompt: {base_desc[:100]}...")
+            
+            resp = hx.post(
+                "https://api.elevenlabs.io/v1/sound-generation",
+                headers={"xi-api-key": elevenlabs_key, "Content-Type": "application/json"},
+                json={"text": base_desc, "duration_seconds": 22},
+                timeout=60,
+            )
+            
+            if resp.status_code == 200:
+                # Save the generated clip
+                clip_path = str(out_path) + ".clip.mp3"
+                Path(clip_path).write_bytes(resp.content)
+                
+                # Convert to WAV
+                clip_wav = str(out_path) + ".clip.wav"
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", clip_path,
+                    "-ar", "44100", "-ac", "1", clip_wav,
+                ], capture_output=True)
+                
+                # Loop the clip to fill the full duration with crossfade
+                # Use ffmpeg's aloop and atrim to create seamless loop
+                subprocess.run([
+                    "ffmpeg", "-y",
+                    "-stream_loop", str(int(duration / 20) + 2),
+                    "-i", clip_wav,
+                    "-af", f"afade=t=in:d=3,afade=t=out:st={duration - 3}:d=3,atrim=0:{duration}",
+                    "-ar", "44100", "-ac", "1",
+                    str(out_path),
+                ], capture_output=True)
+                
+                # Cleanup temp files
+                Path(clip_path).unlink(missing_ok=True)
+                Path(clip_wav).unlink(missing_ok=True)
+                
+                if Path(out_path).exists() and Path(out_path).stat().st_size > 1000:
+                    log.info(f"Ambient audio generated via ElevenLabs SFX ({duration:.0f}s)")
+                    return
+                else:
+                    log.warning("ElevenLabs SFX output too small, falling back to procedural")
+            else:
+                log.warning(f"ElevenLabs Sound Generation failed ({resp.status_code}): {resp.text[:200]}")
+                
+        except Exception as e:
+            log.warning(f"ElevenLabs Sound Generation failed: {str(e)[:150]}")
+    
+    # FALLBACK: Procedural synthesis (helicopter-free version, kept simple)
+    log.info("Falling back to procedural ambient generation...")
+    _generate_procedural_ambient(duration, out_path, channel_id)
+
+
+def _generate_procedural_ambient(duration, out_path, channel_id=None):
+    """Fallback procedural ambient — simple and inoffensive."""
     sr = 44100
     t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-
-    if channel_id == "somnus_protocol":
-        # Sleep-specific: green noise variant + gentle ocean-like waves + warm pad
-        # Green noise (mid-frequency filtered noise, soothing)
-        noise = np.random.randn(len(t)) * 0.15
-        # Band-pass around 500Hz (green noise range)
-        ks = int(sr / 500)
-        if ks > 1:
-            noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
-        # Very slow breathing modulation
-        breath = (np.sin(2 * np.pi * 0.04 * t) * 0.3 + 0.7)
-        noise *= breath
-        # Gentle ocean-like wave wash
-        wave_lfo = (np.sin(2 * np.pi * 0.07 * t) * 0.5 + 0.5) ** 1.5
-        wave_noise = np.random.randn(len(t)) * 0.08
-        ks2 = int(sr / 300)
-        if ks2 > 1:
-            wave_noise = np.convolve(wave_noise, np.ones(ks2) / ks2, mode="same")
-        wave_noise *= wave_lfo
-        # Ultra-soft warm pad (low sine)
-        pad = np.sin(2 * np.pi * 65.0 * t) * 0.04
-        pad += np.sin(2 * np.pi * 97.5 * t) * 0.02
-        pad *= (np.sin(2 * np.pi * 0.02 * t) * 0.3 + 0.7)
-        ambient = noise + wave_noise + pad
-
-    elif channel_id == "the_unwritten_wing":
-        # Warm ambient pad with gentle piano-like overtones
-        # Warm low pad
-        pad1 = np.sin(2 * np.pi * 65.4 * t) * 0.15  # C2
-        pad2 = np.sin(2 * np.pi * 98.0 * t) * 0.10  # ~G2
-        pad_lfo = np.sin(2 * np.pi * 0.02 * t) * 0.3 + 0.7
-        # Piano-like bell tones (sparse, decaying)
-        bell = np.zeros(len(t))
-        bell_notes = [261.6, 329.6, 392.0, 523.2]  # C4, E4, G4, C5
-        num_bells = max(3, int(duration / 12))
-        for _ in range(num_bells):
-            pos = random.randint(0, len(t) - sr * 4)
-            note = random.choice(bell_notes)
-            length = min(sr * 4, len(t) - pos)
-            env = np.exp(-np.linspace(0, 5, length))
-            tone = np.sin(2 * np.pi * note * np.linspace(0, length / sr, length)) * env * 0.03
-            bell[pos:pos + length] += tone
-        # Soft warmth noise
-        warmth = np.random.randn(len(t)) * 0.01
-        ks = int(sr / 200)
-        if ks > 1:
-            warmth = np.convolve(warmth, np.ones(ks) / ks, mode="same")
-        ambient = (pad1 + pad2) * pad_lfo + bell + warmth
-
-    elif channel_id == "zero_trace_archive":
-        # Tense investigative hum with subtle static crackle
-        # Low tension drone
-        drone = np.sin(2 * np.pi * 45.0 * t) * 0.2
-        drone += np.sin(2 * np.pi * 47.5 * t) * 0.08  # slight detuning = tension
-        # Intermittent static crackle
-        crackle = np.zeros(len(t))
-        num_crackles = max(2, int(duration / 8))
-        for _ in range(num_crackles):
-            pos = random.randint(0, len(t) - sr)
-            length = random.randint(int(sr * 0.1), int(sr * 0.5))
-            end = min(pos + length, len(t))
-            burst = np.random.randn(end - pos) * 0.03
-            env = np.hanning(end - pos)
-            crackle[pos:end] += burst * env
-        # Subtle high tension tone
-        tension = np.sin(2 * np.pi * 220 * t) * 0.015
-        tension *= (np.sin(2 * np.pi * 0.03 * t) * 0.5 + 0.5)
-        ambient = drone + crackle + tension
-
-    elif channel_id == "remnants_project":
-        # Post-industrial hum with nature textures (wind, birds-like)
-        # Industrial hum
-        hum = np.sin(2 * np.pi * 60.0 * t) * 0.12
-        hum += np.sin(2 * np.pi * 120.0 * t) * 0.04
-        hum_lfo = np.sin(2 * np.pi * 0.015 * t) * 0.4 + 0.6
-        hum *= hum_lfo
-        # Wind-like broadband noise with slow sweep
-        wind = np.random.randn(len(t)) * 0.06
-        ks = int(sr / 400)
-        if ks > 1:
-            wind = np.convolve(wind, np.ones(ks) / ks, mode="same")
-        wind_lfo = (np.sin(2 * np.pi * 0.05 * t) * 0.5 + 0.5) ** 2
-        wind *= wind_lfo
-        # Sparse high chirp (bird-like, nature reclaiming)
-        chirps = np.zeros(len(t))
-        num_chirps = max(2, int(duration / 20))
-        for _ in range(num_chirps):
-            pos = random.randint(0, len(t) - int(sr * 0.3))
-            length = random.randint(int(sr * 0.05), int(sr * 0.2))
-            freq = random.uniform(2000, 4000)
-            chirp_t = np.linspace(0, length / sr, length)
-            chirp = np.sin(2 * np.pi * freq * chirp_t) * np.exp(-chirp_t * 20) * 0.015
-            end = min(pos + length, len(t))
-            chirps[pos:end] += chirp[:end - pos]
-        ambient = hum + wind + chirps
-
-    elif channel_id == "autonomous_stack":
-        # Clean electronic hum, minimal digital texture
-        # Clean sine pad
-        pad = np.sin(2 * np.pi * 110.0 * t) * 0.1
-        pad += np.sin(2 * np.pi * 165.0 * t) * 0.05
-        # Digital texture — subtle quantized noise
-        digital = np.random.randn(len(t)) * 0.015
-        # Quantize to create digital feel
-        digital = np.round(digital * 10) / 10
-        ks = int(sr / 600)
-        if ks > 1:
-            digital = np.convolve(digital, np.ones(ks) / ks, mode="same")
-        # Minimal pulse
-        pulse_env = (np.sin(2 * np.pi * 0.5 * t) > 0.95).astype(float) * 0.02
-        pulse = np.sin(2 * np.pi * 440 * t) * pulse_env
-        ambient = pad + digital + pulse
-
-    elif channel_id == "gray_meridian":
-        # Neutral warm pad with subtle heartbeat-like pulse
-        pad1 = np.sin(2 * np.pi * 82.4 * t) * 0.12
-        pad2 = np.sin(2 * np.pi * 123.5 * t) * 0.06
-        pad_lfo = np.sin(2 * np.pi * 0.025 * t) * 0.3 + 0.7
-        # Heartbeat-like low thump (very subtle)
-        heartbeat = np.zeros(len(t))
-        beat_interval = int(sr * 1.2)  # ~50 BPM, resting
-        for pos in range(0, len(t) - int(sr * 0.2), beat_interval):
-            length = int(sr * 0.15)
-            end = min(pos + length, len(t))
-            env = np.exp(-np.linspace(0, 8, end - pos))
-            thump = np.sin(2 * np.pi * 35.0 * np.linspace(0, (end - pos) / sr, end - pos)) * env * 0.04
-            heartbeat[pos:end] += thump
-        ambient = (pad1 + pad2) * pad_lfo + heartbeat
-
-    else:
-        # Default / deadlight_codex: dark cosmic drone with dissonance
-        detune = np.sin(2 * np.pi * 0.03 * t) * 0.5
-        drone1 = np.sin(2 * np.pi * (38.0 + detune) * t) * 0.25
-        drone2 = np.sin(2 * np.pi * (55.0 + detune * 0.7) * t) * 0.18
-        harm_lfo = np.sin(2 * np.pi * 0.05 * t) * 0.5 + 0.5
-        harm1 = np.sin(2 * np.pi * 82.4 * t) * 0.07 * harm_lfo
-        harm2 = np.sin(2 * np.pi * 87.3 * t) * 0.05 * (1.0 - harm_lfo) * 0.8
-        pad_lfo = np.sin(2 * np.pi * 0.015 * t) * 0.5 + 0.5
-        pad1 = np.sin(2 * np.pi * 110.0 * t) * 0.04 * pad_lfo
-        pad2 = np.sin(2 * np.pi * 146.8 * t) * 0.03 * (1.0 - pad_lfo)
-        noise = np.random.randn(len(t)) * 0.02
-        ks = int(sr / 180)
-        if ks > 1:
-            noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
-        breath_lfo = (np.sin(2 * np.pi * 0.08 * t) * 0.5 + 0.5) ** 2
-        noise *= breath_lfo
-        sweep_freq = np.linspace(25, 35, len(t))
-        sweep = np.sin(2 * np.pi * sweep_freq * t / 2) * 0.08
-        sweep_lfo = np.sin(2 * np.pi * 0.01 * t) * 0.5 + 0.5
-        sweep *= sweep_lfo
-        rumble_env = np.zeros(len(t))
-        num_rumbles = max(1, int(duration / 30))
-        for _ in range(num_rumbles):
-            pos = random.randint(int(sr * 5), len(t) - int(sr * 3))
-            width = random.randint(int(sr * 1.5), int(sr * 4))
-            end = min(pos + width, len(t))
-            rumble_env[pos:end] += np.hanning(end - pos) * 0.06
-        rumble = np.sin(2 * np.pi * 28.0 * t) * rumble_env
-        ambient = drone1 + drone2 + harm1 + harm2 + pad1 + pad2 + noise + sweep + rumble
-
+    
+    # Keep it very simple — just a warm low pad with gentle movement
+    # No harsh frequencies, no "helicopter" artifacts
+    pad1 = np.sin(2 * np.pi * 55.0 * t) * 0.1
+    pad2 = np.sin(2 * np.pi * 82.5 * t) * 0.06
+    
+    # Very slow LFO modulation
+    lfo = np.sin(2 * np.pi * 0.02 * t) * 0.3 + 0.7
+    ambient = (pad1 + pad2) * lfo
+    
+    # Gentle filtered noise (very quiet)
+    noise = np.random.randn(len(t)) * 0.008
+    ks = int(sr / 150)
+    if ks > 1:
+        noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
+    ambient += noise
+    
     # Fade in/out
     fi = int(sr * 4.0)
     fo = int(sr * 5.0)
@@ -637,7 +575,7 @@ def generate_ambient_drone(duration, out_path, channel_id=None):
 
     peak = np.max(np.abs(ambient))
     if peak > 0:
-        ambient = ambient / peak * 0.95
+        ambient = ambient / peak * 0.7
     scipy_wav.write(str(out_path), sr, (ambient * 32767).astype(np.int16))
 
 
@@ -1609,7 +1547,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     if ambient_cfg.get("enabled", True):
         emit("assembly", "Mixing ambient audio via ffmpeg...")
         drone_path = work_dir / "ambient.wav"
-        generate_ambient_drone(video_duration + 2, str(drone_path), channel_id=channel_id)
+        generate_ambient_audio(video_duration + 2, str(drone_path), channel_id=channel_id, title=title, topic=topic, api_keys=api_keys)
         vol = ambient_cfg.get("volume", 0.30)
 
         mix_cmd = [
