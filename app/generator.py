@@ -141,8 +141,8 @@ def _save_topic_to_bank(channel_id, topic_title):
 # Defaults
 TARGET_FPS = 30
 TARGET_RESOLUTION = (1920, 1080)
-IMAGE_GEN_WIDTH = 3072
-IMAGE_GEN_HEIGHT = 2048
+IMAGE_GEN_WIDTH = 1920
+IMAGE_GEN_HEIGHT = 1080
 KB_ZOOM_RANGE = (1.04, 1.12)
 KB_PAN_RANGE = 0.06
 CROSSFADE_DURATION = 1.5
@@ -350,12 +350,15 @@ OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
   ]
 }}
 
-TARGET LENGTH: The final video MUST be between {vs.get('target_duration_min', 5)} and {vs.get('target_duration_max', 7)} minutes long. Err on the side of going longer rather than shorter.
-- Aim for {vs.get('scene_count_min', 10)}-{vs.get('scene_count_max', 14)} scenes.
-- Each scene's narration MUST be 4-6 sentences and 50-80 words. This is critical.
-- Total narration across all scenes MUST be {vs.get('target_word_count_min', 700)}-{vs.get('target_word_count_max', 900)} words. This is NON-NEGOTIABLE.
-- Do NOT write short 1-2 sentence narration.
-- duration_hint should be 10."""
+TARGET LENGTH — THIS IS THE MOST IMPORTANT REQUIREMENT:
+The final video MUST be between {vs.get('target_duration_min', 5)} and {vs.get('target_duration_max', 7)} minutes long.
+- You MUST write EXACTLY {vs.get('scene_count_min', 10)} to {vs.get('scene_count_max', 14)} scenes. No fewer than {vs.get('scene_count_min', 10)}.
+- Each scene's narration MUST be 5-7 sentences and 60-90 words. SHORT SCENES ARE NOT ACCEPTABLE.
+- Total narration across ALL scenes MUST be {vs.get('target_word_count_min', 700)}-{vs.get('target_word_count_max', 900)} words.
+- If your total word count is under {vs.get('target_word_count_min', 700)}, you have FAILED. Add more detail, atmosphere, and description.
+- Do NOT write short 1-2 sentence narration. Every scene needs substance.
+- Err on the side of LONGER, not shorter. A 3-minute video is a failure.
+- duration_hint should be 15 for each scene."""
 
 
 def generate_script(channel, topic, api_key):
@@ -364,13 +367,39 @@ def generate_script(channel, topic, api_key):
         {"role": "system", "content": system},
         {"role": "user", "content": f"Create an entry about:\n\n{topic}"},
     ]
-    result = _call_openai_sync(messages, api_key)
-    result = result.strip()
-    if result.startswith("```"):
-        result = result.split("\n", 1)[1]
-    if result.endswith("```"):
-        result = result.rsplit("```", 1)[0]
-    return json.loads(result.strip())
+
+    vs = channel.get("video_settings", {})
+    min_words = vs.get("target_word_count_min", 700)
+    min_scenes = vs.get("scene_count_min", 10)
+
+    # Try up to 3 times to get a script that meets length requirements
+    for attempt in range(3):
+        result = _call_openai_sync(messages, api_key)
+        result = result.strip()
+        if result.startswith("```"):
+            result = result.split("\n", 1)[1]
+        if result.endswith("```"):
+            result = result.rsplit("```", 1)[0]
+        script = json.loads(result.strip())
+
+        # Validate length
+        total_words = sum(len(s.get("narration", "").split()) for s in script.get("scenes", []))
+        scene_count = len(script.get("scenes", []))
+
+        if total_words >= min_words and scene_count >= min_scenes:
+            log.info(f"Script accepted: {total_words} words, {scene_count} scenes (attempt {attempt+1})")
+            return script
+
+        log.warning(f"Script too short: {total_words} words, {scene_count} scenes (attempt {attempt+1}). Retrying...")
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": f"Create an entry about:\n\n{topic}"},
+            {"role": "assistant", "content": result},
+            {"role": "user", "content": f"This script is TOO SHORT. It has only {total_words} words and {scene_count} scenes. I need AT LEAST {min_words} words across at least {min_scenes} scenes. Each scene needs 60-90 words of narration. Rewrite the ENTIRE script longer and more detailed."},
+        ]
+
+    log.warning(f"Script still short after 3 attempts, using last result")
+    return script
 
 
 # --- Audio generation ---
@@ -459,7 +488,7 @@ def generate_ambient_drone(duration, out_path):
 
 # --- Image generation ---
 
-def _generate_image_flux(prompt, out_path, hf_token, width=3072, height=2048):
+def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
     from gradio_client import Client
     for space in FLUX_SPACES:
         for attempt in range(2):
@@ -511,7 +540,7 @@ def _generate_image_flux(prompt, out_path, hf_token, width=3072, height=2048):
     return False
 
 
-def _generate_fallback_image(out_path, scene_index, width=3072, height=2048):
+def _generate_fallback_image(out_path, scene_index, width=1344, height=768):
     img = np.zeros((height, width, 3), dtype=np.float32)
     for y in range(height):
         v = 0.02 + 0.03 * math.exp(-((y - height * 0.4) ** 2) / (2 * (height * 0.3) ** 2))
@@ -612,25 +641,35 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
 # --- Title card generation ---
 
 def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token, res=(1920, 1080)):
-    """Generate a cinematic title card with FLUX background image."""
+    """Generate a cinematic title card with channel-specific FLUX background."""
     w, h = res
     channel_name = channel.get("channel_name", "")
+    channel_id = channel.get("channel_id", "")
     visual = channel.get("visual_theme", {})
     palette = ", ".join(visual.get("palette", ["dark", "moody"]))
     style = visual.get("style", "cinematic")
     suffix = visual.get("image_prompt_suffix", "")
+    mood = visual.get("mood", "atmospheric")
 
-    # Generate a title card background via FLUX
-    title_bg_prompt = (
-        f"Abstract cinematic title card background for a video called '{title}'. "
-        f"Style: {style}. Colors: {palette}. "
-        f"Dark, atmospheric, with space for text overlay in the center. "
-        f"No text, no letters, no words, no symbols. "
-        f"Moody, dramatic lighting with subtle depth. {suffix}"
+    # Channel-specific title card prompts
+    channel_title_prompts = {
+        "deadlight_codex": f"A vast ancient cosmic void with faint tentacle-like structures emerging from darkness, deep red nebula glow, eldritch archive atmosphere, centered dark space for title text. {suffix}",
+        "zero_trace_archive": f"An abandoned investigation room with scattered classified documents under a single harsh overhead light, concrete walls, forensic evidence board in shadow, muted earth tones. {suffix}",
+        "the_unwritten_wing": f"An infinite ethereal library with floating luminous pages and soft golden light streaming through impossible architecture, dreamy bokeh, warm surreal atmosphere. {suffix}",
+        "remnants_project": f"A decaying overgrown control room of an abandoned facility, nature reclaiming technology, cracked monitors with faint green glow, ivy and moss, post-human silence. {suffix}",
+        "somnus_protocol": f"Soft moonlit clouds drifting over a calm dark lake, gentle fog, deep blue and silver tones, extremely peaceful and meditative, starlight reflections on water. {suffix}",
+        "autonomous_stack": f"A sleek futuristic command center with holographic data streams and circuit board patterns, cool blue and electric cyan lighting, clean minimal tech aesthetic. {suffix}",
+        "gray_meridian": f"An abstract visualization of a human brain split in half, one side geometric and analytical, the other organic and emotional, dark background with subtle warm and cool contrast. {suffix}",
+    }
+
+    title_bg_prompt = channel_title_prompts.get(
+        channel_id,
+        f"Abstract cinematic title card background. Style: {style}. Colors: {palette}. Mood: {mood}. {suffix}"
     )
+    title_bg_prompt += f" Relating to the concept of '{title}'. Dark, atmospheric, space for text overlay in center. No text, no letters, no words, no readable symbols."
 
     bg_path = str(out_path).replace(".png", "_bg.png")
-    ok = _generate_image_flux(title_bg_prompt, bg_path, hf_token, width=w, height=h)
+    ok = _generate_image_flux(title_bg_prompt, bg_path, hf_token, width=1344, height=768)
 
     if ok:
         pil_img = Image.open(bg_path)
@@ -790,15 +829,25 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     for i, scene in enumerate(scenes):
         emit("images", f"Generating image for scene {i+1}/{len(scenes)}...")
         img_path = images_dir / f"scene_{i:03d}.png"
+        # Generate at FLUX-native resolution (1344x768) for best quality
         ok = _generate_image_flux(
             scene["image_prompt"], str(img_path),
             api_keys.get("hf_token", ""),
-            width=IMAGE_GEN_WIDTH, height=IMAGE_GEN_HEIGHT,
+            width=1344, height=768,
         )
         if not ok:
             fallback_count += 1
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
-            _generate_fallback_image(str(img_path), i, width=IMAGE_GEN_WIDTH, height=IMAGE_GEN_HEIGHT)
+            _generate_fallback_image(str(img_path), i, width=1344, height=768)
+
+        # Upscale to 2x for Ken Burns headroom using Lanczos
+        try:
+            raw_img = Image.open(str(img_path))
+            upscaled = raw_img.resize((2688, 1536), Image.LANCZOS)
+            upscaled.save(str(img_path), "PNG")
+        except Exception as e:
+            log.warning(f"Upscale failed for scene {i}: {e}")
+
         scene["image_path"] = str(img_path)
 
     if fallback_count > 0:
