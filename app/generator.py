@@ -1053,6 +1053,96 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
     return str(out_path)
 
 
+def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
+    """Generate an end card with subscribe CTA, using channel-specific font."""
+    w, h = res
+    channel_id = channel.get("channel_id", "")
+    visual = channel.get("visual_theme", {})
+    palette = visual.get("palette", ["dark"])
+
+    # Dark background with subtle gradient (no FLUX call — keep it clean and fast)
+    img = np.zeros((h, w, 3), dtype=np.float32)
+    cy, cx = h // 2, w // 2
+    Y, X = np.ogrid[:h, :w]
+    dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
+    gradient = np.clip(0.06 - dist * 0.03, 0.01, 0.06)
+    for c_idx in range(3):
+        img[:, :, c_idx] = gradient
+    # Subtle noise
+    img += np.random.randn(h, w, 3) * 0.008
+    img = np.clip(img * 255, 0, 255).astype(np.uint8)
+    pil_img = Image.fromarray(img)
+
+    try:
+        from PIL import ImageDraw, ImageFont
+        draw = ImageDraw.Draw(pil_img)
+
+        # Same channel-specific font system as title card
+        channel_font_prefs = {
+            "deadlight_codex": ["/System/Library/Fonts/Supplemental/Copperplate.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"],
+            "zero_trace_archive": ["/System/Library/Fonts/Supplemental/Courier New.ttf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
+            "the_unwritten_wing": ["/System/Library/Fonts/Supplemental/Baskerville.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
+            "remnants_project": ["/System/Library/Fonts/Supplemental/Futura.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"],
+            "somnus_protocol": ["/System/Library/Fonts/Supplemental/Didot.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
+            "autonomous_stack": ["/System/Library/Fonts/SFMono-Regular.otf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
+            "gray_meridian": ["/System/Library/Fonts/Supplemental/Avenir Next.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf"],
+        }
+
+        font_prefs = channel_font_prefs.get(channel_id, [])
+        generic_fonts = [
+            "/System/Library/Fonts/Supplemental/Georgia.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+        ]
+
+        main_font = None
+        sub_font = None
+        for fp in font_prefs + generic_fonts:
+            if Path(fp).exists():
+                try:
+                    main_font = ImageFont.truetype(fp, 52)
+                    sub_font = ImageFont.truetype(fp, 28)
+                    break
+                except Exception:
+                    continue
+        if not main_font:
+            main_font = ImageFont.load_default()
+            sub_font = main_font
+
+        gold = (212, 168, 84)
+        dim_gold = (160, 130, 70)
+
+        # Main CTA text
+        cta_text = "If you enjoyed this, please"
+        cta_bbox = draw.textbbox((0, 0), cta_text, font=sub_font)
+        cta_w = cta_bbox[2] - cta_bbox[0]
+        draw.text(((w - cta_w) // 2, h // 2 - 80), cta_text, fill=dim_gold, font=sub_font)
+
+        # Like, Comment & Subscribe
+        action_text = "Like, Comment & Subscribe"
+        action_bbox = draw.textbbox((0, 0), action_text, font=main_font)
+        action_w = action_bbox[2] - action_bbox[0]
+        draw.text(((w - action_w) // 2, h // 2 - 30), action_text, fill=gold, font=main_font)
+
+        # Decorative lines
+        line_w = min(action_w + 60, w - 200)
+        draw.line([(w // 2 - line_w // 2, h // 2 - 95), (w // 2 + line_w // 2, h // 2 - 95)], fill=dim_gold, width=1)
+        draw.line([(w // 2 - line_w // 2, h // 2 + 40), (w // 2 + line_w // 2, h // 2 + 40)], fill=dim_gold, width=1)
+
+        # Small copyright line
+        year = datetime.now().year
+        copy_text = f"© {year} Emrose Media Studios"
+        copy_bbox = draw.textbbox((0, 0), copy_text, font=sub_font)
+        copy_w = copy_bbox[2] - copy_bbox[0]
+        draw.text(((w - copy_w) // 2, h // 2 + 60), copy_text, fill=(100, 85, 60), font=sub_font)
+
+    except Exception as e:
+        log.warning(f"End card text rendering failed: {e}")
+
+    pil_img.save(str(out_path), "PNG")
+    return str(out_path)
+
+
 # --- Main video generation pipeline ---
 
 def generate_video(channel, scenes, title, topic, api_keys, generate_short=False, progress=None):
@@ -1253,6 +1343,20 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
 
         assembled_clips.append(clip)
 
+    # End card — "Like, Comment & Subscribe"
+    emit("assembly", "Creating end card...")
+    end_card_img_path = work_dir / "end_card.png"
+    _generate_end_card(channel, 6.0, str(end_card_img_path), res=res)
+    end_card_clip = ImageClip(str(end_card_img_path)).with_duration(6.0)
+    end_card_clip = end_card_clip.with_effects([vfx.FadeIn(1.5), vfx.FadeOut(2.0)])
+    end_card_clip = end_card_clip.with_effects([vfx.Resize(res)])
+
+    # Black gap before end card
+    end_gap = ColorClip(res, color=(0, 0, 0)).with_duration(0.5)
+    end_gap = end_gap.with_audio(None)
+    assembled_clips.append(end_gap)
+    assembled_clips.append(end_card_clip)
+
     # Use method="chain" to avoid audio issues with "compose"
     # Strip all audio from clips — we'll build audio separately via ffmpeg
     for idx in range(len(assembled_clips)):
@@ -1330,6 +1434,14 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
                 "-t", str(extra_buffer), str(tail_silence),
             ], capture_output=True)
             concat_entries.append(f"file '{tail_silence}'")
+
+    # End card silence (0.5s gap + 6s card)
+    end_card_silence = work_dir / "end_card_silence.wav"
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+        "-t", "6.5", str(end_card_silence),
+    ], capture_output=True)
+    concat_entries.append(f"file '{end_card_silence}'")
 
     concat_list_path.write_text("\n".join(concat_entries))
 
@@ -1492,7 +1604,8 @@ Write the following in JSON format:
 1. "description" — A YouTube description (150-300 words) that:
    - Opens with a compelling 1-2 sentence hook about the video
    - Briefly describes what the viewer will experience
-   - Includes a call to subscribe and turn on notifications
+   - Includes a line: "If you enjoyed this, please like, comment, and subscribe for more."
+   - Includes a call to turn on notifications
    - Matches the channel's tone perfectly
    - Ends with exactly this copyright line: "© {year} Emrose Media Studios. All rights reserved."
 
