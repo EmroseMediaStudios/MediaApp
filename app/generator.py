@@ -490,10 +490,26 @@ def generate_ambient_drone(duration, out_path):
 
 def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
     from gradio_client import Client
-    for space in FLUX_SPACES:
+
+    # Spaces with their specific predict arguments
+    space_configs = [
+        {
+            "space": os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
+            "kwargs": {"prompt": prompt, "seed": 0, "randomize_seed": True, "width": width, "height": height,
+                       "guidance_scale": FLUX_GUIDANCE, "num_inference_steps": FLUX_STEPS, "api_name": "/infer"},
+        },
+        {
+            "space": "black-forest-labs/FLUX.1-schnell",
+            "kwargs": {"prompt": prompt, "seed": 0, "randomize_seed": True, "width": width, "height": height,
+                       "num_inference_steps": 4, "api_name": "/infer"},
+        },
+    ]
+
+    for cfg in space_configs:
+        space = cfg["space"]
         for attempt in range(2):
             try:
-                # gradio_client versions vary: try hf_token=, then token=, then no auth
+                # Handle gradio_client auth variations
                 client = None
                 if hf_token:
                     try:
@@ -506,22 +522,7 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
                 else:
                     client = Client(space)
 
-                # Different spaces have different API signatures
-                try:
-                    result = client.predict(
-                        prompt=prompt, seed=0, randomize_seed=True,
-                        width=width, height=height,
-                        guidance_scale=FLUX_GUIDANCE, num_inference_steps=FLUX_STEPS,
-                        api_name="/infer",
-                    )
-                except Exception:
-                    # Some spaces use different param names or api_name
-                    result = client.predict(
-                        prompt, 0, True,
-                        width, height,
-                        FLUX_GUIDANCE, FLUX_STEPS,
-                    )
-
+                result = client.predict(**cfg["kwargs"])
                 img_result = result[0] if isinstance(result, tuple) else result
                 src = img_result.get("path", img_result.get("url", "")) if isinstance(img_result, dict) else str(img_result)
                 img = Image.open(src)
@@ -530,10 +531,13 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
                 return True
             except Exception as e:
                 err = str(e)
-                log.warning(f"FLUX {space} attempt {attempt+1}/2 failed: {err}")
+                log.warning(f"FLUX {space} attempt {attempt+1}/2 failed: {err[:120]}")
                 if "quota" in err.lower() or "limit" in err.lower():
                     log.info(f"Quota exhausted on {space}, trying next space...")
-                    break  # Skip remaining attempts for this space
+                    break
+                if "RUNTIME_ERROR" in err or "invalid state" in err.lower():
+                    log.info(f"Space {space} is down, trying next...")
+                    break
                 if attempt < 1:
                     time.sleep(3)
     log.warning("All FLUX spaces exhausted, will use fallback image")
