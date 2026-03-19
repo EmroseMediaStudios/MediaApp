@@ -296,10 +296,18 @@ def youtube_auth():
 
 @app.route("/youtube/status")
 def youtube_status():
-    """Check YouTube auth status."""
+    """Check YouTube auth status and list available channels."""
+    authenticated = youtube_upload.is_authenticated()
+    channels = []
+    if authenticated:
+        try:
+            channels = youtube_upload.list_channels()
+        except Exception as e:
+            channels = [{"error": str(e)}]
     return jsonify({
-        "authenticated": youtube_upload.is_authenticated(),
+        "authenticated": authenticated,
         "has_client_secret": youtube_upload.CLIENT_SECRET_PATH.exists(),
+        "channels": channels,
     })
 
 

@@ -81,16 +81,12 @@
 
 <script>
 function uploadToYouTube(channelId, dirName, btn) {
-  const privacy = prompt("Upload as:\n- private (only you can see)\n- unlisted (anyone with link)\n- public (everyone)\n\nType one:", "private");
-  if (!privacy || !["private", "unlisted", "public"].includes(privacy.toLowerCase())) {
-    alert("Upload cancelled. Choose: private, unlisted, or public.");
-    return;
-  }
+  if (!confirm('Upload this video to YouTube as Public?')) return;
   btn.innerHTML = '<span class="spinner"></span> Uploading...';
   btn.disabled = true;
   fetch('/api/youtube_upload', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({channel_id: channelId, dir_name: dirName, privacy: privacy.toLowerCase()})
+    body: JSON.stringify({channel_id: channelId, dir_name: dirName, privacy: 'public'})
   }).then(r => r.json()).then(data => {
     if (data.ok) {
       btn.outerHTML = `<a href="${data.url}" class="btn btn-sm" style="color: #22c55e;" target="_blank">✓ YouTube</a>`;
