@@ -143,8 +143,8 @@ TARGET_FPS = 30
 TARGET_RESOLUTION = (1920, 1080)
 IMAGE_GEN_WIDTH = 1920
 IMAGE_GEN_HEIGHT = 1080
-KB_ZOOM_RANGE = (1.04, 1.12)
-KB_PAN_RANGE = 0.06
+KB_ZOOM_RANGE = (1.02, 1.08)
+KB_PAN_RANGE = 0.04
 CROSSFADE_DURATION = 1.5
 FLUX_SPACES = [
     os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
@@ -305,8 +305,22 @@ def _build_director_prompt(channel):
     elements = "\n".join(f"- {e}" for e in v.get("elements", []))
     closing_templates = "\n".join(f'"{t}"' for t in cl.get("templates", []))
 
+    # Special pacing instructions for channels that use elongated pauses
+    scene_pause = vs.get("scene_pause_seconds", 0)
+    pacing_note = ""
+    if scene_pause > 0:
+        pacing_note = f"""
+IMPORTANT PACING NOTE:
+This channel uses ELONGATED PAUSES between sentences and scenes to reach its target duration.
+The video will be {vs.get('target_duration_min', 5)}-{vs.get('target_duration_max', 7)} minutes, but the word count may be lower
+because the pacing is deliberately slow with {scene_pause:.0f}-second pauses between scenes.
+Do NOT try to reach the duration through more words — reach it through slower, more deliberate pacing.
+Write narration that BREATHES. Short sentences. Repetition. Space between thoughts.
+The narrator is drifting off too. Each sentence should feel like it takes effort to say."""
+
     return f"""You are the creative director for {c['channel_name']}.
 {c.get('description', '')}
+{pacing_note}
 
 NARRATOR: {n.get('name', 'Narrator')}
 {n.get('description', '')}
@@ -428,57 +442,187 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
     raise RuntimeError("ElevenLabs rate limit exceeded")
 
 
-def generate_ambient_drone(duration, out_path):
+def generate_ambient_drone(duration, out_path, channel_id=None):
+    """Generate channel-specific ambient audio.
+    
+    Each channel gets a unique sonic palette that matches its theme:
+    - deadlight_codex: dark cosmic drone with dissonance
+    - zero_trace_archive: tense investigative hum with static
+    - the_unwritten_wing: warm ambient pad with gentle piano-like overtones
+    - remnants_project: post-industrial hum with nature textures
+    - somnus_protocol: ultra-calm sleep sounds, soft green noise, gentle waves
+    - autonomous_stack: clean electronic hum, minimal digital texture
+    - gray_meridian: neutral warm pad, subtle heartbeat-like pulse
+    """
     sr = 44100
     t = np.linspace(0, duration, int(sr * duration), endpoint=False)
 
-    # Primary drones — deep sub-bass
-    detune = np.sin(2 * np.pi * 0.03 * t) * 0.5
-    drone1 = np.sin(2 * np.pi * (38.0 + detune) * t) * 0.25
-    drone2 = np.sin(2 * np.pi * (55.0 + detune * 0.7) * t) * 0.18
+    if channel_id == "somnus_protocol":
+        # Sleep-specific: green noise variant + gentle ocean-like waves + warm pad
+        # Green noise (mid-frequency filtered noise, soothing)
+        noise = np.random.randn(len(t)) * 0.15
+        # Band-pass around 500Hz (green noise range)
+        ks = int(sr / 500)
+        if ks > 1:
+            noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
+        # Very slow breathing modulation
+        breath = (np.sin(2 * np.pi * 0.04 * t) * 0.3 + 0.7)
+        noise *= breath
+        # Gentle ocean-like wave wash
+        wave_lfo = (np.sin(2 * np.pi * 0.07 * t) * 0.5 + 0.5) ** 1.5
+        wave_noise = np.random.randn(len(t)) * 0.08
+        ks2 = int(sr / 300)
+        if ks2 > 1:
+            wave_noise = np.convolve(wave_noise, np.ones(ks2) / ks2, mode="same")
+        wave_noise *= wave_lfo
+        # Ultra-soft warm pad (low sine)
+        pad = np.sin(2 * np.pi * 65.0 * t) * 0.04
+        pad += np.sin(2 * np.pi * 97.5 * t) * 0.02
+        pad *= (np.sin(2 * np.pi * 0.02 * t) * 0.3 + 0.7)
+        ambient = noise + wave_noise + pad
 
-    # Dissonant harmonics with slow LFO
-    harm_lfo = np.sin(2 * np.pi * 0.05 * t) * 0.5 + 0.5
-    harm1 = np.sin(2 * np.pi * 82.4 * t) * 0.07 * harm_lfo
-    harm2 = np.sin(2 * np.pi * 87.3 * t) * 0.05 * (1.0 - harm_lfo) * 0.8
+    elif channel_id == "the_unwritten_wing":
+        # Warm ambient pad with gentle piano-like overtones
+        # Warm low pad
+        pad1 = np.sin(2 * np.pi * 65.4 * t) * 0.15  # C2
+        pad2 = np.sin(2 * np.pi * 98.0 * t) * 0.10  # ~G2
+        pad_lfo = np.sin(2 * np.pi * 0.02 * t) * 0.3 + 0.7
+        # Piano-like bell tones (sparse, decaying)
+        bell = np.zeros(len(t))
+        bell_notes = [261.6, 329.6, 392.0, 523.2]  # C4, E4, G4, C5
+        num_bells = max(3, int(duration / 12))
+        for _ in range(num_bells):
+            pos = random.randint(0, len(t) - sr * 4)
+            note = random.choice(bell_notes)
+            length = min(sr * 4, len(t) - pos)
+            env = np.exp(-np.linspace(0, 5, length))
+            tone = np.sin(2 * np.pi * note * np.linspace(0, length / sr, length)) * env * 0.03
+            bell[pos:pos + length] += tone
+        # Soft warmth noise
+        warmth = np.random.randn(len(t)) * 0.01
+        ks = int(sr / 200)
+        if ks > 1:
+            warmth = np.convolve(warmth, np.ones(ks) / ks, mode="same")
+        ambient = (pad1 + pad2) * pad_lfo + bell + warmth
 
-    # Atmospheric pad — higher register, very slow evolve
-    pad_lfo = np.sin(2 * np.pi * 0.015 * t) * 0.5 + 0.5
-    pad1 = np.sin(2 * np.pi * 110.0 * t) * 0.04 * pad_lfo
-    pad2 = np.sin(2 * np.pi * 146.8 * t) * 0.03 * (1.0 - pad_lfo)
+    elif channel_id == "zero_trace_archive":
+        # Tense investigative hum with subtle static crackle
+        # Low tension drone
+        drone = np.sin(2 * np.pi * 45.0 * t) * 0.2
+        drone += np.sin(2 * np.pi * 47.5 * t) * 0.08  # slight detuning = tension
+        # Intermittent static crackle
+        crackle = np.zeros(len(t))
+        num_crackles = max(2, int(duration / 8))
+        for _ in range(num_crackles):
+            pos = random.randint(0, len(t) - sr)
+            length = random.randint(int(sr * 0.1), int(sr * 0.5))
+            end = min(pos + length, len(t))
+            burst = np.random.randn(end - pos) * 0.03
+            env = np.hanning(end - pos)
+            crackle[pos:end] += burst * env
+        # Subtle high tension tone
+        tension = np.sin(2 * np.pi * 220 * t) * 0.015
+        tension *= (np.sin(2 * np.pi * 0.03 * t) * 0.5 + 0.5)
+        ambient = drone + crackle + tension
 
-    # Subtle breath-like filtered noise
-    noise = np.random.randn(len(t)) * 0.02
-    ks = int(sr / 180)
-    if ks > 1:
-        noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
-    breath_lfo = (np.sin(2 * np.pi * 0.08 * t) * 0.5 + 0.5) ** 2
-    noise *= breath_lfo
+    elif channel_id == "remnants_project":
+        # Post-industrial hum with nature textures (wind, birds-like)
+        # Industrial hum
+        hum = np.sin(2 * np.pi * 60.0 * t) * 0.12
+        hum += np.sin(2 * np.pi * 120.0 * t) * 0.04
+        hum_lfo = np.sin(2 * np.pi * 0.015 * t) * 0.4 + 0.6
+        hum *= hum_lfo
+        # Wind-like broadband noise with slow sweep
+        wind = np.random.randn(len(t)) * 0.06
+        ks = int(sr / 400)
+        if ks > 1:
+            wind = np.convolve(wind, np.ones(ks) / ks, mode="same")
+        wind_lfo = (np.sin(2 * np.pi * 0.05 * t) * 0.5 + 0.5) ** 2
+        wind *= wind_lfo
+        # Sparse high chirp (bird-like, nature reclaiming)
+        chirps = np.zeros(len(t))
+        num_chirps = max(2, int(duration / 20))
+        for _ in range(num_chirps):
+            pos = random.randint(0, len(t) - int(sr * 0.3))
+            length = random.randint(int(sr * 0.05), int(sr * 0.2))
+            freq = random.uniform(2000, 4000)
+            chirp_t = np.linspace(0, length / sr, length)
+            chirp = np.sin(2 * np.pi * freq * chirp_t) * np.exp(-chirp_t * 20) * 0.015
+            end = min(pos + length, len(t))
+            chirps[pos:end] += chirp[:end - pos]
+        ambient = hum + wind + chirps
 
-    # Deep sweep
-    sweep_freq = np.linspace(25, 35, len(t))
-    sweep = np.sin(2 * np.pi * sweep_freq * t / 2) * 0.08
-    sweep_lfo = np.sin(2 * np.pi * 0.01 * t) * 0.5 + 0.5
-    sweep *= sweep_lfo
+    elif channel_id == "autonomous_stack":
+        # Clean electronic hum, minimal digital texture
+        # Clean sine pad
+        pad = np.sin(2 * np.pi * 110.0 * t) * 0.1
+        pad += np.sin(2 * np.pi * 165.0 * t) * 0.05
+        # Digital texture — subtle quantized noise
+        digital = np.random.randn(len(t)) * 0.015
+        # Quantize to create digital feel
+        digital = np.round(digital * 10) / 10
+        ks = int(sr / 600)
+        if ks > 1:
+            digital = np.convolve(digital, np.ones(ks) / ks, mode="same")
+        # Minimal pulse
+        pulse_env = (np.sin(2 * np.pi * 0.5 * t) > 0.95).astype(float) * 0.02
+        pulse = np.sin(2 * np.pi * 440 * t) * pulse_env
+        ambient = pad + digital + pulse
 
-    # Occasional distant rumble (very subtle)
-    rumble_env = np.zeros(len(t))
-    num_rumbles = max(1, int(duration / 30))
-    for _ in range(num_rumbles):
-        pos = random.randint(int(sr * 5), len(t) - int(sr * 3))
-        width = random.randint(int(sr * 1.5), int(sr * 4))
-        end = min(pos + width, len(t))
-        rumble_env[pos:end] += np.hanning(end - pos) * 0.06
-    rumble = np.sin(2 * np.pi * 28.0 * t) * rumble_env
+    elif channel_id == "gray_meridian":
+        # Neutral warm pad with subtle heartbeat-like pulse
+        pad1 = np.sin(2 * np.pi * 82.4 * t) * 0.12
+        pad2 = np.sin(2 * np.pi * 123.5 * t) * 0.06
+        pad_lfo = np.sin(2 * np.pi * 0.025 * t) * 0.3 + 0.7
+        # Heartbeat-like low thump (very subtle)
+        heartbeat = np.zeros(len(t))
+        beat_interval = int(sr * 1.2)  # ~50 BPM, resting
+        for pos in range(0, len(t) - int(sr * 0.2), beat_interval):
+            length = int(sr * 0.15)
+            end = min(pos + length, len(t))
+            env = np.exp(-np.linspace(0, 8, end - pos))
+            thump = np.sin(2 * np.pi * 35.0 * np.linspace(0, (end - pos) / sr, end - pos)) * env * 0.04
+            heartbeat[pos:end] += thump
+        ambient = (pad1 + pad2) * pad_lfo + heartbeat
 
-    # Combine all layers
-    ambient = drone1 + drone2 + harm1 + harm2 + pad1 + pad2 + noise + sweep + rumble
+    else:
+        # Default / deadlight_codex: dark cosmic drone with dissonance
+        detune = np.sin(2 * np.pi * 0.03 * t) * 0.5
+        drone1 = np.sin(2 * np.pi * (38.0 + detune) * t) * 0.25
+        drone2 = np.sin(2 * np.pi * (55.0 + detune * 0.7) * t) * 0.18
+        harm_lfo = np.sin(2 * np.pi * 0.05 * t) * 0.5 + 0.5
+        harm1 = np.sin(2 * np.pi * 82.4 * t) * 0.07 * harm_lfo
+        harm2 = np.sin(2 * np.pi * 87.3 * t) * 0.05 * (1.0 - harm_lfo) * 0.8
+        pad_lfo = np.sin(2 * np.pi * 0.015 * t) * 0.5 + 0.5
+        pad1 = np.sin(2 * np.pi * 110.0 * t) * 0.04 * pad_lfo
+        pad2 = np.sin(2 * np.pi * 146.8 * t) * 0.03 * (1.0 - pad_lfo)
+        noise = np.random.randn(len(t)) * 0.02
+        ks = int(sr / 180)
+        if ks > 1:
+            noise = np.convolve(noise, np.ones(ks) / ks, mode="same")
+        breath_lfo = (np.sin(2 * np.pi * 0.08 * t) * 0.5 + 0.5) ** 2
+        noise *= breath_lfo
+        sweep_freq = np.linspace(25, 35, len(t))
+        sweep = np.sin(2 * np.pi * sweep_freq * t / 2) * 0.08
+        sweep_lfo = np.sin(2 * np.pi * 0.01 * t) * 0.5 + 0.5
+        sweep *= sweep_lfo
+        rumble_env = np.zeros(len(t))
+        num_rumbles = max(1, int(duration / 30))
+        for _ in range(num_rumbles):
+            pos = random.randint(int(sr * 5), len(t) - int(sr * 3))
+            width = random.randint(int(sr * 1.5), int(sr * 4))
+            end = min(pos + width, len(t))
+            rumble_env[pos:end] += np.hanning(end - pos) * 0.06
+        rumble = np.sin(2 * np.pi * 28.0 * t) * rumble_env
+        ambient = drone1 + drone2 + harm1 + harm2 + pad1 + pad2 + noise + sweep + rumble
 
     # Fade in/out
     fi = int(sr * 4.0)
     fo = int(sr * 5.0)
-    ambient[:fi] *= np.linspace(0, 1, fi) ** 2
-    ambient[-fo:] *= np.linspace(1, 0, fo) ** 2
+    if len(ambient) > fi:
+        ambient[:fi] *= np.linspace(0, 1, fi) ** 2
+    if len(ambient) > fo:
+        ambient[-fo:] *= np.linspace(1, 0, fo) ** 2
 
     peak = np.max(np.abs(ambient))
     if peak > 0:
@@ -489,9 +633,42 @@ def generate_ambient_drone(duration, out_path):
 # --- Image generation ---
 
 def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
+    """Generate image via FLUX. Tries HF Inference API first (most reliable),
+    then falls back to HF Spaces."""
+
+    # PRIMARY: HuggingFace Inference API (most reliable, worked best in testing)
+    if hf_token:
+        inference_models = [
+            "black-forest-labs/FLUX.1-schnell",
+            "stabilityai/stable-diffusion-3.5-large-turbo",
+        ]
+        for model in inference_models:
+            try:
+                import httpx as hx
+                headers = {"Authorization": f"Bearer {hf_token}"}
+                payload = {
+                    "inputs": prompt,
+                    "parameters": {"width": width, "height": height, "num_inference_steps": 4},
+                }
+                url = f"https://router.huggingface.co/hf-inference/models/{model}"
+                log.info(f"Trying HF Inference API: {model}")
+                r = hx.post(url, headers=headers, json=payload, timeout=120)
+                if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
+                    with open(str(out_path), "wb") as f:
+                        f.write(r.content)
+                    # Verify and convert to PNG
+                    img = Image.open(str(out_path))
+                    img.save(str(out_path), "PNG")
+                    log.info(f"Image generated via HF Inference API ({model}): {img.size[0]}x{img.size[1]}")
+                    return True
+                else:
+                    log.warning(f"HF Inference {model}: {r.status_code} - {r.text[:120]}")
+            except Exception as e:
+                log.warning(f"HF Inference {model} failed: {str(e)[:120]}")
+
+    # FALLBACK: HuggingFace Spaces (ZeroGPU, quota-limited)
     from gradio_client import Client
 
-    # Spaces with their specific predict arguments
     space_configs = [
         {
             "space": os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
@@ -509,7 +686,6 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
         space = cfg["space"]
         for attempt in range(2):
             try:
-                # Handle gradio_client auth variations
                 client = None
                 if hf_token:
                     try:
@@ -541,37 +717,7 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
                 if attempt < 1:
                     time.sleep(3)
 
-    # Fallback: HuggingFace Inference API (separate from ZeroGPU quota)
-    if hf_token:
-        inference_models = [
-            "black-forest-labs/FLUX.1-schnell",
-            "stabilityai/stable-diffusion-3.5-large-turbo",
-        ]
-        for model in inference_models:
-            try:
-                import httpx as hx
-                headers = {"Authorization": f"Bearer {hf_token}"}
-                payload = {
-                    "inputs": prompt,
-                    "parameters": {"width": width, "height": height, "num_inference_steps": 4},
-                }
-                url = f"https://router.huggingface.co/hf-inference/models/{model}"
-                log.info(f"Trying HF Inference API: {model}")
-                r = hx.post(url, headers=headers, json=payload, timeout=120)
-                if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
-                    with open(str(out_path), "wb") as f:
-                        f.write(r.content)
-                    # Verify and convert to PNG
-                    img = Image.open(str(out_path))
-                    img.save(str(out_path), "PNG")
-                    log.info(f"Image generated via HF Inference API ({model}): {img.size[0]}x{img.size[1]}")
-                    return True
-                else:
-                    log.warning(f"HF Inference {model}: {r.status_code} - {r.text[:120]}")
-            except Exception as e:
-                log.warning(f"HF Inference {model} failed: {str(e)[:120]}")
-
-    log.warning("All FLUX spaces and Inference API exhausted, will use fallback image")
+    log.warning("All image generation methods exhausted, will use fallback image")
     return False
 
 
@@ -676,7 +822,8 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
 # --- Title card generation ---
 
 def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token, res=(1920, 1080)):
-    """Generate a cinematic title card with channel-specific FLUX background."""
+    """Generate a cinematic title card with channel-specific FLUX background.
+    Shows only the video title (no channel name) with a channel-specific font."""
     w, h = res
     channel_name = channel.get("channel_name", "")
     channel_id = channel.get("channel_id", "")
@@ -732,43 +879,79 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
         img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
         pil_img = Image.fromarray(img)
 
-    # Draw text overlay
+    # Draw text overlay — video title only (no channel name)
     try:
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        font_paths = [
+        # Channel-specific font preferences
+        # Each channel gets a distinct font family for brand differentiation
+        channel_font_prefs = {
+            "deadlight_codex": [
+                "/System/Library/Fonts/Supplemental/Copperplate.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+            ],
+            "zero_trace_archive": [
+                "/System/Library/Fonts/Supplemental/Courier New.ttf",
+                "/System/Library/Fonts/Courier.dfont",
+                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+            ],
+            "the_unwritten_wing": [
+                "/System/Library/Fonts/Supplemental/Baskerville.ttc",
+                "/System/Library/Fonts/Supplemental/Palatino.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+            ],
+            "remnants_project": [
+                "/System/Library/Fonts/Supplemental/Futura.ttc",
+                "/System/Library/Fonts/Helvetica.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            ],
+            "somnus_protocol": [
+                "/System/Library/Fonts/Supplemental/Didot.ttc",
+                "/System/Library/Fonts/Supplemental/Georgia.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+            ],
+            "autonomous_stack": [
+                "/System/Library/Fonts/SFMono-Regular.otf",
+                "/System/Library/Fonts/Supplemental/Menlo.ttc",
+                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+            ],
+            "gray_meridian": [
+                "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
+                "/System/Library/Fonts/Supplemental/Gill Sans.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf",
+            ],
+        }
+
+        # Find the right font for this channel
+        font_prefs = channel_font_prefs.get(channel_id, [])
+        generic_fonts = [
             "/System/Library/Fonts/Supplemental/Georgia.ttf",
             "/System/Library/Fonts/Georgia.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
         ]
+
         title_font = None
-        channel_font = None
-        for fp in font_paths:
+        for fp in font_prefs + generic_fonts:
             if Path(fp).exists():
-                title_font = ImageFont.truetype(fp, 58)
-                channel_font = ImageFont.truetype(fp, 28)
-                break
+                try:
+                    title_font = ImageFont.truetype(fp, 62)
+                    break
+                except Exception:
+                    continue
 
         if not title_font:
             title_font = ImageFont.load_default()
-            channel_font = title_font
 
         gold = (212, 168, 84)
-        dim_gold = (160, 130, 70)
 
-        # Channel name
-        ch_bbox = draw.textbbox((0, 0), channel_name, font=channel_font)
-        ch_w = ch_bbox[2] - ch_bbox[0]
-        draw.text(((w - ch_w) // 2, h // 2 - 70), channel_name, fill=dim_gold, font=channel_font)
+        # Thin divider line above title
+        line_w = min(400, w - 200)
+        line_y = h // 2 - 45
+        draw.line([(w // 2 - line_w // 2, line_y), (w // 2 + line_w // 2, line_y)], fill=gold, width=1)
 
-        # Thin divider line
-        line_w = min(ch_w + 80, w - 200)
-        line_y = h // 2 - 25
-        draw.line([(w // 2 - line_w // 2, line_y), (w // 2 + line_w // 2, line_y)], fill=dim_gold, width=1)
-
-        # Title — wrap long titles
+        # Title — wrap long titles (centered vertically)
         words = title.split()
         lines = []
         current = ""
@@ -784,11 +967,16 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
         if current:
             lines.append(current)
 
-        y_start = h // 2 - 5
+        total_text_height = len(lines) * 72
+        y_start = h // 2 - 20
         for i, line in enumerate(lines):
             bbox = draw.textbbox((0, 0), line, font=title_font)
             lw = bbox[2] - bbox[0]
-            draw.text(((w - lw) // 2, y_start + i * 68), line, fill=gold, font=title_font)
+            draw.text(((w - lw) // 2, y_start + i * 72), line, fill=gold, font=title_font)
+
+        # Thin divider line below title
+        line_y_bottom = y_start + total_text_height + 15
+        draw.line([(w // 2 - line_w // 2, line_y_bottom), (w // 2 + line_w // 2, line_y_bottom)], fill=gold, width=1)
 
     except Exception as e:
         log.warning(f"Title card text rendering failed: {e}")
@@ -821,6 +1009,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     crossfade = vs.get("crossfade_seconds", 1.5)
     fade_in = vs.get("fade_in_seconds", 2.0)
     fade_out = vs.get("fade_out_seconds", 3.0)
+    scene_pause = vs.get("scene_pause_seconds", 0)
     ambient_cfg = channel.get("ambient_audio", {})
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -875,10 +1064,10 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
             _generate_fallback_image(str(img_path), i, width=1344, height=768)
 
-        # Upscale to 2x for Ken Burns headroom using Lanczos
+        # Upscale to ~3x for Ken Burns headroom (more visible scene, less cropping)
         try:
             raw_img = Image.open(str(img_path))
-            upscaled = raw_img.resize((2688, 1536), Image.LANCZOS)
+            upscaled = raw_img.resize((3360, 1920), Image.LANCZOS)
             upscaled.save(str(img_path), "PNG")
         except Exception as e:
             log.warning(f"Upscale failed for scene {i}: {e}")
@@ -897,7 +1086,8 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         emit("kenburns", f"Animating scene {i+1}/{len(scenes)}...")
         # Make the animation longer than the audio to ensure no cutoff
         audio_dur = scene.get("audio_duration", 10)
-        duration = audio_dur + 3.0  # extra 3s buffer beyond narration
+        extra_buffer = max(3.0, scene_pause + 1.0) if scene_pause > 0 else 3.0
+        duration = audio_dur + extra_buffer  # buffer beyond narration
         kb_path = work_dir / f"kb_{i:03d}.mp4"
         apply_ken_burns(scene["image_path"], duration, str(kb_path), target_res=res)
         scene["video_path"] = str(kb_path)
@@ -926,8 +1116,9 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
 
         if scene.get("audio_path") and scene.get("audio_duration", 0) > 0:
             audio = AudioFileClip(scene["audio_path"])
-            # Scene duration = narration + 2s breathing room
-            target_dur = scene["audio_duration"] + 2.0
+            # Scene duration = narration + breathing room (more for sleep channels)
+            extra_buffer = max(2.0, scene_pause) if scene_pause > 0 else 2.0
+            target_dur = scene["audio_duration"] + extra_buffer
             clip = clip.subclipped(0, min(target_dur, clip.duration))
             # Ensure audio matches clip duration
             if audio.duration > clip.duration:
@@ -938,11 +1129,12 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             log.warning(f"Scene {i}: NO AUDIO")
 
         clip = clip.with_effects([vfx.Resize(res)])
-        clip = clip.with_effects([vfx.FadeIn(0.8), vfx.FadeOut(0.8)])
+        clip = clip.with_effects([vfx.FadeIn(0.5), vfx.FadeOut(0.5)])
 
         # Add brief black gap before this scene (except first)
         if i > 0:
-            gap = ColorClip(res, color=(0, 0, 0)).with_duration(0.4)
+            gap_duration = scene_pause if scene_pause > 0 else 0.2
+            gap = ColorClip(res, color=(0, 0, 0)).with_duration(gap_duration)
             assembled_clips.append(gap)
 
         assembled_clips.append(clip)
@@ -978,7 +1170,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     if ambient_cfg.get("enabled", True):
         emit("assembly", "Mixing ambient audio via ffmpeg...")
         drone_path = work_dir / "ambient.wav"
-        generate_ambient_drone(video_duration + 2, str(drone_path))
+        generate_ambient_drone(video_duration + 2, str(drone_path), channel_id=channel_id)
         vol = ambient_cfg.get("volume", 0.30)
 
         import subprocess
@@ -1090,6 +1282,7 @@ def _generate_youtube_metadata(channel, title, topic, scenes, openai_key):
     channel_name = channel.get("channel_name", "")
     channel_desc = channel.get("description", "")
     default_tags = channel.get("youtube", {}).get("default_tags", [])
+    default_hashtags = channel.get("youtube", {}).get("default_hashtags", [])
     category = channel.get("youtube", {}).get("category", "Entertainment")
 
     full_narration = " ".join(s.get("narration", "") for s in scenes)
@@ -1135,6 +1328,13 @@ Respond with ONLY valid JSON, no markdown fences:
         for dt in default_tags:
             if dt.lower() not in existing_tags:
                 yt_meta["tags"].append(dt)
+
+        # Merge default channel hashtags
+        if default_hashtags:
+            existing_ht = set(h.lower() for h in yt_meta.get("hashtags", []))
+            for dh in default_hashtags:
+                if dh.lower() not in existing_ht:
+                    yt_meta["hashtags"].insert(0, dh)
 
         return yt_meta
     except Exception as e:

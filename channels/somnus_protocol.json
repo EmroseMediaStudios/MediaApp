@@ -4,15 +4,17 @@
   "description": "Sleep-inducing audio experiences. Reduces cognitive load and gently guides the listener into rest through calm, repetitive narration.",
   "narrator": {
     "name": "The Guide",
-    "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity.",
+    "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity. Speaks as if lulling someone to sleep — barely above a whisper, with long pauses between sentences.",
     "rules": [
-      "Extremely slow and calm delivery",
-      "Soft, repetitive, soothing tone",
+      "Extremely slow and calm delivery — as if putting someone to sleep",
+      "Soft, repetitive, soothing tone — barely above a whisper",
       "No tension, no conflict, no surprises",
       "Designed to lower mental activity",
       "Gentle repetition of phrases and images",
       "Sentences should blur together softly",
-      "No questions, no calls to action"
+      "No questions, no calls to action",
+      "Long, deliberate pauses between sentences and thoughts",
+      "Each word should feel like it takes effort to say, as if the narrator is also drifting off"
     ]
   },
   "voice": {
@@ -20,12 +22,12 @@
     "elevenlabs_voice_name": "River",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.8,
+      "stability": 0.92,
       "similarity_boost": 0.85,
-      "style": 0.15,
-      "use_speaker_boost": true
+      "style": 0.08,
+      "use_speaker_boost": false
     },
-    "speed": 0.85
+    "speed": 0.65
   },
   "opening_format": {
     "template": "There is nothing you need to do...",
@@ -70,25 +72,26 @@
     "image_prompt_suffix": "calming, sleep-inducing, soft gradient, night sky, minimal, peaceful, dark blue tones, 4k, ambient"
   },
   "video_settings": {
-    "target_duration_min": 5,
-    "target_duration_max": 7,
+    "target_duration_min": 9,
+    "target_duration_max": 11,
     "scene_count_min": 8,
-    "scene_count_max": 12,
+    "scene_count_max": 14,
     "target_word_count_min": 500,
-    "target_word_count_max": 700,
+    "target_word_count_max": 800,
+    "scene_pause_seconds": 4.0,
     "resolution": [
       1920,
       1080
     ],
     "fps": 30,
-    "crossfade_seconds": 3.0,
-    "fade_in_seconds": 4.0,
-    "fade_out_seconds": 6.0
+    "crossfade_seconds": 4.0,
+    "fade_in_seconds": 5.0,
+    "fade_out_seconds": 8.0
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.4,
-    "style": "Very low, warm drone. Almost imperceptible. Gentle sine waves with slow modulation."
+    "volume": 0.45,
+    "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
   },
   "shorts": {
     "enabled": false,
@@ -110,7 +113,17 @@
       "ambient",
       "soothing",
       "somnus protocol",
-      "ASMR"
+      "ASMR",
+      "sleep stories",
+      "bedtime stories",
+      "fall asleep fast",
+      "deep sleep"
+    ],
+    "default_hashtags": [
+      "#SleepStories",
+      "#SomnusProtocol",
+      "#SleepAid",
+      "#Relaxation"
     ],
     "uploaded": false
   }
