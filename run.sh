@@ -9,6 +9,13 @@ elif [ -d "venv" ]; then
     source venv/bin/activate
 fi
 
+# Load .env file if it exists
+if [ -f ".env" ]; then
+    set -a
+    source .env
+    set +a
+fi
+
 # Check for required env vars
 if [ -z "$OPENAI_API_KEY" ]; then
     echo "⚠  OPENAI_API_KEY not set"
