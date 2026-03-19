@@ -19,12 +19,12 @@
     "elevenlabs_voice_name": "Lily",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.55,
-      "similarity_boost": 0.75,
-      "style": 0.45,
+      "stability": 0.45,
+      "similarity_boost": 0.85,
+      "style": 0.55,
       "use_speaker_boost": true
     },
-    "speed": 0.95
+    "speed": 0.75
   },
   "opening_format": {
     "template": "It begins with something small...",
