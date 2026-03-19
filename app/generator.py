@@ -505,24 +505,34 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
                 # Save the generated clip
                 clip_path = str(out_path) + ".clip.mp3"
                 Path(clip_path).write_bytes(resp.content)
+                log.info(f"ElevenLabs SFX clip saved: {len(resp.content)} bytes")
                 
                 # Convert to WAV
                 clip_wav = str(out_path) + ".clip.wav"
-                subprocess.run([
+                conv_result = subprocess.run([
                     "ffmpeg", "-y", "-i", clip_path,
                     "-ar", "44100", "-ac", "1", clip_wav,
-                ], capture_output=True)
+                ], capture_output=True, text=True)
+                
+                if conv_result.returncode != 0:
+                    log.warning(f"SFX clip conversion failed: {conv_result.stderr[:200]}")
+                    raise Exception("SFX clip conversion failed")
+                
+                log.info(f"SFX clip converted to WAV: {Path(clip_wav).stat().st_size} bytes")
                 
                 # Loop the clip to fill the full duration with crossfade
-                # Use ffmpeg's aloop and atrim to create seamless loop
-                subprocess.run([
+                loop_result = subprocess.run([
                     "ffmpeg", "-y",
                     "-stream_loop", str(int(duration / 20) + 2),
                     "-i", clip_wav,
                     "-af", f"afade=t=in:d=3,afade=t=out:st={duration - 3}:d=3,atrim=0:{duration}",
                     "-ar", "44100", "-ac", "1",
                     str(out_path),
-                ], capture_output=True)
+                ], capture_output=True, text=True)
+                
+                if loop_result.returncode != 0:
+                    log.warning(f"SFX loop failed: {loop_result.stderr[:200]}")
+                    raise Exception("SFX loop failed")
                 
                 # Cleanup temp files
                 Path(clip_path).unlink(missing_ok=True)
@@ -1548,28 +1558,35 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         emit("assembly", "Mixing ambient audio via ffmpeg...")
         drone_path = work_dir / "ambient.wav"
         generate_ambient_audio(video_duration + 2, str(drone_path), channel_id=channel_id, title=title, topic=topic, api_keys=api_keys)
-        vol = ambient_cfg.get("volume", 0.30)
-
-        mix_cmd = [
-            "ffmpeg", "-y",
-            "-i", str(video_path_with_narration),
-            "-i", str(drone_path),
-            "-filter_complex",
-            f"[1:a]atrim=0:{video_duration:.2f},volume={vol}[drone];[0:a][drone]amix=inputs=2:duration=first:dropout_transition=3[out]",
-            "-map", "0:v",
-            "-map", "[out]",
-            "-c:v", "copy",
-            "-c:a", "aac", "-b:a", "320k",
-            str(video_path),
-        ]
-        result = subprocess.run(mix_cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            log.info(f"Ambient mixed successfully at volume {vol}")
-        else:
-            log.warning(f"Ambient mix failed: {result.stderr[:200]}")
-            # Fall back to the version without ambient
+        
+        if not Path(drone_path).exists() or Path(drone_path).stat().st_size < 1000:
+            emit("assembly", "⚠ Ambient audio generation failed — video will have narration only")
             import shutil as sh
             sh.move(str(video_path_with_narration), str(video_path))
+        else:
+            vol = ambient_cfg.get("volume", 0.30)
+            emit("assembly", f"Mixing ambient at volume {vol}...")
+
+            mix_cmd = [
+                "ffmpeg", "-y",
+                "-i", str(video_path_with_narration),
+                "-i", str(drone_path),
+                "-filter_complex",
+                f"[1:a]atrim=0:{video_duration:.2f},volume={vol}[drone];[0:a][drone]amix=inputs=2:duration=first:dropout_transition=3[out]",
+                "-map", "0:v",
+                "-map", "[out]",
+                "-c:v", "copy",
+                "-c:a", "aac", "-b:a", "320k",
+                str(video_path),
+            ]
+            result = subprocess.run(mix_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                log.info(f"Ambient mixed successfully at volume {vol}")
+            else:
+                log.warning(f"Ambient mix failed: {result.stderr[:300]}")
+                emit("assembly", f"⚠ Ambient mix failed — using narration only")
+                import shutil as sh
+                sh.move(str(video_path_with_narration), str(video_path))
     else:
         import shutil as sh
         sh.move(str(video_path_with_narration), str(video_path))
