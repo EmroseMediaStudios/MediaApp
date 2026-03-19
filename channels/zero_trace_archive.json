@@ -85,7 +85,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.3,
+    "volume": 0.4,
     "style": "Subtle room tone with distant environmental sounds"
   },
   "shorts": {

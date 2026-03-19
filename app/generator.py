@@ -453,7 +453,7 @@ def generate_ambient_drone(duration, out_path):
 
     peak = np.max(np.abs(ambient))
     if peak > 0:
-        ambient = ambient / peak * 0.75
+        ambient = ambient / peak * 0.95
     scipy_wav.write(str(out_path), sr, (ambient * 32767).astype(np.int16))
 
 
