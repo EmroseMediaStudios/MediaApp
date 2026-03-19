@@ -47,6 +47,17 @@
 
   <hr class="divider">
 
+  <!-- ElevenLabs quota display -->
+  <div id="quota-card" class="card" style="border: 1px solid var(--border); margin-bottom: 16px;">
+    <div class="flex flex-between flex-center">
+      <div>
+        <strong>ElevenLabs TTS Quota</strong>
+        <div id="quota-info" class="meta mt-8" style="color: var(--text2);">Loading...</div>
+      </div>
+      <div id="quota-estimate" style="text-align: right;"></div>
+    </div>
+  </div>
+
   <div class="flex gap-16 mt-24 flex-center">
     <label class="checkbox-label">
       <input type="checkbox" name="generate_short">
@@ -73,6 +84,42 @@ function buildScenesJson() {
   {% endfor %}
   document.getElementById('scenes_json').value = JSON.stringify(scenes);
 }
+
+// Fetch ElevenLabs quota and show estimate
+(function() {
+  // Calculate total characters in current script
+  let totalChars = 0;
+  {% for scene in script.scenes %}
+  totalChars += document.querySelector('[name="narration_{{ loop.index0 }}"]').value.length;
+  {% endfor %}
+
+  fetch('/api/elevenlabs_quota')
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        const remaining = data.remaining;
+        const limit = data.limit;
+        const pct = ((remaining / limit) * 100).toFixed(0);
+        const color = remaining < totalChars ? '#ef4444' : remaining < limit * 0.1 ? '#f59e0b' : '#22c55e';
+        document.getElementById('quota-info').innerHTML =
+          `<span style="color:${color};">${remaining.toLocaleString()}</span> characters remaining of ${limit.toLocaleString()} (${pct}% left)`;
+        
+        const estPct = ((totalChars / Math.max(remaining, 1)) * 100).toFixed(0);
+        const estColor = totalChars > remaining ? '#ef4444' : '#d4a854';
+        let estHtml = `<span style="color:${estColor};font-size:1.1em;font-weight:600;">~${totalChars.toLocaleString()}</span><br>`;
+        estHtml += `<span class="meta">chars needed (${estPct}% of remaining)</span>`;
+        if (totalChars > remaining) {
+          estHtml += `<br><span style="color:#ef4444;font-weight:600;">⚠ Not enough credits!</span>`;
+        }
+        document.getElementById('quota-estimate').innerHTML = estHtml;
+      } else {
+        document.getElementById('quota-info').textContent = 'Could not fetch quota: ' + data.error;
+      }
+    })
+    .catch(e => {
+      document.getElementById('quota-info').textContent = 'Could not fetch quota';
+    });
+})();
 </script>
 {% endif %}
 {% endblock %}

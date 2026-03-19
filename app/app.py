@@ -144,6 +144,31 @@ def youtube_toggle():
     return jsonify({"ok": True})
 
 
+@app.route("/api/elevenlabs_quota")
+def elevenlabs_quota():
+    """Return ElevenLabs character usage for quota display in UI."""
+    try:
+        import httpx
+        resp = httpx.get(
+            "https://api.elevenlabs.io/v1/user",
+            headers={"xi-api-key": API_KEYS["elevenlabs"]},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            sub = resp.json().get("subscription", {})
+            char_used = sub.get("character_count", 0)
+            char_limit = sub.get("character_limit", 0)
+            return jsonify({
+                "ok": True,
+                "used": char_used,
+                "limit": char_limit,
+                "remaining": char_limit - char_used,
+            })
+        return jsonify({"ok": False, "error": f"HTTP {resp.status_code}"})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
 @app.route("/channel/<channel_id>/regenerate/<dir_name>")
 def regenerate_page(channel_id, dir_name):
     ch = generator.load_channel(channel_id)

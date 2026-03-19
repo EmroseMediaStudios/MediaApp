@@ -1024,9 +1024,20 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         )
         if _check.status_code == 200:
             user_info = _check.json()
-            char_remaining = user_info.get("subscription", {}).get("character_count", 0)
+            char_used = user_info.get("subscription", {}).get("character_count", 0)
             char_limit = user_info.get("subscription", {}).get("character_limit", 0)
-            emit("preflight", f"ElevenLabs key valid. Characters: {char_remaining:,}/{char_limit:,} used")
+            char_remaining = char_limit - char_used
+
+            # Estimate characters needed for this video
+            total_chars_needed = sum(len(s.get("narration", "")) for s in scenes)
+            pct_of_remaining = (total_chars_needed / max(char_remaining, 1)) * 100 if char_remaining > 0 else 999
+
+            emit("preflight", f"ElevenLabs key valid. Characters remaining: {char_remaining:,} of {char_limit:,}")
+            emit("preflight", f"This video needs ~{total_chars_needed:,} characters ({pct_of_remaining:.0f}% of remaining quota)")
+
+            if total_chars_needed > char_remaining:
+                emit("error", f"⚠ Not enough ElevenLabs characters! Need ~{total_chars_needed:,} but only {char_remaining:,} remaining.")
+                raise RuntimeError(f"Not enough ElevenLabs characters. Need ~{total_chars_needed:,}, have {char_remaining:,}. Upgrade your plan or wait for quota reset.")
         else:
             emit("error", f"ElevenLabs API key check failed: HTTP {_check.status_code} — {_check.text[:200]}")
             raise RuntimeError(f"ElevenLabs API key invalid (HTTP {_check.status_code}). Check your .env file.")
