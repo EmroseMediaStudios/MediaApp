@@ -429,8 +429,10 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
             headers={"xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
             json=payload, timeout=180,
         )
-        if resp.status_code == 429:
+        if resp.status_code in (429, 401):
+            # ElevenLabs sometimes returns 401 for rate limits instead of 429
             wait = int(resp.headers.get("Retry-After", str(5 * (attempt + 1))))
+            log.warning(f"ElevenLabs {resp.status_code}, retrying in {wait}s (attempt {attempt+1}/5)")
             time.sleep(wait)
             continue
         resp.raise_for_status()
@@ -1042,7 +1044,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         scene["audio_path"] = str(audio_path)
         scene["audio_duration"] = dur
         audio_durations.append(dur)
-        time.sleep(0.5)  # Brief pause between TTS calls
+        time.sleep(1.5)  # Pause between TTS calls to avoid rate limits
 
     total_narration = sum(audio_durations)
     emit("narration", f"All narration complete ({total_narration:.0f}s total)")
