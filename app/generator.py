@@ -199,6 +199,7 @@ def list_videos(channel_id):
                 if video_path.exists():
                     meta["file_size_mb"] = round(video_path.stat().st_size / 1024 / 1024, 1)
                 meta["has_short"] = (d / "short.mp4").exists()
+                meta["has_thumbnail"] = (d / "thumbnail.png").exists()
                 videos.append(meta)
             except Exception:
                 pass

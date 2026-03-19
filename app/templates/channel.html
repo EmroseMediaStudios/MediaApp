@@ -65,6 +65,8 @@
       {% endif %}
       <a href="/channel/{{ channel.channel_id }}/regenerate/{{ v.dir_name }}" class="btn btn-sm btn-secondary" title="Re-generate this video">🔄</a>
       <a href="/channel/{{ channel.channel_id }}/youtube/{{ v.dir_name }}" class="btn btn-sm btn-secondary" title="YouTube upload info">📋</a>
+      <button class="btn btn-sm" style="color: #ef4444;" title="Delete this video"
+        onclick="if(confirm('Delete \'{{ v.title }}\'? This cannot be undone.')) deleteVideo('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">🗑</button>
     </div>
   </div>
 {% endfor %}
@@ -81,6 +83,18 @@ function toggleYouTube(channelId, dirName, uploaded) {
   fetch('/api/youtube_toggle', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({channel_id: channelId, dir_name: dirName, uploaded: uploaded})
+  });
+}
+function deleteVideo(channelId, dirName, btn) {
+  fetch('/api/delete_video', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({channel_id: channelId, dir_name: dirName})
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      btn.closest('.video-item').remove();
+    } else {
+      alert('Delete failed: ' + (data.error || 'unknown'));
+    }
   });
 }
 </script>

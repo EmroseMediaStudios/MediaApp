@@ -144,6 +144,29 @@ def youtube_toggle():
     return jsonify({"ok": True})
 
 
+@app.route("/api/delete_video", methods=["POST"])
+def delete_video():
+    """Delete a video and all its files from the output directory."""
+    data = request.json
+    channel_id = data.get("channel_id")
+    dir_name = data.get("dir_name")
+    if not channel_id or not dir_name:
+        return jsonify({"ok": False, "error": "Missing channel_id or dir_name"})
+
+    # Safety: ensure dir_name doesn't contain path traversal
+    if ".." in dir_name or "/" in dir_name:
+        return jsonify({"ok": False, "error": "Invalid directory name"})
+
+    target = generator.OUTPUT_DIR / channel_id / dir_name
+    if target.exists() and target.is_dir():
+        import shutil
+        shutil.rmtree(str(target))
+        log.info(f"Deleted video: {channel_id}/{dir_name}")
+        return jsonify({"ok": True})
+    else:
+        return jsonify({"ok": False, "error": "Directory not found"})
+
+
 @app.route("/api/elevenlabs_quota")
 def elevenlabs_quota():
     """Return ElevenLabs character usage for quota display in UI."""
