@@ -429,19 +429,27 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
             headers={"xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
             json=payload, timeout=180,
         )
-        if resp.status_code in (429, 401):
-            # ElevenLabs sometimes returns 401 for rate limits instead of 429
+        if resp.status_code == 429:
             wait = int(resp.headers.get("Retry-After", str(5 * (attempt + 1))))
-            log.warning(f"ElevenLabs {resp.status_code}, retrying in {wait}s (attempt {attempt+1}/5)")
+            log.warning(f"ElevenLabs 429 rate limit, retrying in {wait}s (attempt {attempt+1}/5)")
             time.sleep(wait)
             continue
+        if resp.status_code == 401:
+            # Log the actual error body to understand why
+            log.error(f"ElevenLabs 401: {resp.text[:300]}")
+            # Only retry once for 401 — if it persists, it's a real auth issue
+            if attempt < 1:
+                log.warning(f"ElevenLabs 401, retrying once in 3s...")
+                time.sleep(3)
+                continue
+            raise RuntimeError(f"ElevenLabs authentication failed (401): {resp.text[:200]}")
         resp.raise_for_status()
         Path(out_path).write_bytes(resp.content)
         clip = AudioFileClip(str(out_path))
         dur = clip.duration
         clip.close()
         return dur
-    raise RuntimeError("ElevenLabs rate limit exceeded")
+    raise RuntimeError("ElevenLabs rate limit exceeded after 5 attempts")
 
 
 def generate_ambient_drone(duration, out_path, channel_id=None):
@@ -1005,6 +1013,27 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     model_id = voice.get("model_id", "eleven_multilingual_v2")
     voice_settings = voice.get("settings", {"stability": 0.85, "similarity_boost": 0.80, "style": 0.15, "use_speaker_boost": False})
     speed = voice.get("speed", 0.85)
+
+    # Pre-flight: verify ElevenLabs API key works before starting expensive pipeline
+    import httpx as _hx
+    try:
+        _check = _hx.get(
+            "https://api.elevenlabs.io/v1/user",
+            headers={"xi-api-key": api_keys["elevenlabs"]},
+            timeout=15,
+        )
+        if _check.status_code == 200:
+            user_info = _check.json()
+            char_remaining = user_info.get("subscription", {}).get("character_count", 0)
+            char_limit = user_info.get("subscription", {}).get("character_limit", 0)
+            emit("preflight", f"ElevenLabs key valid. Characters: {char_remaining:,}/{char_limit:,} used")
+        else:
+            emit("error", f"ElevenLabs API key check failed: HTTP {_check.status_code} — {_check.text[:200]}")
+            raise RuntimeError(f"ElevenLabs API key invalid (HTTP {_check.status_code}). Check your .env file.")
+    except httpx.ConnectError as e:
+        emit("error", f"Cannot reach ElevenLabs API: {e}")
+        raise RuntimeError(f"Cannot reach ElevenLabs: {e}")
+
     vs = channel.get("video_settings", {})
     res = tuple(vs.get("resolution", [1920, 1080]))
     fps = vs.get("fps", 30)
