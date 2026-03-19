@@ -52,11 +52,12 @@
       </div>
     </div>
     <div class="actions">
-      <label class="checkbox-label">
-        <input type="checkbox" {% if v.youtube_uploaded %}checked{% endif %}
-          onchange="toggleYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this.checked)">
-        YouTube
-      </label>
+      {% if v.youtube_uploaded %}
+      <a href="{{ v.youtube_url|default('#') }}" class="btn btn-sm" style="color: #22c55e;" target="_blank" title="View on YouTube">✓ YouTube</a>
+      {% else %}
+      <button class="btn btn-sm btn-secondary" title="Upload to YouTube"
+        onclick="uploadToYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">⬆ Upload</button>
+      {% endif %}
       {% if v.has_video %}
       <a href="/video/{{ channel.channel_id }}/{{ v.dir_name }}/video.mp4" class="btn btn-sm btn-primary" target="_blank">▶ Play</a>
       {% endif %}
@@ -79,10 +80,35 @@
 {% endif %}
 
 <script>
-function toggleYouTube(channelId, dirName, uploaded) {
-  fetch('/api/youtube_toggle', {
+function uploadToYouTube(channelId, dirName, btn) {
+  const privacy = prompt("Upload as:\n- private (only you can see)\n- unlisted (anyone with link)\n- public (everyone)\n\nType one:", "private");
+  if (!privacy || !["private", "unlisted", "public"].includes(privacy.toLowerCase())) {
+    alert("Upload cancelled. Choose: private, unlisted, or public.");
+    return;
+  }
+  btn.innerHTML = '<span class="spinner"></span> Uploading...';
+  btn.disabled = true;
+  fetch('/api/youtube_upload', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({channel_id: channelId, dir_name: dirName, uploaded: uploaded})
+    body: JSON.stringify({channel_id: channelId, dir_name: dirName, privacy: privacy.toLowerCase()})
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      btn.outerHTML = `<a href="${data.url}" class="btn btn-sm" style="color: #22c55e;" target="_blank">✓ YouTube</a>`;
+    } else {
+      btn.innerHTML = '⬆ Upload';
+      btn.disabled = false;
+      if (data.error.includes('Not authenticated')) {
+        if (confirm('YouTube not connected yet. Open auth page?')) {
+          window.open('/youtube/auth', '_blank');
+        }
+      } else {
+        alert('Upload failed: ' + data.error);
+      }
+    }
+  }).catch(e => {
+    btn.innerHTML = '⬆ Upload';
+    btn.disabled = false;
+    alert('Upload failed: ' + e);
   });
 }
 function deleteVideo(channelId, dirName, btn) {

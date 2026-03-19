@@ -7,7 +7,18 @@
 <hr class="divider">
 <div class="page-header" style="text-align: center;">
   <p style="color: var(--text2);">Select a channel to begin.</p>
+  <div id="yt-status" class="meta mt-8"></div>
 </div>
+<script>
+fetch('/youtube/status').then(r=>r.json()).then(d=>{
+  const el = document.getElementById('yt-status');
+  if(d.authenticated){
+    el.innerHTML='<span style="color:#22c55e;">✓ YouTube Connected</span>';
+  } else if(d.has_client_secret){
+    el.innerHTML='<a href="/youtube/auth" style="color:#f59e0b;">⚠ YouTube: Click to connect</a>';
+  }
+});
+</script>
 <div class="grid">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">

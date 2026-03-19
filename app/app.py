@@ -13,6 +13,7 @@ from flask import (
 )
 
 from . import generator
+from . import youtube_upload
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -277,6 +278,101 @@ def youtube_meta_page(channel_id, dir_name):
             yt_meta = meta["youtube_meta"]
 
     return render_template("youtube.html", channel=ch, yt_meta=yt_meta, title=title, dir_name=dir_name)
+
+
+# --- YouTube Upload ---
+
+@app.route("/youtube/auth")
+def youtube_auth():
+    """Start YouTube OAuth2 flow."""
+    if youtube_upload.is_authenticated():
+        return redirect(url_for("dashboard"))
+    try:
+        youtube_upload.run_local_auth()
+        return redirect(url_for("dashboard"))
+    except Exception as e:
+        return f"YouTube auth failed: {e}", 500
+
+
+@app.route("/youtube/status")
+def youtube_status():
+    """Check YouTube auth status."""
+    return jsonify({
+        "authenticated": youtube_upload.is_authenticated(),
+        "has_client_secret": youtube_upload.CLIENT_SECRET_PATH.exists(),
+    })
+
+
+@app.route("/api/youtube_upload", methods=["POST"])
+def youtube_upload_video():
+    """Upload a video to YouTube. Called from the channel video list."""
+    data = request.json
+    channel_id = data.get("channel_id")
+    dir_name = data.get("dir_name")
+    privacy = data.get("privacy", "private")
+
+    if not channel_id or not dir_name:
+        return jsonify({"ok": False, "error": "Missing channel_id or dir_name"})
+
+    if not youtube_upload.is_authenticated():
+        return jsonify({"ok": False, "error": "Not authenticated with YouTube. Visit /youtube/auth first."})
+
+    # Load video metadata
+    video_dir = generator.OUTPUT_DIR / channel_id / dir_name
+    video_path = video_dir / "video.mp4"
+    meta_path = video_dir / "metadata.json"
+    yt_meta_path = video_dir / "youtube.json"
+    thumb_path = video_dir / "thumbnail.png"
+
+    if not video_path.exists():
+        return jsonify({"ok": False, "error": "Video file not found"})
+
+    meta = {}
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+
+    yt_meta = {}
+    if yt_meta_path.exists():
+        yt_meta = json.loads(yt_meta_path.read_text())
+    elif meta.get("youtube_meta"):
+        yt_meta = meta["youtube_meta"]
+
+    title = meta.get("title", "Untitled")
+    description = yt_meta.get("description", "")
+
+    # Add hashtags to top of description (YouTube shows these above the title)
+    hashtags = yt_meta.get("hashtags", [])
+    if hashtags:
+        description = " ".join(hashtags) + "\n\n" + description
+
+    tags = yt_meta.get("tags", [])
+    category = youtube_upload.CATEGORIES.get(
+        yt_meta.get("category", meta.get("youtube", {}).get("category", "Entertainment")),
+        "24"
+    )
+
+    try:
+        result = youtube_upload.upload_video(
+            video_path=str(video_path),
+            title=title,
+            description=description,
+            tags=tags,
+            category_id=category,
+            privacy=privacy,
+            thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
+        )
+
+        # Update metadata
+        meta["youtube_uploaded"] = True
+        meta["youtube_video_id"] = result["video_id"]
+        meta["youtube_url"] = result["url"]
+        meta["youtube_privacy"] = privacy
+        meta_path.write_text(json.dumps(meta, indent=2))
+
+        return jsonify({"ok": True, "video_id": result["video_id"], "url": result["url"]})
+
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
 
 
 if __name__ == "__main__":

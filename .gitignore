@@ -5,3 +5,5 @@ output/
 *.egg-info/
 .DS_Store
 .env
+client_secret.json
+youtube_token.json
