@@ -26,6 +26,7 @@
 <div class="flex gap-16 mt-24">
   <a href="/channel/{{ channel.channel_id }}/idea" class="btn btn-primary btn-lg">💡 Generate Topic Idea</a>
   <a href="/channel/{{ channel.channel_id }}/script" class="btn btn-secondary btn-lg">✍️ Create Video</a>
+  <a href="/channel/{{ channel.channel_id }}/compile" class="btn btn-secondary btn-lg">📦 Compile Videos</a>
 </div>
 
 <div class="section-title">Previous Videos</div>
@@ -34,12 +35,20 @@
 <div class="video-list">
 {% for v in videos %}
   <div class="video-item">
-    <div class="info">
-      <h4>{{ v.title }}</h4>
-      <div class="meta">
-        {{ v.created_at[:10] if v.created_at else v.timestamp }} · {{ (v.duration / 60)|round(1) }} min · {{ v.file_size_mb|default('?') }} MB
-        {% if v.has_short %} · <span class="badge badge-gold">Short</span>{% endif %}
-        {% if v.used_fallback_images %} · <span class="badge badge-rose">⚠ Fallback Images</span>{% endif %}
+    <div class="info" style="display: flex; gap: 12px; align-items: flex-start;">
+      {% if v.has_thumbnail %}
+      <img src="/video/{{ channel.channel_id }}/{{ v.dir_name }}/thumbnail.png"
+           style="width: 160px; height: 90px; border-radius: 4px; object-fit: cover; flex-shrink: 0;"
+           onerror="this.style.display='none'">
+      {% endif %}
+      <div>
+        <h4>{{ v.title }}</h4>
+        <div class="meta">
+          {{ v.created_at[:10] if v.created_at else v.timestamp }} · {{ (v.duration / 60)|round(1) }} min · {{ v.file_size_mb|default('?') }} MB
+          {% if v.has_short %} · <span class="badge badge-gold">Short</span>{% endif %}
+          {% if v.has_thumbnail %} · <span class="badge">🖼 Thumb</span>{% endif %}
+          {% if v.used_fallback_images %} · <span class="badge badge-rose">⚠ Fallback Images</span>{% endif %}
+        </div>
       </div>
     </div>
     <div class="actions">

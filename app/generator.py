@@ -1143,6 +1143,134 @@ def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
     return str(out_path)
 
 
+def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 720)):
+    """Generate a YouTube thumbnail from a scene image + title text overlay.
+    YouTube recommends 1280x720 (16:9), minimum 640x360."""
+    w, h = res
+    channel_id = channel.get("channel_id", "")
+
+    # Load the best scene image as background
+    try:
+        bg = Image.open(scene_image_path)
+        bg = bg.resize((w, h), Image.LANCZOS)
+    except Exception:
+        bg = Image.fromarray(np.zeros((h, w, 3), dtype=np.uint8))
+
+    # Increase contrast and saturation for thumbnail pop
+    from PIL import ImageEnhance
+    bg = ImageEnhance.Contrast(bg).enhance(1.3)
+    bg = ImageEnhance.Color(bg).enhance(1.2)
+    bg = ImageEnhance.Brightness(bg).enhance(0.85)
+
+    img_array = np.array(bg).astype(np.float32)
+
+    # Strong bottom gradient for text readability
+    for y in range(h):
+        fade = max(0, (y - h * 0.5) / (h * 0.5))
+        img_array[y] *= (1.0 - fade * 0.7)
+
+    # Subtle vignette
+    cy, cx = h // 2, w // 2
+    Y, X = np.ogrid[:h, :w]
+    dist = np.sqrt(((X - cx) / (w * 0.7)) ** 2 + ((Y - cy) / (h * 0.7)) ** 2)
+    vignette = np.clip(1.0 - dist * 0.3, 0.4, 1.0)
+    img_array *= vignette[:, :, None]
+
+    pil_img = Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
+
+    try:
+        from PIL import ImageDraw, ImageFont
+        draw = ImageDraw.Draw(pil_img)
+
+        # Channel-specific fonts — LARGER for thumbnails
+        channel_font_prefs = {
+            "deadlight_codex": ["/System/Library/Fonts/Supplemental/Copperplate.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"],
+            "zero_trace_archive": ["/System/Library/Fonts/Supplemental/Courier New.ttf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
+            "the_unwritten_wing": ["/System/Library/Fonts/Supplemental/Baskerville.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
+            "remnants_project": ["/System/Library/Fonts/Supplemental/Futura.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"],
+            "somnus_protocol": ["/System/Library/Fonts/Supplemental/Didot.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
+            "autonomous_stack": ["/System/Library/Fonts/SFMono-Regular.otf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
+            "gray_meridian": ["/System/Library/Fonts/Supplemental/Avenir Next.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf"],
+        }
+
+        font_prefs = channel_font_prefs.get(channel_id, [])
+        generic_fonts = [
+            "/System/Library/Fonts/Supplemental/Georgia.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+        ]
+
+        title_font = None
+        for fp in font_prefs + generic_fonts:
+            if Path(fp).exists():
+                try:
+                    title_font = ImageFont.truetype(fp, 72)
+                    break
+                except Exception:
+                    continue
+        if not title_font:
+            title_font = ImageFont.load_default()
+
+        # UPPERCASE title for thumbnail impact
+        words = title.upper().split()
+        lines = []
+        current = ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            bbox = draw.textbbox((0, 0), test, font=title_font)
+            if bbox[2] - bbox[0] > w - 100:
+                if current:
+                    lines.append(current)
+                current = word
+            else:
+                current = test
+        if current:
+            lines.append(current)
+
+        # Max 3 lines for readability
+        if len(lines) > 3:
+            lines = lines[:3]
+            lines[2] = lines[2][:20] + "..."
+
+        # Position text in bottom third
+        line_height = 82
+        total_text_h = len(lines) * line_height
+        y_start = h - total_text_h - 50
+
+        # Channel-specific accent colors
+        accent_colors = {
+            "deadlight_codex": (200, 50, 50),
+            "zero_trace_archive": (200, 200, 180),
+            "the_unwritten_wing": (255, 220, 150),
+            "remnants_project": (120, 180, 100),
+            "somnus_protocol": (150, 170, 220),
+            "autonomous_stack": (100, 200, 255),
+            "gray_meridian": (200, 180, 200),
+        }
+        text_color = accent_colors.get(channel_id, (255, 255, 255))
+        outline_color = (0, 0, 0)
+
+        for i, line in enumerate(lines):
+            bbox = draw.textbbox((0, 0), line, font=title_font)
+            lw = bbox[2] - bbox[0]
+            x = (w - lw) // 2
+            y = y_start + i * line_height
+
+            # Thick outline (8 directions)
+            for ox in range(-3, 4):
+                for oy in range(-3, 4):
+                    if ox != 0 or oy != 0:
+                        draw.text((x + ox, y + oy), line, fill=outline_color, font=title_font)
+            draw.text((x, y), line, fill=text_color, font=title_font)
+
+    except Exception as e:
+        log.warning(f"Thumbnail text rendering failed: {e}")
+
+    pil_img.save(str(out_path), "PNG")
+    log.info(f"Thumbnail generated: {out_path}")
+    return str(out_path)
+
+
 # --- Main video generation pipeline ---
 
 def generate_video(channel, scenes, title, topic, api_keys, generate_short=False, progress=None):
@@ -1272,8 +1400,17 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     if fallback_count > 0:
         emit("images", f"⚠ {fallback_count}/{len(scenes)} scenes used fallback images — consider re-generating when image quota resets")
     else:
-        emit("images", "All images generated successfully via FLUX")
+        emit("images", "All images generated successfully")
     used_fallback = fallback_count > 0
+
+    # Generate thumbnail from the most visually interesting scene (scene 2 or 3 — skip opener)
+    emit("images", "Generating YouTube thumbnail...")
+    thumb_scene_idx = min(2, len(scenes) - 1)
+    thumb_scene_img = scenes[thumb_scene_idx].get("image_path", scenes[0].get("image_path", ""))
+    thumb_path = out_dir / "thumbnail.png"
+    if thumb_scene_img:
+        _generate_thumbnail(channel, title, thumb_scene_img, str(thumb_path))
+    emit("images", "Thumbnail ready")
 
     # Step 3: Ken Burns animation
     emit("kenburns", "Applying Ken Burns animation...")
@@ -1533,6 +1670,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         "scenes_count": len(scenes),
         "youtube_uploaded": False,
         "has_short": short_meta is not None,
+        "has_thumbnail": thumb_path.exists(),
         "short": short_meta,
         "used_fallback_images": used_fallback,
         "fallback_image_count": fallback_count,
@@ -1649,6 +1787,124 @@ Respond with ONLY valid JSON, no markdown fences:
             "hashtags": [f"#{channel_name}"],
             "category": category,
         }
+
+
+def compile_videos(channel, video_dirs, title, progress=None):
+    """Compile multiple videos into one long-form video with transitions.
+    Great for 30-60 minute compilations that drive watch time."""
+    import subprocess
+
+    def emit(step, msg):
+        if progress:
+            progress(step, msg)
+        log.info(f"[compile/{step}] {msg}")
+
+    channel_id = channel["channel_id"]
+    channel_name = channel["channel_name"]
+    vs = channel.get("video_settings", {})
+    res = tuple(vs.get("resolution", [1920, 1080]))
+
+    emit("compile", f"Compiling {len(video_dirs)} videos...")
+
+    # Collect video paths
+    video_paths = []
+    for dir_name in video_dirs:
+        vp = OUTPUT_DIR / channel_id / dir_name / "video.mp4"
+        if vp.exists():
+            video_paths.append(str(vp))
+            emit("compile", f"Added: {dir_name}")
+        else:
+            emit("compile", f"⚠ Skipping {dir_name} — video.mp4 not found")
+
+    if len(video_paths) < 2:
+        raise RuntimeError("Need at least 2 videos to compile")
+
+    # Create output directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_title = "".join(c if c.isalnum() or c in "-_ " else "" for c in title)[:50].strip().replace(" ", "_")
+    out_dir = OUTPUT_DIR / channel_id / f"{timestamp}_{safe_title}_compilation"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    work_dir = Path(tempfile.mkdtemp(prefix="compile_"))
+
+    # Build ffmpeg concat list with 2s black transition between videos
+    concat_list = work_dir / "concat.txt"
+
+    # Create a 2-second black transition video
+    transition_path = work_dir / "transition.mp4"
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "lavfi",
+        "-i", f"color=c=black:s={res[0]}x{res[1]}:r=30:d=2",
+        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+        "-t", "2",
+        "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "320k",
+        str(transition_path),
+    ], capture_output=True)
+
+    entries = []
+    for i, vp in enumerate(video_paths):
+        if i > 0:
+            entries.append(f"file '{transition_path}'")
+        entries.append(f"file '{vp}'")
+
+    concat_list.write_text("\n".join(entries))
+
+    # Compile via ffmpeg concat
+    output_path = out_dir / "video.mp4"
+    emit("compile", "Concatenating videos via ffmpeg...")
+    result = subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_list),
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-c:a", "aac", "-b:a", "320k",
+        "-pix_fmt", "yuv420p",
+        str(output_path),
+    ], capture_output=True, text=True)
+
+    if result.returncode != 0:
+        log.error(f"Compilation failed: {result.stderr[:300]}")
+        raise RuntimeError(f"Compilation failed: {result.stderr[:200]}")
+
+    # Get duration
+    probe = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(output_path),
+    ], capture_output=True, text=True)
+    duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
+
+    # Save metadata
+    meta = {
+        "title": title,
+        "channel_id": channel_id,
+        "channel_name": channel_name,
+        "timestamp": timestamp,
+        "duration": round(duration, 1),
+        "is_compilation": True,
+        "source_videos": video_dirs,
+        "source_count": len(video_dirs),
+        "youtube_uploaded": False,
+        "created_at": datetime.now().isoformat(),
+    }
+    (out_dir / "metadata.json").write_text(json.dumps(meta, indent=2))
+
+    # Copy to Desktop
+    desktop_dir = _get_desktop_channel_dir(channel_name)
+    desktop_path = desktop_dir / f"{safe_title}_{timestamp}_compilation.mp4"
+    shutil.copy2(str(output_path), str(desktop_path))
+
+    duration_min = int(duration // 60)
+    emit("done", f"Compilation complete! {duration_min}min — saved to Desktop/EmroseMedia/{channel_name}/")
+
+    # Cleanup
+    shutil.rmtree(work_dir, ignore_errors=True)
+
+    return {
+        "video_path": str(output_path),
+        "desktop_path": str(desktop_path),
+        "output_dir": str(out_dir),
+        "dir_name": out_dir.name,
+        "metadata": meta,
+    }
 
 
 def _generate_short(channel, scenes, work_dir, out_dir, api_keys, voice_id, model_id, voice_settings, speed, emit):

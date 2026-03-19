@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Compile — {{ channel.channel_name }}{% endblock %}
+{% block breadcrumb %}<div class="breadcrumb"><a href="/">Channels</a> <span>›</span> <a href="/channel/{{ channel.channel_id }}">{{ channel.channel_name }}</a> <span>›</span> Compile</div>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>📦 Create Compilation</h2>
+  <p style="color: var(--text2);">Select videos to combine into a long-form compilation. Great for 30-60 minute watch-time boosters.</p>
+</div>
+
+{% if error %}
+<div class="card" style="border: 1px solid #ef4444; margin-bottom: 16px;">
+  <span style="color: #ef4444;">⚠ {{ error }}</span>
+</div>
+{% endif %}
+
+{% if videos|length < 2 %}
+<div class="card">
+  <p>You need at least 2 completed videos to create a compilation. Generate some videos first!</p>
+  <a href="/channel/{{ channel.channel_id }}" class="btn btn-primary mt-16">← Back to Channel</a>
+</div>
+{% else %}
+<form method="POST">
+  <div class="form-group">
+    <label>Compilation Title</label>
+    <input type="text" name="title" value="{{ channel.channel_name }} — Best Of Collection" placeholder="Compilation title for YouTube">
+  </div>
+
+  <div class="section-title">Select Videos ({{ videos|length }} available)</div>
+  <p class="meta mb-16">Videos will be joined in the order shown, with 2-second black transitions between each.</p>
+
+  {% for video in videos %}
+  <div class="card" style="padding: 12px 16px;">
+    <label class="checkbox-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+      <input type="checkbox" name="video_dirs" value="{{ video.dir_name }}" {% if loop.index <= 5 %}checked{% endif %}>
+      <div style="flex: 1;">
+        <strong>{{ video.title }}</strong>
+        <div class="meta">{{ video.duration|round(0)|int }}s · {{ video.scenes_count }} scenes · {{ video.created_at[:10] if video.created_at else video.timestamp }}</div>
+      </div>
+      {% if video.file_size_mb %}
+      <span class="badge">{{ video.file_size_mb }}MB</span>
+      {% endif %}
+    </label>
+  </div>
+  {% endfor %}
+
+  <div id="compile-estimate" class="card mt-16" style="border: 1px solid var(--border);">
+    <strong>Estimated compilation</strong>
+    <div class="meta mt-4" id="estimate-text">Select videos to see estimate</div>
+  </div>
+
+  <div class="flex gap-16 mt-24">
+    <button type="submit" class="btn btn-primary btn-lg"
+      onclick="this.innerHTML='<span class=spinner></span> Compiling...';">
+      📦 Create Compilation
+    </button>
+    <a href="/channel/{{ channel.channel_id }}" class="btn">Cancel</a>
+  </div>
+</form>
+
+<script>
+function updateEstimate() {
+  const checked = document.querySelectorAll('input[name="video_dirs"]:checked');
+  let totalDuration = 0;
+  checked.forEach(cb => {
+    const meta = cb.closest('.card').querySelector('.meta');
+    const match = meta.textContent.match(/(\d+)s/);
+    if (match) totalDuration += parseInt(match[1]);
+  });
+  // Add 2s transition per gap
+  totalDuration += Math.max(0, checked.length - 1) * 2;
+  const mins = Math.floor(totalDuration / 60);
+  const secs = totalDuration % 60;
+  document.getElementById('estimate-text').textContent =
+    `${checked.length} videos · ~${mins}m ${secs}s total`;
+}
+document.querySelectorAll('input[name="video_dirs"]').forEach(cb => {
+  cb.addEventListener('change', updateEstimate);
+});
+updateEstimate();
+</script>
+{% endif %}
+{% endblock %}

@@ -169,6 +169,47 @@ def elevenlabs_quota():
         return jsonify({"ok": False, "error": str(e)})
 
 
+@app.route("/channel/<channel_id>/compile", methods=["GET", "POST"])
+def compile_videos(channel_id):
+    ch = generator.load_channel(channel_id)
+    if not ch:
+        return "Channel not found", 404
+
+    videos = generator.list_videos(channel_id)
+    # Only show videos that have actual video files
+    available = [v for v in videos if v.get("has_video")]
+
+    if request.method == "POST":
+        selected = request.form.getlist("video_dirs")
+        comp_title = request.form.get("title", f"{ch['channel_name']} Compilation")
+        if len(selected) < 2:
+            return render_template("compile.html", channel=ch, videos=available,
+                                   error="Select at least 2 videos to compile.")
+
+        # Create progress queue
+        job_id = f"compile_{channel_id}_{id(threading.current_thread())}"
+        q = queue.Queue()
+        _progress_queues[job_id] = q
+
+        def progress_cb(step, msg):
+            q.put({"step": step, "message": msg})
+
+        def run_compile():
+            try:
+                result = generator.compile_videos(ch, selected, comp_title, progress=progress_cb)
+                _generation_results[job_id] = result
+                q.put({"step": "complete", "message": "done", "result": result})
+            except Exception as e:
+                q.put({"step": "error", "message": str(e)})
+
+        t = threading.Thread(target=run_compile, daemon=True)
+        t.start()
+
+        return render_template("generate.html", channel=ch, job_id=job_id, title=comp_title)
+
+    return render_template("compile.html", channel=ch, videos=available)
+
+
 @app.route("/channel/<channel_id>/regenerate/<dir_name>")
 def regenerate_page(channel_id, dir_name):
     ch = generator.load_channel(channel_id)

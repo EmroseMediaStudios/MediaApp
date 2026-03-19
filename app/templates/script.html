@@ -61,7 +61,7 @@
 
   <div class="flex gap-16 mt-24 flex-center">
     <label class="checkbox-label">
-      <input type="checkbox" name="generate_short">
+      <input type="checkbox" name="generate_short" {% if channel.shorts.enabled|default(true) %}checked{% endif %}>
       Also generate YouTube Short
     </label>
     <button type="submit" class="btn btn-primary btn-lg"
