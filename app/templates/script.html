@@ -47,12 +47,13 @@
 
   <hr class="divider">
 
-  <!-- ElevenLabs quota display -->
+  <!-- Cost estimates -->
   <div id="quota-card" class="card" style="border: 1px solid var(--border); margin-bottom: 16px;">
     <div class="flex flex-between flex-center">
       <div>
-        <strong>ElevenLabs TTS Quota</strong>
+        <strong>Generation Cost Estimate</strong>
         <div id="quota-info" class="meta mt-8" style="color: var(--text2);">Loading...</div>
+        <div id="image-cost" class="meta mt-4" style="color: var(--text2);"></div>
       </div>
       <div id="quota-estimate" style="text-align: right;"></div>
     </div>
@@ -85,13 +86,21 @@ function buildScenesJson() {
   document.getElementById('scenes_json').value = JSON.stringify(scenes);
 }
 
-// Fetch ElevenLabs quota and show estimate
+// Fetch ElevenLabs quota and show estimates
 (function() {
   // Calculate total characters in current script
   let totalChars = 0;
+  let sceneCount = 0;
   {% for scene in script.scenes %}
   totalChars += document.querySelector('[name="narration_{{ loop.index0 }}"]').value.length;
+  sceneCount++;
   {% endfor %}
+
+  // DALL-E 3 cost estimate (scenes + title card)
+  const numImages = sceneCount + 1;
+  const dalleCost = numImages * 0.08;
+  document.getElementById('image-cost').innerHTML =
+    `🎨 DALL-E 3: ${numImages} images × $0.08 = <strong>~$${dalleCost.toFixed(2)}</strong>`;
 
   fetch('/api/elevenlabs_quota')
     .then(r => r.json())
@@ -102,14 +111,15 @@ function buildScenesJson() {
         const pct = ((remaining / limit) * 100).toFixed(0);
         const color = remaining < totalChars ? '#ef4444' : remaining < limit * 0.1 ? '#f59e0b' : '#22c55e';
         document.getElementById('quota-info').innerHTML =
-          `<span style="color:${color};">${remaining.toLocaleString()}</span> characters remaining of ${limit.toLocaleString()} (${pct}% left)`;
+          `🗣️ ElevenLabs: <span style="color:${color};">${remaining.toLocaleString()}</span> chars remaining of ${limit.toLocaleString()} (${pct}% left)`;
         
         const estPct = ((totalChars / Math.max(remaining, 1)) * 100).toFixed(0);
         const estColor = totalChars > remaining ? '#ef4444' : '#d4a854';
-        let estHtml = `<span style="color:${estColor};font-size:1.1em;font-weight:600;">~${totalChars.toLocaleString()}</span><br>`;
-        estHtml += `<span class="meta">chars needed (${estPct}% of remaining)</span>`;
+        let estHtml = `<span style="color:${estColor};font-size:1.1em;font-weight:600;">~${totalChars.toLocaleString()} chars</span><br>`;
+        estHtml += `<span class="meta">${estPct}% of remaining quota</span><br>`;
+        estHtml += `<span class="meta">+ ~$${dalleCost.toFixed(2)} images</span>`;
         if (totalChars > remaining) {
-          estHtml += `<br><span style="color:#ef4444;font-weight:600;">⚠ Not enough credits!</span>`;
+          estHtml += `<br><span style="color:#ef4444;font-weight:600;">⚠ Not enough TTS credits!</span>`;
         }
         document.getElementById('quota-estimate').innerHTML = estHtml;
       } else {

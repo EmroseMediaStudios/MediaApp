@@ -642,10 +642,58 @@ def generate_ambient_drone(duration, out_path, channel_id=None):
 
 # --- Image generation ---
 
-def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
-    """Generate image via FLUX. Tries best quality models first, falls back as needed."""
+def _generate_image(prompt, out_path, hf_token, width=1344, height=768):
+    """Generate image. Tries DALL-E 3 first (best quality), falls back to FLUX via HuggingFace."""
 
-    # Model configs with quality-appropriate settings
+    # PRIMARY: OpenAI DALL-E 3 (consistent high quality)
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if openai_key:
+        try:
+            import httpx as hx
+            # DALL-E 3 generates at fixed sizes — use 1792x1024 (landscape, closest to 16:9)
+            dalle_size = "1792x1024"
+            if width < height:
+                dalle_size = "1024x1792"  # vertical for Shorts
+
+            log.info(f"Generating image via DALL-E 3 ({dalle_size})...")
+            r = hx.post(
+                "https://api.openai.com/v1/images/generations",
+                headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "dall-e-3",
+                    "prompt": prompt,
+                    "n": 1,
+                    "size": dalle_size,
+                    "quality": "hd",
+                    "response_format": "url",
+                },
+                timeout=120,
+            )
+            if r.status_code == 200:
+                img_url = r.json()["data"][0]["url"]
+                # Download the image
+                img_resp = hx.get(img_url, timeout=60)
+                if img_resp.status_code == 200:
+                    with open(str(out_path), "wb") as f:
+                        f.write(img_resp.content)
+                    img = Image.open(str(out_path))
+                    img.save(str(out_path), "PNG")
+                    log.info(f"Image generated via DALL-E 3: {img.size[0]}x{img.size[1]}")
+                    return True
+                else:
+                    log.warning(f"DALL-E 3 image download failed: {img_resp.status_code}")
+            else:
+                error_msg = r.text[:200]
+                log.warning(f"DALL-E 3 failed ({r.status_code}): {error_msg}")
+                # Don't fall through on billing/auth errors
+                if r.status_code == 401:
+                    log.error("OpenAI API key invalid for DALL-E 3")
+                elif "billing" in error_msg.lower() or "quota" in error_msg.lower():
+                    log.warning("OpenAI billing/quota issue — falling back to FLUX")
+        except Exception as e:
+            log.warning(f"DALL-E 3 failed: {str(e)[:150]}")
+
+    # FALLBACK 1: HuggingFace Inference API (free with HF Pro)
     inference_configs = [
         {
             "model": "black-forest-labs/FLUX.1-dev",
@@ -661,7 +709,6 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
         },
     ]
 
-    # PRIMARY: HuggingFace Inference API
     if hf_token:
         for cfg in inference_configs:
             model = cfg["model"]
@@ -678,7 +725,6 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
                 if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
                     with open(str(out_path), "wb") as f:
                         f.write(r.content)
-                    # Verify and convert to PNG
                     img = Image.open(str(out_path))
                     img.save(str(out_path), "PNG")
                     log.info(f"Image generated via HF Inference API ({model}): {img.size[0]}x{img.size[1]}")
@@ -688,7 +734,7 @@ def _generate_image_flux(prompt, out_path, hf_token, width=1344, height=768):
             except Exception as e:
                 log.warning(f"HF Inference {model} failed: {str(e)[:120]}")
 
-    # FALLBACK: HuggingFace Spaces (ZeroGPU, quota-limited)
+    # FALLBACK 2: HuggingFace Spaces (ZeroGPU, quota-limited)
     from gradio_client import Client
 
     space_configs = [
@@ -873,7 +919,7 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
     title_bg_prompt += f" Relating to the concept of '{title}'. Dark, atmospheric, space for text overlay in center. No text, no letters, no words, no readable symbols."
 
     bg_path = str(out_path).replace(".png", "_bg.png")
-    ok = _generate_image_flux(title_bg_prompt, bg_path, hf_token, width=1344, height=768)
+    ok = _generate_image(title_bg_prompt, bg_path, hf_token, width=1344, height=768)
 
     if ok:
         pil_img = Image.open(bg_path)
@@ -1057,6 +1103,11 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         emit("error", f"Cannot reach ElevenLabs API: {e}")
         raise RuntimeError(f"Cannot reach ElevenLabs: {e}")
 
+    # Image cost estimate (DALL-E 3 HD: $0.080 per image, title card + scenes)
+    num_images = len(scenes) + 1  # scenes + title card
+    dalle_cost = num_images * 0.080
+    emit("preflight", f"DALL-E 3 image estimate: {num_images} images × $0.08 = ~${dalle_cost:.2f}")
+
     vs = channel.get("video_settings", {})
     res = tuple(vs.get("resolution", [1920, 1080]))
     fps = vs.get("fps", 30)
@@ -1108,7 +1159,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         emit("images", f"Generating image for scene {i+1}/{len(scenes)}...")
         img_path = images_dir / f"scene_{i:03d}.png"
         # Generate at FLUX-native resolution (1344x768) for best quality
-        ok = _generate_image_flux(
+        ok = _generate_image(
             scene["image_prompt"], str(img_path),
             api_keys.get("hf_token", ""),
             width=1344, height=768,
@@ -1523,7 +1574,7 @@ Full script:
 
     emit("short", "Generating short image...")
     short_img = work_dir / "short_image.png"
-    ok = _generate_image_flux(short_data["image_prompt"], str(short_img), api_keys.get("hf_token", ""), width=1080, height=1920)
+    ok = _generate_image(short_data["image_prompt"], str(short_img), api_keys.get("hf_token", ""), width=1080, height=1920)
     if not ok:
         _generate_fallback_image(str(short_img), 99, width=1080, height=1920)
 
