@@ -28,8 +28,8 @@
     "speed": 0.85
   },
   "opening_format": {
-    "template": "You are listening to the DeadlightCodex.\n\nThis entry concerns {subject}.",
-    "notes": "Must follow this structure exactly. The introduction should feel procedural, like accessing a recorded archive."
+    "template": "Good evening. I am the Keeper, and you are listening to the DeadlightCodex.\n\nThis entry concerns {subject}.",
+    "notes": "Must follow this structure exactly. The greeting sets a personal, intimate tone before transitioning into the archival record."
   },
   "closing_format": {
     "templates": [
