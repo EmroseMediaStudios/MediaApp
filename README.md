@@ -30,7 +30,7 @@ Or add them to your `~/.zshrc` / `~/.bash_profile` to persist.
 ./run.sh
 ```
 
-Open **http://localhost:5000** in your browser.
+Open **http://localhost:7749** in your browser.
 
 ## How It Works
 
