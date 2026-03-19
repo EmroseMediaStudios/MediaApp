@@ -576,42 +576,36 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
         end_x = random.randint(-max_pan_x // 2, max_pan_x // 2)
         end_y = random.randint(-max_pan_y // 2, max_pan_y // 2)
 
-    total_frames = int(duration * TARGET_FPS)
     img_array = np.array(img)
 
-    writer = imageio.get_writer(
-        str(out_path), fps=TARGET_FPS, codec="libx264",
-        quality=None,
-        macro_block_size=1,
-        output_params=[
-            "-preset", "medium",
-            "-pix_fmt", "yuv420p",
-            "-crf", "18",
-            "-g", str(TARGET_FPS * 2),
-        ],
-    )
-    for frame_idx in range(total_frames):
-        t = frame_idx / max(total_frames - 1, 1)
-        # Smooth easing
-        t_smooth = t * t * (3.0 - 2.0 * t)  # smoothstep
+    def make_frame(t_val):
+        t_norm = t_val / max(duration - 0.001, 0.001)
+        t_norm = max(0.0, min(1.0, t_norm))
+        # Smoothstep easing
+        t_smooth = t_norm * t_norm * (3.0 - 2.0 * t_norm)
         zoom = zoom_start + (zoom_end - zoom_start) * t_smooth
         pan_x = start_x + (end_x - start_x) * t_smooth
         pan_y = start_y + (end_y - start_y) * t_smooth
         crop_w = int(target_w / zoom)
         crop_h = int(target_h / zoom)
-
-        # Clamp crop size to image bounds
         crop_w = min(crop_w, img_w)
         crop_h = min(crop_h, img_h)
-
         cx = img_w // 2 + int(pan_x)
         cy = img_h // 2 + int(pan_y)
         x1 = max(0, min(cx - crop_w // 2, img_w - crop_w))
         y1 = max(0, min(cy - crop_h // 2, img_h - crop_h))
         frame = img_array[y1:y1+crop_h, x1:x1+crop_w]
         frame_img = Image.fromarray(frame).resize((target_w, target_h), Image.LANCZOS)
-        writer.append_data(np.array(frame_img))
-    writer.close()
+        return np.array(frame_img)
+
+    from moviepy import VideoClip
+    clip = VideoClip(make_frame, duration=duration)
+    clip.write_videofile(
+        str(out_path), fps=TARGET_FPS, codec="libx264",
+        preset="medium", logger=None,
+        ffmpeg_params=["-crf", "18", "-pix_fmt", "yuv420p"],
+    )
+    clip.close()
     return str(out_path)
 
 
