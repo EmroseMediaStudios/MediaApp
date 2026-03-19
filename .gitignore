@@ -7,3 +7,4 @@ output/
 .env
 client_secret.json
 youtube_token.json
+youtube_tokens/

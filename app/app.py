@@ -283,12 +283,15 @@ def youtube_meta_page(channel_id, dir_name):
 # --- YouTube Upload ---
 
 @app.route("/youtube/auth")
-def youtube_auth():
-    """Start YouTube OAuth2 flow."""
-    if youtube_upload.is_authenticated():
-        return redirect(url_for("dashboard"))
+@app.route("/youtube/auth/<channel_id>")
+def youtube_auth(channel_id=None):
+    """Start YouTube OAuth2 flow. For Brand Accounts, pass channel_id.
+    Before clicking authorize, switch to the correct Brand Account channel in YouTube."""
+    yt_channel_id = None
+    if channel_id:
+        yt_channel_id = youtube_upload.YOUTUBE_CHANNEL_MAP.get(channel_id)
     try:
-        youtube_upload.run_local_auth()
+        youtube_upload.run_local_auth(youtube_channel_id=yt_channel_id)
         return redirect(url_for("dashboard"))
     except Exception as e:
         return f"YouTube auth failed: {e}", 500
@@ -368,6 +371,7 @@ def youtube_upload_video():
             category_id=category,
             privacy=privacy,
             thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
+            app_channel_id=channel_id,
         )
 
         # Update metadata
@@ -407,6 +411,7 @@ def youtube_upload_video():
                     tags=short_tags,
                     category_id=category,
                     privacy=privacy,
+                    app_channel_id=channel_id,
                 )
                 meta["youtube_short_id"] = short_result["video_id"]
                 meta["youtube_short_url"] = short_result["url"]

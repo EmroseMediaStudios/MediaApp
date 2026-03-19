@@ -10,26 +10,40 @@ from pathlib import Path
 log = logging.getLogger("youtube_upload")
 
 CLIENT_SECRET_PATH = Path(__file__).parent.parent / "client_secret.json"
-TOKEN_PATH = Path(__file__).parent.parent / "youtube_token.json"
+TOKEN_DIR = Path(__file__).parent.parent / "youtube_tokens"
+TOKEN_PATH = Path(__file__).parent.parent / "youtube_token.json"  # Legacy default
 
 # YouTube API scopes
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
           "https://www.googleapis.com/auth/youtube"]
 
 
-def _get_credentials():
+def _token_path_for_channel(channel_id=None):
+    """Get the token file path for a specific YouTube channel."""
+    if channel_id:
+        TOKEN_DIR.mkdir(exist_ok=True)
+        return TOKEN_DIR / f"{channel_id}.json"
+    return TOKEN_PATH
+
+
+def _get_credentials(youtube_channel_id=None):
     """Get or refresh OAuth2 credentials. Returns None if not authenticated."""
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
 
+    token_path = _token_path_for_channel(youtube_channel_id)
+    
     creds = None
-    if TOKEN_PATH.exists():
+    if token_path.exists():
+        creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+    elif youtube_channel_id and TOKEN_PATH.exists():
+        # Fall back to default token
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
 
     if creds and creds.expired and creds.refresh_token:
         try:
             creds.refresh(Request())
-            TOKEN_PATH.write_text(creds.to_json())
+            token_path.write_text(creds.to_json())
         except Exception as e:
             log.warning(f"Token refresh failed: {e}")
             creds = None
@@ -37,10 +51,24 @@ def _get_credentials():
     return creds
 
 
-def is_authenticated():
+def is_authenticated(youtube_channel_id=None):
     """Check if we have valid YouTube credentials."""
-    creds = _get_credentials()
+    creds = _get_credentials(youtube_channel_id)
     return creds is not None and creds.valid
+
+
+def get_authenticated_channels():
+    """List which YouTube channels have saved auth tokens."""
+    authenticated = {}
+    # Check default token
+    if TOKEN_PATH.exists():
+        authenticated["default"] = True
+    # Check per-channel tokens
+    if TOKEN_DIR.exists():
+        for f in TOKEN_DIR.glob("*.json"):
+            channel_id = f.stem
+            authenticated[channel_id] = True
+    return authenticated
 
 
 def get_auth_url():
@@ -69,8 +97,9 @@ def complete_auth(auth_code):
     return True
 
 
-def run_local_auth():
-    """Run the full OAuth2 flow using a local server (opens browser)."""
+def run_local_auth(youtube_channel_id=None):
+    """Run the full OAuth2 flow using a local server (opens browser).
+    For Brand Accounts, switch to the target channel in YouTube before authorizing."""
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     if not CLIENT_SECRET_PATH.exists():
@@ -78,8 +107,10 @@ def run_local_auth():
 
     flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRET_PATH), SCOPES)
     creds = flow.run_local_server(port=8090, open_browser=True)
-    TOKEN_PATH.write_text(creds.to_json())
-    log.info("YouTube OAuth2 credentials saved via local server")
+    
+    token_path = _token_path_for_channel(youtube_channel_id)
+    token_path.write_text(creds.to_json())
+    log.info(f"YouTube OAuth2 credentials saved to {token_path}")
     return True
 
 
@@ -120,27 +151,19 @@ def list_channels():
 
 
 def upload_video(video_path, title, description="", tags=None, category_id="22",
-                 privacy="private", thumbnail_path=None, progress=None):
+                 privacy="private", thumbnail_path=None, progress=None, app_channel_id=None):
     """
     Upload a video to YouTube.
-
-    Args:
-        video_path: Path to the .mp4 file
-        title: Video title
-        description: Video description
-        tags: List of tags
-        category_id: YouTube category (22=Entertainment, 28=Science, etc.)
-        privacy: "private", "unlisted", or "public"
-        thumbnail_path: Optional path to thumbnail image
-        progress: Optional callback(percent, message)
-
-    Returns:
-        dict with video_id, url, etc.
+    app_channel_id maps to the YouTube channel via YOUTUBE_CHANNEL_MAP.
     """
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
 
-    creds = _get_credentials()
+    # Resolve YouTube channel ID and get appropriate credentials
+    yt_channel_id = YOUTUBE_CHANNEL_MAP.get(app_channel_id) if app_channel_id else None
+    creds = _get_credentials(yt_channel_id)
+    if not creds:
+        creds = _get_credentials()  # Fall back to default
     if not creds:
         raise RuntimeError("Not authenticated with YouTube. Run /youtube/auth first.")
 
@@ -215,4 +238,15 @@ CATEGORIES = {
     "People & Blogs": "22",
     "Gaming": "20",
     "Howto & Style": "26",
+}
+
+# Map app channel IDs to YouTube channel IDs
+YOUTUBE_CHANNEL_MAP = {
+    "gray_meridian": "UC9bKvKkjAtoA9ysy2RnRPaQ",
+    "zero_trace_archive": "UC8Hy4GyP9T_qTp72c0kAYpg",
+    "remnants_project": "UC7tUZwk9l23qVwryihjBZSg",
+    "the_unwritten_wing": "UCyjZXmPy4gG1xX2RJVJpfGA",
+    "autonomous_stack": "UCzZU7Gn_5eQAfUz6a9rXPAA",
+    "somnus_protocol": "UCukqYDdDPGG8G_jNvkb_2VQ",
+    "deadlight_codex": "UCeR5uvuGWIQgxHsCg6KOYlg",
 }
