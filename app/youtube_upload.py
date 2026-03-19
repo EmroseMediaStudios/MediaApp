@@ -92,14 +92,30 @@ def list_channels():
         return []
 
     youtube = build("youtube", "v3", credentials=creds)
-    resp = youtube.channels().list(part="snippet,contentDetails", mine=True).execute()
+    
+    # Get own channels
     channels = []
+    resp = youtube.channels().list(part="snippet,contentDetails", mine=True).execute()
     for ch in resp.get("items", []):
         channels.append({
             "id": ch["id"],
             "title": ch["snippet"]["title"],
             "description": ch["snippet"].get("description", ""),
         })
+    
+    # Also list channels managed via Brand Accounts
+    try:
+        resp2 = youtube.channels().list(part="snippet,contentDetails", managedByMe=True, maxResults=50).execute()
+        for ch in resp2.get("items", []):
+            if ch["id"] not in [c["id"] for c in channels]:
+                channels.append({
+                    "id": ch["id"],
+                    "title": ch["snippet"]["title"],
+                    "description": ch["snippet"].get("description", ""),
+                })
+    except Exception as e:
+        log.warning(f"Could not list managed channels: {e}")
+    
     return channels
 
 
