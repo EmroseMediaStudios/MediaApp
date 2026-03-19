@@ -377,7 +377,48 @@ def youtube_upload_video():
         meta["youtube_privacy"] = privacy
         meta_path.write_text(json.dumps(meta, indent=2))
 
-        return jsonify({"ok": True, "video_id": result["video_id"], "url": result["url"]})
+        # Also upload Short if it exists and was requested
+        short_result = None
+        short_path = video_dir / "short.mp4"
+        if data.get("include_short", True) and short_path.exists():
+            short_meta = meta.get("short", {})
+            short_title = short_meta.get("suggested_title", title + " #Shorts")
+            if not short_title.endswith("#Shorts"):
+                short_title += " #Shorts"
+
+            short_caption = short_meta.get("suggested_caption", "")
+            short_hashtags = short_meta.get("suggested_hashtags", ["#Shorts"])
+            if "#Shorts" not in short_hashtags:
+                short_hashtags.insert(0, "#Shorts")
+
+            short_desc = " ".join(short_hashtags) + "\n\n"
+            if short_caption:
+                short_desc += short_caption + "\n\n"
+            short_desc += f"Full video: {result['url']}\n\n"
+            short_desc += f"Subscribe for more from {meta.get('channel_name', '')}!"
+
+            short_tags = tags + ["Shorts", "YouTube Shorts"]
+
+            try:
+                short_result = youtube_upload.upload_video(
+                    video_path=str(short_path),
+                    title=short_title,
+                    description=short_desc,
+                    tags=short_tags,
+                    category_id=category,
+                    privacy=privacy,
+                )
+                meta["youtube_short_id"] = short_result["video_id"]
+                meta["youtube_short_url"] = short_result["url"]
+                meta_path.write_text(json.dumps(meta, indent=2))
+            except Exception as e:
+                log.warning(f"Short upload failed: {e}")
+
+        response = {"ok": True, "video_id": result["video_id"], "url": result["url"]}
+        if short_result:
+            response["short_id"] = short_result["video_id"]
+            response["short_url"] = short_result["url"]
+        return jsonify(response)
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
