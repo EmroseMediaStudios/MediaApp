@@ -1110,11 +1110,14 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     # Build each scene clip with its audio
     assembled_clips = []
 
-    # Title card first (no audio, just visual)
-    assembled_clips.append(title_clip)
+    # Title card first (no audio — give it a silent audio track)
+    silent_title = AudioFileClip.__new__(AudioFileClip)
+    title_with_silent = title_clip.with_audio(None)
+    assembled_clips.append(title_with_silent)
 
     for i, scene in enumerate(scenes):
         clip = VideoFileClip(scene["video_path"])
+        clip = clip.with_effects([vfx.Resize(res)])
 
         if scene.get("audio_path") and scene.get("audio_duration", 0) > 0:
             audio = AudioFileClip(scene["audio_path"])
@@ -1130,32 +1133,39 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         else:
             log.warning(f"Scene {i}: NO AUDIO")
 
-        clip = clip.with_effects([vfx.Resize(res)])
-        clip = clip.with_effects([vfx.FadeIn(0.5), vfx.FadeOut(0.5)])
+        # Apply fades BEFORE adding to list (after audio is attached)
+        if i == 0:
+            clip = clip.with_effects([vfx.FadeIn(fade_in), vfx.FadeOut(0.5)])
+        elif i == len(scenes) - 1:
+            clip = clip.with_effects([vfx.FadeIn(0.5), vfx.FadeOut(fade_out)])
+        else:
+            clip = clip.with_effects([vfx.FadeIn(0.5), vfx.FadeOut(0.5)])
 
         # Add brief black gap before this scene (except first)
         if i > 0:
             gap_duration = scene_pause if scene_pause > 0 else 0.2
             gap = ColorClip(res, color=(0, 0, 0)).with_duration(gap_duration)
+            gap = gap.with_audio(None)
             assembled_clips.append(gap)
 
         assembled_clips.append(clip)
 
-    # Overall fade in/out on first and last scene clips
-    assembled_clips[1] = assembled_clips[1].with_effects([vfx.FadeIn(fade_in)])
-    assembled_clips[-1] = assembled_clips[-1].with_effects([vfx.FadeOut(fade_out)])
-
     # Use method="chain" to avoid audio issues with "compose"
-    final = concatenate_videoclips(assembled_clips, method="chain")
-    log.info(f"Final video duration: {final.duration:.1f}s, has audio: {final.audio is not None}")
+    # Strip all audio from clips — we'll build audio separately via ffmpeg
+    for idx in range(len(assembled_clips)):
+        assembled_clips[idx] = assembled_clips[idx].without_audio()
 
-    # Render video with narration only first
-    video_path_temp = out_dir / "video_temp.mp4"
+    final = concatenate_videoclips(assembled_clips, method="chain")
+    log.info(f"Final video duration: {final.duration:.1f}s")
+
+    # Render VIDEO ONLY (no audio — ffmpeg handles all audio)
+    video_path_temp = out_dir / "video_noaudio.mp4"
+    video_path_with_narration = out_dir / "video_temp.mp4"
     video_path = out_dir / "video.mp4"
-    emit("assembly", "Rendering video with narration...")
+    emit("assembly", "Rendering video frames...")
     final.write_videofile(
         str(video_path_temp), fps=fps, codec="libx264",
-        audio_codec="aac", audio_bitrate="320k", preset="slow",
+        audio=False, preset="slow",
         threads=4, logger=None,
     )
 
@@ -1168,17 +1178,90 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     title_clip.close()
     final.close()
 
-    # Mix ambient drone using ffmpeg (moviepy CompositeAudioClip is unreliable)
+    # Build complete narration audio track via ffmpeg
+    # This avoids moviepy's unreliable audio concatenation entirely
+    import subprocess
+
+    emit("assembly", "Building narration audio track via ffmpeg...")
+
+    # Create silent segments and narration concat list
+    concat_list_path = work_dir / "audio_concat.txt"
+    title_silence = work_dir / "title_silence.wav"
+    gap_silence = work_dir / "gap_silence.wav"
+
+    # Generate silence files
+    title_dur = 5.0  # title card duration
+    gap_dur = scene_pause if scene_pause > 0 else 0.2
+
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+        "-t", str(title_dur), str(title_silence),
+    ], capture_output=True)
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+        "-t", str(gap_dur), str(gap_silence),
+    ], capture_output=True)
+
+    # Build concat list: title_silence, then for each scene: [gap_silence +] narration + scene_tail_silence
+    concat_entries = []
+    concat_entries.append(f"file '{title_silence}'")
+
+    for i, scene in enumerate(scenes):
+        if i > 0:
+            concat_entries.append(f"file '{gap_silence}'")
+
+        if scene.get("audio_path"):
+            # Convert MP3 narration to WAV for consistent concat
+            wav_path = work_dir / f"narration_{i:03d}.wav"
+            subprocess.run([
+                "ffmpeg", "-y", "-i", scene["audio_path"],
+                "-ar", "44100", "-ac", "1", str(wav_path),
+            ], capture_output=True)
+            concat_entries.append(f"file '{wav_path}'")
+
+            # Add tail silence for breathing room after narration
+            extra_buffer = max(2.0, scene_pause) if scene_pause > 0 else 2.0
+            tail_silence = work_dir / f"tail_silence_{i:03d}.wav"
+            subprocess.run([
+                "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+                "-t", str(extra_buffer), str(tail_silence),
+            ], capture_output=True)
+            concat_entries.append(f"file '{tail_silence}'")
+
+    concat_list_path.write_text("\n".join(concat_entries))
+
+    # Concat all audio segments into one continuous narration track
+    full_narration_path = work_dir / "full_narration.wav"
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_list_path),
+        "-c:a", "pcm_s16le", str(full_narration_path),
+    ], capture_output=True)
+
+    # Merge narration audio with video
+    emit("assembly", "Merging narration with video...")
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-i", str(video_path_temp),
+        "-i", str(full_narration_path),
+        "-map", "0:v",
+        "-map", "1:a",
+        "-c:v", "copy",
+        "-c:a", "aac", "-b:a", "320k",
+        "-shortest",
+        str(video_path_with_narration),
+    ], capture_output=True)
+
+    # Mix ambient drone using ffmpeg
     if ambient_cfg.get("enabled", True):
         emit("assembly", "Mixing ambient audio via ffmpeg...")
         drone_path = work_dir / "ambient.wav"
         generate_ambient_drone(video_duration + 2, str(drone_path), channel_id=channel_id)
         vol = ambient_cfg.get("volume", 0.30)
 
-        import subprocess
         mix_cmd = [
             "ffmpeg", "-y",
-            "-i", str(video_path_temp),
+            "-i", str(video_path_with_narration),
             "-i", str(drone_path),
             "-filter_complex",
             f"[1:a]atrim=0:{video_duration:.2f},volume={vol}[drone];[0:a][drone]amix=inputs=2:duration=first:dropout_transition=3[out]",
@@ -1191,16 +1274,19 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         result = subprocess.run(mix_cmd, capture_output=True, text=True)
         if result.returncode == 0:
             log.info(f"Ambient mixed successfully at volume {vol}")
-            video_path_temp.unlink(missing_ok=True)
         else:
             log.warning(f"Ambient mix failed: {result.stderr[:200]}")
             # Fall back to the version without ambient
             import shutil as sh
-            sh.move(str(video_path_temp), str(video_path))
+            sh.move(str(video_path_with_narration), str(video_path))
     else:
         import shutil as sh
-        sh.move(str(video_path_temp), str(video_path))
+        sh.move(str(video_path_with_narration), str(video_path))
         log.info("Ambient audio disabled for this channel")
+
+    # Clean up temp files
+    video_path_temp.unlink(missing_ok=True)
+    video_path_with_narration.unlink(missing_ok=True)
 
     emit("assembly", f"Video complete: {video_duration:.0f}s")
 
