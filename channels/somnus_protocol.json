@@ -27,7 +27,7 @@
       "style": 0.45,
       "use_speaker_boost": false
     },
-    "speed": 0.50,
+    "speed": 0.40,
     "narration_volume": 0.55
   },
   "opening_format": {
@@ -77,9 +77,9 @@
     "target_duration_max": 11,
     "scene_count_min": 8,
     "scene_count_max": 14,
-    "target_word_count_min": 500,
-    "target_word_count_max": 800,
-    "scene_pause_seconds": 4.0,
+    "target_word_count_min": 300,
+    "target_word_count_max": 500,
+    "scene_pause_seconds": 7.0,
     "resolution": [
       1920,
       1080

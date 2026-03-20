@@ -317,7 +317,11 @@ The video will be {vs.get('target_duration_min', 5)}-{vs.get('target_duration_ma
 because the pacing is deliberately slow with {scene_pause:.0f}-second pauses between scenes.
 Do NOT try to reach the duration through more words — reach it through slower, more deliberate pacing.
 Write narration that BREATHES. Short sentences. Repetition. Space between thoughts.
-The narrator is drifting off too. Each sentence should feel like it takes effort to say."""
+Use ellipses (...) liberally to indicate pauses WITHIN sentences. Add "..." between phrases to signal the narrator to slow down and drift.
+Each sentence should stand alone, separated by natural silence.
+The narrator is drifting off too. Each sentence should feel like it takes effort to say.
+Example style: "The sky... is very still tonight... Nothing moves... nothing needs to... Just the quiet... and the dark... settling in around you..."
+"""
 
     return f"""You are the creative director for {c['channel_name']}.
 {c.get('description', '')}
@@ -1554,7 +1558,8 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             concat_entries.append(f"file '{wav_path}'")
 
             # Add tail silence for breathing room after narration
-            extra_buffer = max(2.0, scene_pause) if scene_pause > 0 else 2.0
+            # Keep tail shorter — the gap_silence between scenes handles the main pause
+            extra_buffer = max(3.0, scene_pause * 0.5) if scene_pause > 0 else 2.0
             tail_silence = work_dir / f"tail_silence_{i:03d}.wav"
             subprocess.run([
                 "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
