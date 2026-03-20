@@ -2,6 +2,9 @@
 # Launch Video Studio
 cd "$(dirname "$0")"
 
+# Raise file descriptor limit (parallel video generation needs many open files)
+ulimit -n 4096
+
 # Activate venv
 if [ -d ".venv" ]; then
     source .venv/bin/activate
