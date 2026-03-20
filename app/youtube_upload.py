@@ -153,8 +153,12 @@ def list_channels():
 def _sanitize_tags(tags):
     """Sanitize YouTube tags to avoid 'invalid video keywords' API errors.
     
-    YouTube rejects tags containing < >, and has a 500-char combined limit.
-    Individual tags should be short phrases (no commas within a tag).
+    YouTube rejects tags that:
+    - Contain < or > characters
+    - Exceed 500 characters combined (including comma separators)
+    - Are excessively long individually (>30 chars is unusual)
+    - Contain special characters like = { } [ ] or multiple spaces
+    - Are empty or whitespace-only
     """
     import re
     if not tags:
@@ -162,24 +166,38 @@ def _sanitize_tags(tags):
     
     sanitized = []
     total_chars = 0
+    seen = set()
     for tag in tags:
         if not isinstance(tag, str):
             continue
         # Strip HTML-like characters and other problematic chars
-        tag = re.sub(r'[<>]', '', tag)
-        # Remove leading/trailing whitespace
-        tag = tag.strip()
-        # Skip empty tags or tags that are just punctuation
+        tag = re.sub(r'[<>{}\[\]=|\\~`]', '', tag)
+        # Collapse multiple spaces
+        tag = re.sub(r'\s+', ' ', tag)
+        # Remove leading/trailing whitespace and quotes
+        tag = tag.strip().strip('"').strip("'").strip()
+        # Skip empty tags or tags that are just punctuation/symbols
         if not tag or len(tag) < 2:
             continue
-        # Truncate individual tags at 100 chars
-        tag = tag[:100]
-        # Check combined limit (500 chars total, with commas between)
-        tag_cost = len(tag) + (2 if sanitized else 0)  # ", " separator
-        if total_chars + tag_cost > 500:
+        # Skip if it looks like a URL
+        if tag.startswith("http") or ".com" in tag or ".org" in tag:
+            continue
+        # Skip duplicate tags (case-insensitive)
+        tag_lower = tag.lower()
+        if tag_lower in seen:
+            continue
+        seen.add(tag_lower)
+        # Truncate individual tags at 30 chars (YouTube best practice)
+        tag = tag[:30].rstrip()
+        # Check combined limit (500 chars total, YouTube counts commas as separators)
+        tag_cost = len(tag) + (1 if sanitized else 0)  # comma separator
+        if total_chars + tag_cost > 480:  # Leave some margin
             break
         sanitized.append(tag)
         total_chars += tag_cost
+    
+    # Log what we're sending for debugging
+    log.info(f"Sanitized {len(tags)} tags → {len(sanitized)} tags ({total_chars} chars)")
     
     return sanitized
 
@@ -205,10 +223,15 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
 
     # Sanitize tags to avoid YouTube API "invalid video keywords" errors
     clean_tags = _sanitize_tags(tags)
+    log.info(f"Upload tags for '{title}': {clean_tags}")
+
+    # Also sanitize title (max 100 chars, no < >)
+    import re
+    clean_title = re.sub(r'[<>]', '', title or "Untitled")[:100].strip()
 
     body = {
         "snippet": {
-            "title": title,
+            "title": clean_title,
             "description": description,
             "tags": clean_tags,
             "categoryId": category_id,
