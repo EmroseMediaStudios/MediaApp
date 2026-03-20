@@ -33,8 +33,8 @@ API_KEYS = {
 @app.route("/")
 def dashboard():
     channels = generator.list_channels()
-    # Load cached metrics for dashboard display
-    cache = youtube_metrics.get_metrics()
+    # Always load from cache — never block the dashboard on a refresh
+    cache = youtube_metrics._load_cache()
     metrics = youtube_metrics.get_dashboard_summary(cache)
     last_refresh = cache.get("last_refresh")
     return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh)
@@ -46,8 +46,8 @@ def channel_workspace(channel_id):
     if not ch:
         return "Channel not found", 404
     videos = generator.list_videos(channel_id)
-    # Load YouTube metrics for this channel
-    cache = youtube_metrics.get_metrics()
+    # Load YouTube metrics from cache only — never block page load
+    cache = youtube_metrics._load_cache()
     ch_stats = cache.get("channels", {}).get(channel_id, {})
     vid_data = cache.get("videos", {}).get(channel_id, {})
     yt_videos = vid_data.get("videos", [])
