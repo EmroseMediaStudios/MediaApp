@@ -153,12 +153,8 @@ def list_channels():
 def _sanitize_tags(tags):
     """Sanitize YouTube tags to avoid 'invalid video keywords' API errors.
     
-    YouTube rejects tags that:
-    - Contain < or > characters
-    - Exceed 500 characters combined (including comma separators)
-    - Are excessively long individually (>30 chars is unusual)
-    - Contain special characters like = { } [ ] or multiple spaces
-    - Are empty or whitespace-only
+    YouTube rejects tags for various undocumented reasons. This function
+    takes an aggressive approach: strip everything questionable.
     """
     import re
     if not tags:
@@ -170,13 +166,11 @@ def _sanitize_tags(tags):
     for tag in tags:
         if not isinstance(tag, str):
             continue
-        # Strip HTML-like characters and other problematic chars
-        tag = re.sub(r'[<>{}\[\]=|\\~`]', '', tag)
+        # Strip ALL non-alphanumeric characters except spaces, hyphens, and apostrophes
+        tag = re.sub(r"[^a-zA-Z0-9\s\-']", '', tag)
         # Collapse multiple spaces
-        tag = re.sub(r'\s+', ' ', tag)
-        # Remove leading/trailing whitespace and quotes
-        tag = tag.strip().strip('"').strip("'").strip()
-        # Skip empty tags or tags that are just punctuation/symbols
+        tag = re.sub(r'\s+', ' ', tag).strip()
+        # Skip empty tags or very short ones
         if not tag or len(tag) < 2:
             continue
         # Skip if it looks like a URL
@@ -187,17 +181,16 @@ def _sanitize_tags(tags):
         if tag_lower in seen:
             continue
         seen.add(tag_lower)
-        # Truncate individual tags at 30 chars (YouTube best practice)
+        # Truncate individual tags at 30 chars
         tag = tag[:30].rstrip()
-        # Check combined limit (500 chars total, YouTube counts commas as separators)
-        tag_cost = len(tag) + (1 if sanitized else 0)  # comma separator
-        if total_chars + tag_cost > 480:  # Leave some margin
+        # Check combined limit (YouTube counts commas as separators)
+        tag_cost = len(tag) + (1 if sanitized else 0)
+        if total_chars + tag_cost > 480:
             break
         sanitized.append(tag)
         total_chars += tag_cost
     
-    # Log what we're sending for debugging
-    log.info(f"Sanitized {len(tags)} tags → {len(sanitized)} tags ({total_chars} chars)")
+    log.info(f"Sanitized {len(tags)} tags -> {len(sanitized)} tags ({total_chars} chars): {sanitized}")
     
     return sanitized
 

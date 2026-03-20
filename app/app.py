@@ -392,16 +392,33 @@ def youtube_upload_video():
     )
 
     try:
-        result = youtube_upload.upload_video(
-            video_path=str(video_path),
-            title=title,
-            description=description,
-            tags=tags,
-            category_id=category,
-            privacy=privacy,
-            thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
-            app_channel_id=channel_id,
-        )
+        try:
+            result = youtube_upload.upload_video(
+                video_path=str(video_path),
+                title=title,
+                description=description,
+                tags=tags,
+                category_id=category,
+                privacy=privacy,
+                thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
+                app_channel_id=channel_id,
+            )
+        except Exception as upload_err:
+            if "invalidTags" in str(upload_err) or "invalid video keywords" in str(upload_err):
+                # Log the offending tags and retry without any tags
+                log.warning(f"Upload failed due to invalid tags, retrying with no tags. Original tags: {tags}")
+                result = youtube_upload.upload_video(
+                    video_path=str(video_path),
+                    title=title,
+                    description=description,
+                    tags=[],
+                    category_id=category,
+                    privacy=privacy,
+                    thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
+                    app_channel_id=channel_id,
+                )
+            else:
+                raise
 
         # Update metadata
         meta["youtube_uploaded"] = True
