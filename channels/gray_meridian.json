@@ -4,28 +4,30 @@
   "description": "Explores human behavior, psychology, and cognition. Examines how people think, react, and make decisions, often focusing on subtle or overlooked patterns.",
   "narrator": {
     "name": "The Thinker",
-    "description": "A calm thinker guiding the listener through an idea. Thoughtful, analytical, reflective. Measured and encouraging of introspection.",
+    "description": "A warm, emotionally intelligent guide leading the listener through an idea. Thoughtful and reflective, with genuine feeling behind every observation. Speaks like a trusted mentor — educated but never cold, analytical but deeply human.",
     "rules": [
-      "Thoughtful, analytical, reflective tone",
-      "Calm and measured delivery",
+      "Warm, emotionally engaged, reflective tone",
+      "Speaks with genuine feeling — not detached or clinical",
+      "Guiding and encouraging, like a wise friend sharing an insight",
       "No dramatic claims or sensationalism",
       "Encourages introspection in the listener",
       "Presents ideas as observations, not conclusions",
       "Comfortable with ambiguity and open questions",
-      "Treats the listener as intelligent"
+      "Treats the listener as intelligent",
+      "Educated but accessible — never condescending"
     ]
   },
   "voice": {
-    "elevenlabs_voice_id": "pqHfZKP75CvOlQylNhV4",
-    "elevenlabs_voice_name": "Bill",
+    "elevenlabs_voice_id": "XB0fDUnXU5powFXDhCwa",
+    "elevenlabs_voice_name": "Charlotte",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.6,
-      "similarity_boost": 0.8,
-      "style": 0.35,
-      "use_speaker_boost": true
+      "stability": 0.65,
+      "similarity_boost": 0.75,
+      "style": 0.55,
+      "use_speaker_boost": false
     },
-    "speed": 0.93
+    "speed": 0.88
   },
   "opening_format": {
     "template": "{subject}",
