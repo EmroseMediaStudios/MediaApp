@@ -11,7 +11,7 @@
   {% if last_refresh %}
   <div class="meta mt-4" style="font-size: 0.75em; color: var(--text3);">
     📊 Metrics updated: {{ last_refresh[:16].replace('T', ' ') }} UTC
-    <button onclick="refreshMetrics(this)" class="btn btn-sm" style="margin-left: 8px; font-size: 0.85em;">🔄 Refresh</button>
+    <button onclick="refreshMetrics(this)" class="btn btn-sm" style="margin-left: 8px; font-size: 0.85em; background: transparent; color: var(--gold); border: 1px solid var(--border2);">🔄 Refresh</button>
   </div>
   {% endif %}
 </div>
