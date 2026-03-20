@@ -1971,6 +1971,16 @@ def compile_videos(channel, video_dirs, title, progress=None):
         str(transition_path),
     ], capture_output=True)
 
+    # Probe each source video's duration for chapter timestamps
+    source_durations = []
+    for vp in video_paths:
+        probe = subprocess.run([
+            "ffprobe", "-v", "error", "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1", vp,
+        ], capture_output=True, text=True)
+        dur = float(probe.stdout.strip()) if probe.stdout.strip() else 0
+        source_durations.append(dur)
+
     entries = []
     for i, vp in enumerate(video_paths):
         if i > 0:
@@ -2002,6 +2012,47 @@ def compile_videos(channel, video_dirs, title, progress=None):
     ], capture_output=True, text=True)
     duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
 
+    # Build chapter timestamps for YouTube description
+    # YouTube requires first chapter at 0:00, each chapter must be >= 10 seconds
+    chapters = []
+    current_time = 0.0
+    transition_dur = 2.0
+    for i, dir_name in enumerate(video_dirs):
+        # Get the source video's title from its metadata
+        source_meta_path = OUTPUT_DIR / channel_id / dir_name / "metadata.json"
+        chapter_title = dir_name  # fallback
+        if source_meta_path.exists():
+            try:
+                source_meta = json.loads(source_meta_path.read_text())
+                chapter_title = source_meta.get("title", dir_name)
+            except Exception:
+                pass
+
+        # Format timestamp as H:MM:SS or M:SS
+        total_secs = int(current_time)
+        hours = total_secs // 3600
+        mins = (total_secs % 3600) // 60
+        secs = total_secs % 60
+        if hours > 0:
+            ts = f"{hours}:{mins:02d}:{secs:02d}"
+        else:
+            ts = f"{mins}:{secs:02d}"
+
+        chapters.append({"timestamp": ts, "title": chapter_title, "start_seconds": current_time})
+
+        # Advance by this video's duration + transition (except after last)
+        if i < len(source_durations):
+            current_time += source_durations[i]
+        if i < len(video_dirs) - 1:
+            current_time += transition_dur
+
+    chapters_text = "\n".join(f"{ch['timestamp']} {ch['title']}" for ch in chapters)
+    log.info(f"Generated {len(chapters)} chapter markers for compilation")
+
+    # Save chapters as a readable text file for review/editing before upload
+    (out_dir / "chapters.txt").write_text(chapters_text)
+    emit("compile", f"Generated {len(chapters)} YouTube chapter markers")
+
     # Save metadata
     meta = {
         "title": title,
@@ -2012,6 +2063,8 @@ def compile_videos(channel, video_dirs, title, progress=None):
         "is_compilation": True,
         "source_videos": video_dirs,
         "source_count": len(video_dirs),
+        "chapters": chapters,
+        "chapters_text": chapters_text,
         "youtube_uploaded": False,
         "created_at": datetime.now().isoformat(),
     }

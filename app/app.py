@@ -351,6 +351,24 @@ def youtube_upload_video():
     title = meta.get("title", "Untitled")
     description = yt_meta.get("description", "")
 
+    # For compilations, auto-generate description with chapter timestamps
+    if meta.get("is_compilation") and meta.get("chapters_text"):
+        chapters_block = meta["chapters_text"]
+        if not description:
+            year = __import__("datetime").datetime.now().year
+            channel_name = meta.get("channel_name", "")
+            description = (
+                f"{title}\n\n"
+                f"A compilation of {meta.get('source_count', '?')} episodes from {channel_name}.\n\n"
+                f"📑 Chapters:\n{chapters_block}\n\n"
+                f"If you enjoyed this, please like, comment, and subscribe for more.\n"
+                f"🔔 Turn on notifications so you never miss an upload.\n\n"
+                f"© {year} Emrose Media Studios. All rights reserved."
+            )
+        elif "0:00" not in description:
+            # youtube.json exists but no chapters — append them
+            description += f"\n\n📑 Chapters:\n{chapters_block}"
+
     # Add hashtags to top of description (YouTube shows these above the title)
     hashtags = yt_meta.get("hashtags", [])
     if hashtags:
