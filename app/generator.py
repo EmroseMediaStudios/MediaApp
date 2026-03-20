@@ -2105,18 +2105,39 @@ def _generate_short(channel, scenes, work_dir, out_dir, api_keys, voice_id, mode
 
 Select the most engaging, curiosity-driven segment and convert it into a short-form narration.
 
-Rules:
+CRITICAL RULES FOR SHORTS SUCCESS:
+
+HOOK (FIRST 2 SECONDS — THIS IS EVERYTHING):
+- The VERY FIRST SENTENCE must be a jarring, provocative, or deeply curious statement
+- It must make someone STOP scrolling immediately
+- Examples of strong hooks:
+  - "This building hasn't been touched in 200 years."
+  - "Your brain is lying to you right now."
+  - "No one has ever explained what happened here."
+  - "You've been making this decision wrong your entire life."
+- Do NOT start with atmosphere, setting, or slow buildup
+- Do NOT start with "Imagine..." or "What if..." — be declarative, not hypothetical
+- The hook must work WITHOUT any visual context — audio alone must grab attention
+
+NARRATION RULES:
 - Length: 20-40 seconds when read at the narrator's pace
-- Must start with a strong hook in the first 2 seconds
-- Must NOT require prior context
+- Must NOT require prior context from the full video
 - Must create curiosity, tension, or insight
 - Must feel complete but leave the viewer wanting more
 - Do NOT summarize — extract a compelling moment
+- Every sentence after the hook should escalate interest
+
+IMAGE PROMPT:
+- The image must be VISUALLY STRIKING and immediately attention-grabbing
+- High contrast, bold composition, dramatic lighting
+- Must be compelling even as a tiny thumbnail in a scroll feed
+- No subtle or minimal imagery — this needs to stop a thumb mid-scroll
+- The image should match or amplify the hook's impact
 
 Match the tone of {channel['channel_name']} exactly.
 
 Output ONLY valid JSON:
-{{"narration": "short script", "image_prompt": "image prompt matching channel style", "suggested_title": "title", "suggested_caption": "caption", "suggested_hashtags": ["#tag1", "#tag2"]}}
+{{"narration": "short script", "image_prompt": "detailed image prompt — MUST be visually striking and scroll-stopping", "suggested_title": "title", "suggested_caption": "caption", "suggested_hashtags": ["#tag1", "#tag2"]}}
 
 Full script:
 {full_script}"""
