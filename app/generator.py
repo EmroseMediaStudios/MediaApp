@@ -423,7 +423,19 @@ def generate_script(channel, topic, api_key):
 
 # --- Audio generation ---
 
-def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, api_key, out_path):
+def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, api_key, out_path,
+                              sentence_pause=0):
+    """Generate narration audio via ElevenLabs TTS.
+    
+    If sentence_pause > 0, splits text into individual sentences,
+    generates each separately, and concatenates with silence between them.
+    This creates deliberate pauses between sentences for sleep/meditation content.
+    """
+    if sentence_pause > 0:
+        return _generate_narration_with_pauses(
+            text, voice_id, model_id, voice_settings, speed, api_key, out_path, sentence_pause
+        )
+    
     import httpx as hx
     payload = {"text": text, "model_id": model_id, "voice_settings": voice_settings}
     if speed != 1.0:
@@ -440,9 +452,7 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
             time.sleep(wait)
             continue
         if resp.status_code == 401:
-            # Log the actual error body to understand why
             log.error(f"ElevenLabs 401: {resp.text[:300]}")
-            # Only retry once for 401 — if it persists, it's a real auth issue
             if attempt < 1:
                 log.warning(f"ElevenLabs 401, retrying once in 3s...")
                 time.sleep(3)
@@ -455,6 +465,107 @@ def _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, ap
         clip.close()
         return dur
     raise RuntimeError("ElevenLabs rate limit exceeded after 5 attempts")
+
+
+def _split_into_sentences(text):
+    """Split narration text into individual sentences, preserving ellipses as pause markers."""
+    import re
+    # Split on sentence-ending punctuation followed by space or end
+    # Keep ellipses as part of the sentence they're in
+    parts = re.split(r'(?<=[.!?])\s+(?=[A-Z"])', text)
+    # Filter out empty strings
+    return [s.strip() for s in parts if s.strip()]
+
+
+def _generate_narration_with_pauses(text, voice_id, model_id, voice_settings, speed, api_key, out_path, pause_seconds):
+    """Generate narration sentence-by-sentence with silence gaps between them."""
+    import subprocess
+    import httpx as hx
+    
+    sentences = _split_into_sentences(text)
+    if len(sentences) <= 1:
+        # Single sentence or couldn't split — fall back to normal generation
+        return _generate_narration_sync(text, voice_id, model_id, voice_settings, speed, api_key, out_path, sentence_pause=0)
+    
+    log.info(f"Generating narration with {pause_seconds}s pauses between {len(sentences)} sentences")
+    
+    work_dir = Path(out_path).parent
+    sentence_files = []
+    
+    for idx, sentence in enumerate(sentences):
+        sentence_path = work_dir / f"_sentence_{Path(out_path).stem}_{idx:03d}.mp3"
+        payload = {"text": sentence, "model_id": model_id, "voice_settings": voice_settings}
+        if speed != 1.0:
+            payload["speed"] = speed
+        
+        for attempt in range(5):
+            resp = hx.post(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+                headers={"xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
+                json=payload, timeout=180,
+            )
+            if resp.status_code == 429:
+                wait = int(resp.headers.get("Retry-After", str(5 * (attempt + 1))))
+                log.warning(f"ElevenLabs 429 (sentence {idx+1}), retrying in {wait}s")
+                time.sleep(wait)
+                continue
+            if resp.status_code == 401:
+                if attempt < 1:
+                    time.sleep(3)
+                    continue
+                raise RuntimeError(f"ElevenLabs auth failed: {resp.text[:200]}")
+            resp.raise_for_status()
+            sentence_path.write_bytes(resp.content)
+            break
+        else:
+            raise RuntimeError(f"ElevenLabs rate limit exceeded for sentence {idx+1}")
+        
+        sentence_files.append(sentence_path)
+        time.sleep(1.0)  # Rate limit courtesy between sentences
+    
+    # Convert all sentence MP3s to WAV and build concat list with silence gaps
+    concat_list = work_dir / f"_concat_{Path(out_path).stem}.txt"
+    silence_path = work_dir / f"_pause_{Path(out_path).stem}.wav"
+    
+    # Generate the silence gap file
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+        "-t", str(pause_seconds), str(silence_path),
+    ], capture_output=True)
+    
+    entries = []
+    for idx, mp3_path in enumerate(sentence_files):
+        wav_path = work_dir / f"_sentence_{Path(out_path).stem}_{idx:03d}.wav"
+        subprocess.run([
+            "ffmpeg", "-y", "-i", str(mp3_path),
+            "-ar", "44100", "-ac", "1", str(wav_path),
+        ], capture_output=True)
+        
+        if idx > 0:
+            entries.append(f"file '{silence_path}'")
+        entries.append(f"file '{wav_path}'")
+    
+    concat_list.write_text("\n".join(entries))
+    
+    # Concat into final output as WAV first, then convert to MP3
+    combined_wav = work_dir / f"_combined_{Path(out_path).stem}.wav"
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_list),
+        "-c:a", "pcm_s16le", str(combined_wav),
+    ], capture_output=True)
+    
+    # Convert to MP3 to match expected output format
+    subprocess.run([
+        "ffmpeg", "-y", "-i", str(combined_wav),
+        "-c:a", "libmp3lame", "-b:a", "192k", str(out_path),
+    ], capture_output=True)
+    
+    clip = AudioFileClip(str(out_path))
+    dur = clip.duration
+    clip.close()
+    log.info(f"Narration with pauses: {len(sentences)} sentences, {dur:.1f}s total")
+    return dur
 
 
 def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topic=None, api_keys=None):
@@ -1283,6 +1394,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     voice_settings = voice.get("settings", {"stability": 0.85, "similarity_boost": 0.80, "style": 0.15, "use_speaker_boost": False})
     speed = voice.get("speed", 0.85)
     narration_volume = voice.get("narration_volume", 1.0)  # Optional per-channel narration volume reduction
+    sentence_pause = voice.get("sentence_pause_seconds", 0)  # Silence between sentences (sleep/meditation channels)
 
     # Pre-flight: verify ElevenLabs API key works before starting expensive pipeline
     import httpx as _hx
@@ -1355,6 +1467,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         dur = _generate_narration_sync(
             scene["narration"], voice_id, model_id, voice_settings, speed,
             api_keys["elevenlabs"], str(audio_path),
+            sentence_pause=sentence_pause,
         )
         scene["audio_path"] = str(audio_path)
         scene["audio_duration"] = dur
