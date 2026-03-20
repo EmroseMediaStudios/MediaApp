@@ -5,6 +5,7 @@ Handles OAuth2 authentication and video uploads via YouTube Data API v3.
 import os
 import json
 import logging
+import time
 from pathlib import Path
 
 log = logging.getLogger("youtube_upload")
@@ -37,7 +38,6 @@ def _get_credentials(youtube_channel_id=None):
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
     elif youtube_channel_id and TOKEN_PATH.exists():
-        # Fall back to default token
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
 
     if creds and creds.expired and creds.refresh_token:
@@ -60,10 +60,8 @@ def is_authenticated(youtube_channel_id=None):
 def get_authenticated_channels():
     """List which YouTube channels have saved auth tokens."""
     authenticated = {}
-    # Check default token
     if TOKEN_PATH.exists():
         authenticated["default"] = True
-    # Check per-channel tokens
     if TOKEN_DIR.exists():
         for f in TOKEN_DIR.glob("*.json"):
             channel_id = f.stem
@@ -98,8 +96,7 @@ def complete_auth(auth_code):
 
 
 def run_local_auth(youtube_channel_id=None):
-    """Run the full OAuth2 flow using a local server (opens browser).
-    For Brand Accounts, switch to the target channel in YouTube before authorizing."""
+    """Run the full OAuth2 flow using a local server (opens browser)."""
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     if not CLIENT_SECRET_PATH.exists():
@@ -124,7 +121,6 @@ def list_channels():
 
     youtube = build("youtube", "v3", credentials=creds)
     
-    # Get own channels
     channels = []
     resp = youtube.channels().list(part="snippet,contentDetails", mine=True).execute()
     for ch in resp.get("items", []):
@@ -134,7 +130,6 @@ def list_channels():
             "description": ch["snippet"].get("description", ""),
         })
     
-    # Also list channels managed via Brand Accounts
     try:
         resp2 = youtube.channels().list(part="snippet,contentDetails", managedByMe=True, maxResults=50).execute()
         for ch in resp2.get("items", []):
@@ -151,11 +146,7 @@ def list_channels():
 
 
 def _sanitize_tags(tags):
-    """Sanitize YouTube tags to avoid 'invalid video keywords' API errors.
-    
-    YouTube rejects tags for various undocumented reasons. This function
-    takes an aggressive approach: strip everything questionable.
-    """
+    """Sanitize YouTube tags — strip everything except alphanumeric, spaces, hyphens, apostrophes."""
     import re
     if not tags:
         return []
@@ -166,24 +157,17 @@ def _sanitize_tags(tags):
     for tag in tags:
         if not isinstance(tag, str):
             continue
-        # Strip ALL non-alphanumeric characters except spaces, hyphens, and apostrophes
         tag = re.sub(r"[^a-zA-Z0-9\s\-']", '', tag)
-        # Collapse multiple spaces
         tag = re.sub(r'\s+', ' ', tag).strip()
-        # Skip empty tags or very short ones
         if not tag or len(tag) < 2:
             continue
-        # Skip if it looks like a URL
         if tag.startswith("http") or ".com" in tag or ".org" in tag:
             continue
-        # Skip duplicate tags (case-insensitive)
         tag_lower = tag.lower()
         if tag_lower in seen:
             continue
         seen.add(tag_lower)
-        # Truncate individual tags at 30 chars
         tag = tag[:30].rstrip()
-        # Check combined limit (YouTube counts commas as separators)
         tag_cost = len(tag) + (1 if sanitized else 0)
         if total_chars + tag_cost > 480:
             break
@@ -191,42 +175,24 @@ def _sanitize_tags(tags):
         total_chars += tag_cost
     
     log.info(f"Sanitized {len(tags)} tags -> {len(sanitized)} tags ({total_chars} chars): {sanitized}")
-    
     return sanitized
 
 
-def upload_video(video_path, title, description="", tags=None, category_id="22",
-                 privacy="private", thumbnail_path=None, progress=None, app_channel_id=None):
-    """
-    Upload a video to YouTube.
-    app_channel_id maps to the YouTube channel via YOUTUBE_CHANNEL_MAP.
-    """
-    from googleapiclient.discovery import build
+def _is_invalid_tags_error(error):
+    """Check if an HttpError is specifically about invalid tags."""
+    err_str = str(error)
+    return "invalidTags" in err_str or "invalid video keywords" in err_str
+
+
+def _do_upload(youtube, video_path, title, description, tags, category_id, privacy, progress):
+    """Execute the actual YouTube upload. Returns the API response."""
     from googleapiclient.http import MediaFileUpload
-
-    # Resolve YouTube channel ID and get appropriate credentials
-    yt_channel_id = YOUTUBE_CHANNEL_MAP.get(app_channel_id) if app_channel_id else None
-    creds = _get_credentials(yt_channel_id)
-    if not creds:
-        creds = _get_credentials()  # Fall back to default
-    if not creds:
-        raise RuntimeError("Not authenticated with YouTube. Run /youtube/auth first.")
-
-    youtube = build("youtube", "v3", credentials=creds)
-
-    # Sanitize tags to avoid YouTube API "invalid video keywords" errors
-    clean_tags = _sanitize_tags(tags)
-    log.info(f"Upload tags for '{title}': {clean_tags}")
-
-    # Also sanitize title (max 100 chars, no < >)
-    import re
-    clean_title = re.sub(r'[<>]', '', title or "Untitled")[:100].strip()
 
     body = {
         "snippet": {
-            "title": clean_title,
+            "title": title,
             "description": description,
-            "tags": clean_tags,
+            "tags": tags,
             "categoryId": category_id,
         },
         "status": {
@@ -239,10 +205,10 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
         video_path,
         mimetype="video/mp4",
         resumable=True,
-        chunksize=10 * 1024 * 1024,  # 10MB chunks
+        chunksize=10 * 1024 * 1024,
     )
 
-    log.info(f"Uploading '{title}' to YouTube ({privacy})...")
+    log.info(f"Uploading '{title}' ({privacy}) with {len(tags)} tags: {tags}")
     if progress:
         progress(0, "Starting upload...")
 
@@ -257,6 +223,114 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
             if progress:
                 progress(pct, f"Uploading... {pct}%")
 
+    return response
+
+
+def _find_bad_tags_by_elimination(youtube, video_path, title, description, tags, category_id, privacy):
+    """Find bad tags by testing each one individually.
+    
+    YouTube validates metadata on the first chunk request, so we catch the error
+    before any significant data is uploaded. Each test costs minimal bandwidth.
+    """
+    from googleapiclient.errors import HttpError
+    from googleapiclient.http import MediaFileUpload
+
+    bad_tags = []
+    good_tags = []
+
+    for tag in tags:
+        # Test this single tag
+        body = {
+            "snippet": {
+                "title": title,
+                "description": description,
+                "tags": [tag],
+                "categoryId": category_id,
+            },
+            "status": {
+                "privacyStatus": privacy,
+                "selfDeclaredMadeForKids": False,
+            },
+        }
+        media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True, chunksize=10 * 1024 * 1024)
+        request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+
+        try:
+            # The first next_chunk() sends metadata + first data chunk
+            # If tags are invalid, YouTube rejects before processing video data
+            status, response = request.next_chunk()
+            # Tag is valid — but we started an upload. Delete it.
+            if response:
+                vid_id = response.get("id")
+                if vid_id:
+                    try:
+                        youtube.videos().delete(id=vid_id).execute()
+                        log.info(f"Cleaned up test upload for tag '{tag}'")
+                    except Exception:
+                        log.warning(f"Could not delete test upload {vid_id} for tag '{tag}'")
+            good_tags.append(tag)
+        except HttpError as e:
+            if _is_invalid_tags_error(e):
+                log.warning(f"BAD TAG FOUND: '{tag}'")
+                bad_tags.append(tag)
+            else:
+                # Some other error — assume tag is fine, problem is elsewhere
+                good_tags.append(tag)
+
+        time.sleep(0.3)  # Brief pause between tests
+
+    return good_tags, bad_tags
+
+
+def upload_video(video_path, title, description="", tags=None, category_id="22",
+                 privacy="private", thumbnail_path=None, progress=None, app_channel_id=None):
+    """
+    Upload a video to YouTube.
+    On invalid tags: tests each tag individually, removes bad ones, retries.
+    """
+    import re
+    from googleapiclient.discovery import build
+    from googleapiclient.errors import HttpError
+
+    # Resolve YouTube channel ID and get appropriate credentials
+    yt_channel_id = YOUTUBE_CHANNEL_MAP.get(app_channel_id) if app_channel_id else None
+    creds = _get_credentials(yt_channel_id)
+    if not creds:
+        creds = _get_credentials()
+    if not creds:
+        raise RuntimeError("Not authenticated with YouTube. Run /youtube/auth first.")
+
+    youtube = build("youtube", "v3", credentials=creds)
+
+    # Sanitize tags and title
+    clean_tags = _sanitize_tags(tags)
+    clean_title = re.sub(r'[<>]', '', title or "Untitled")[:100].strip()
+
+    # First attempt with all sanitized tags
+    try:
+        response = _do_upload(youtube, video_path, clean_title, description, clean_tags, category_id, privacy, progress)
+    except HttpError as e:
+        if not _is_invalid_tags_error(e):
+            raise
+
+        log.warning(f"Upload failed with invalidTags. Testing each tag individually...")
+        log.warning(f"Failed tags were: {clean_tags}")
+
+        # Test each tag to find the bad ones
+        good_tags, bad_tags = _find_bad_tags_by_elimination(
+            youtube, video_path, clean_title, description, clean_tags, category_id, privacy
+        )
+
+        if bad_tags:
+            log.warning(f"Removed {len(bad_tags)} bad tags: {bad_tags}")
+            log.info(f"Retrying upload with {len(good_tags)} good tags: {good_tags}")
+        else:
+            # Couldn't isolate any — might be a combination issue. Try with no tags.
+            log.warning("No individual bad tags found — might be a combination issue. Uploading with no tags.")
+            good_tags = []
+
+        response = _do_upload(youtube, video_path, clean_title, description, good_tags, category_id, privacy, progress)
+
     video_id = response["id"]
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     log.info(f"Upload complete: {video_url}")
@@ -267,7 +341,8 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
     # Set thumbnail if provided
     if thumbnail_path and Path(thumbnail_path).exists():
         try:
-            thumb_media = MediaFileUpload(thumbnail_path, mimetype="image/png")
+            from googleapiclient.http import MediaFileUpload as MFU
+            thumb_media = MFU(thumbnail_path, mimetype="image/png")
             youtube.thumbnails().set(videoId=video_id, media_body=thumb_media).execute()
             log.info(f"Thumbnail set for {video_id}")
         except Exception as e:
@@ -276,7 +351,7 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
     return {
         "video_id": video_id,
         "url": video_url,
-        "title": title,
+        "title": clean_title,
         "privacy": privacy,
     }
 
