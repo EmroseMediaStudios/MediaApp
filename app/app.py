@@ -14,6 +14,7 @@ from flask import (
 
 from . import generator
 from . import youtube_upload
+from . import youtube_metrics
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -32,7 +33,11 @@ API_KEYS = {
 @app.route("/")
 def dashboard():
     channels = generator.list_channels()
-    return render_template("dashboard.html", channels=channels)
+    # Load cached metrics for dashboard display
+    cache = youtube_metrics.get_metrics()
+    metrics = youtube_metrics.get_dashboard_summary(cache)
+    last_refresh = cache.get("last_refresh")
+    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh)
 
 
 @app.route("/channel/<channel_id>")
@@ -41,7 +46,13 @@ def channel_workspace(channel_id):
     if not ch:
         return "Channel not found", 404
     videos = generator.list_videos(channel_id)
-    return render_template("channel.html", channel=ch, videos=videos)
+    # Load YouTube metrics for this channel
+    cache = youtube_metrics.get_metrics()
+    ch_stats = cache.get("channels", {}).get(channel_id, {})
+    vid_data = cache.get("videos", {}).get(channel_id, {})
+    yt_videos = vid_data.get("videos", [])
+    return render_template("channel.html", channel=ch, videos=videos,
+                           ch_stats=ch_stats, yt_videos=yt_videos, vid_data=vid_data)
 
 
 @app.route("/channel/<channel_id>/idea", methods=["GET", "POST"])
@@ -445,6 +456,64 @@ def youtube_upload_video():
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+
+
+# --- YouTube Metrics ---
+
+@app.route("/api/metrics")
+def api_metrics():
+    """Get cached metrics for all channels."""
+    cache = youtube_metrics.get_metrics()
+    summary = youtube_metrics.get_dashboard_summary(cache)
+    return jsonify({"ok": True, "metrics": summary, "last_refresh": cache.get("last_refresh")})
+
+
+@app.route("/api/metrics/refresh", methods=["POST"])
+def api_metrics_refresh():
+    """Force refresh metrics from YouTube API."""
+    cache = youtube_metrics.get_metrics(force_refresh=True, channel_map=youtube_upload.YOUTUBE_CHANNEL_MAP)
+    summary = youtube_metrics.get_dashboard_summary(cache)
+    return jsonify({"ok": True, "metrics": summary, "last_refresh": cache.get("last_refresh")})
+
+
+@app.route("/api/metrics/<channel_id>")
+def api_channel_metrics(channel_id):
+    """Get detailed per-video metrics for a channel."""
+    cache = youtube_metrics.get_metrics()
+    videos = youtube_metrics.get_channel_videos_with_stats(channel_id, cache)
+    ch_stats = cache.get("channels", {}).get(channel_id, {})
+    vid_summary = cache.get("videos", {}).get(channel_id, {})
+    return jsonify({
+        "ok": True,
+        "channel": ch_stats,
+        "full_length_views": vid_summary.get("full_length_views", 0),
+        "shorts_views": vid_summary.get("shorts_views", 0),
+        "videos": videos,
+        "last_refresh": cache.get("last_refresh"),
+    })
+
+
+# --- Auto-refresh metrics on startup and hourly ---
+
+def _start_metrics_scheduler():
+    """Background thread that refreshes metrics every hour."""
+    import time as _time
+    def _refresh_loop():
+        _time.sleep(10)  # Wait for app startup
+        while True:
+            try:
+                log.info("Hourly metrics refresh starting...")
+                youtube_metrics.refresh_all_metrics(youtube_upload.YOUTUBE_CHANNEL_MAP)
+                log.info("Hourly metrics refresh complete")
+            except Exception as e:
+                log.warning(f"Metrics refresh failed: {e}")
+            _time.sleep(3600)  # 1 hour
+
+    t = threading.Thread(target=_refresh_loop, daemon=True, name="metrics-refresh")
+    t.start()
+
+
+_start_metrics_scheduler()
 
 
 if __name__ == "__main__":
