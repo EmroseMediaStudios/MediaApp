@@ -581,15 +581,21 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
         "zero_trace_archive": "tense investigative ambient, low frequency hum, occasional radio static crackle, surveillance room atmosphere, muted fluorescent buzz",
         "the_unwritten_wing": "warm nostalgic ambient, soft piano-like tones in the distance, gentle wind through old windows, dusty library atmosphere, golden hour warmth",
         "remnants_project": "post-apocalyptic ambient, wind through abandoned structures, distant creaking metal, nature sounds slowly reclaiming, industrial decay atmosphere",
-        "somnus_protocol": "ultra calming sleep ambient, soft ocean waves in the distance, gentle warm breeze, quiet night sounds, peaceful and drowsy atmosphere, green noise",
         "autonomous_stack": "clean futuristic ambient, soft electronic hum, minimal digital textures, data center atmosphere, cool and precise",
         "gray_meridian": "neutral contemplative ambient, soft warm pad, subtle heartbeat-like rhythm, quiet room tone, psychological atmosphere",
     }
     
     base_desc = channel_ambient_base.get(channel_id, "atmospheric ambient soundscape, cinematic, moody")
     
-    # Add video-specific context if available
-    if title:
+    # For Somnus Protocol, generate fully content-aware ambient instead of hardcoded ocean waves
+    if channel_id == "somnus_protocol":
+        base_desc = "ultra calming sleep ambient, peaceful and drowsy atmosphere"
+        if topic:
+            base_desc = f"ultra calming sleep ambient matching the theme of {topic}, soft gentle sounds appropriate to the scene, peaceful and drowsy atmosphere, no harsh or sudden sounds"
+        elif title:
+            base_desc = f"ultra calming sleep ambient matching the theme of {title}, soft gentle sounds appropriate to the scene, peaceful and drowsy atmosphere, no harsh or sudden sounds"
+    elif title:
+        # Add video-specific context for other channels
         base_desc += f", themed around {title}"
     
     # ElevenLabs Sound Generation can do max ~22 seconds per call
