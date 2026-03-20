@@ -423,6 +423,14 @@ def youtube_upload_video():
             short_hashtags = short_meta.get("suggested_hashtags", ["#Shorts"])
             if "#Shorts" not in short_hashtags:
                 short_hashtags.insert(0, "#Shorts")
+            # Merge channel default hashtags into Shorts
+            ch = generator.load_channel(channel_id)
+            if ch:
+                default_ht = ch.get("youtube", {}).get("default_hashtags", [])
+                existing = set(h.lower() for h in short_hashtags)
+                for dh in default_ht:
+                    if dh.lower() not in existing:
+                        short_hashtags.append(dh)
 
             short_desc = " ".join(short_hashtags) + "\n\n"
             if short_caption:
