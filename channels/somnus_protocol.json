@@ -18,16 +18,17 @@
     ]
   },
   "voice": {
-    "elevenlabs_voice_id": "SAz9YHcvj6GT2YYXdXww",
-    "elevenlabs_voice_name": "River",
+    "elevenlabs_voice_id": "XB0fDUnXU5powFXDhCwa",
+    "elevenlabs_voice_name": "Charlotte",
     "model_id": "eleven_multilingual_v2",
     "settings": {
       "stability": 0.95,
-      "similarity_boost": 0.70,
-      "style": 0.02,
+      "similarity_boost": 0.55,
+      "style": 0.45,
       "use_speaker_boost": false
     },
-    "speed": 0.50
+    "speed": 0.50,
+    "narration_volume": 0.55
   },
   "opening_format": {
     "template": "There is nothing you need to do...",
@@ -90,7 +91,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.5,
+    "volume": 0.65,
     "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
   },
   "shorts": {

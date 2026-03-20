@@ -1243,6 +1243,25 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
 
 # --- Main video generation pipeline ---
 
+def _apply_narration_volume(input_path, output_path, volume):
+    """Reduce narration volume via ffmpeg. Used for sleep/meditation channels."""
+    import subprocess
+    result = subprocess.run([
+        "ffmpeg", "-y",
+        "-i", str(input_path),
+        "-af", f"volume={volume}",
+        "-c:v", "copy",
+        "-c:a", "aac", "-b:a", "320k",
+        str(output_path),
+    ], capture_output=True, text=True)
+    if result.returncode == 0:
+        log.info(f"Narration volume reduced to {volume}")
+    else:
+        log.warning(f"Narration volume reduction failed: {result.stderr[:200]}")
+        import shutil as sh
+        sh.move(str(input_path), str(output_path))
+
+
 def generate_video(channel, scenes, title, topic, api_keys, generate_short=False, progress=None):
     """
     Full pipeline. progress is a callable(step, message) for SSE updates.
@@ -1259,6 +1278,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     model_id = voice.get("model_id", "eleven_multilingual_v2")
     voice_settings = voice.get("settings", {"stability": 0.85, "similarity_boost": 0.80, "style": 0.15, "use_speaker_boost": False})
     speed = voice.get("speed", 0.85)
+    narration_volume = voice.get("narration_volume", 1.0)  # Optional per-channel narration volume reduction
 
     # Pre-flight: verify ElevenLabs API key works before starting expensive pipeline
     import httpx as _hx
@@ -1582,21 +1602,26 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         
         if not Path(drone_path).exists() or Path(drone_path).stat().st_size < 1000:
             emit("assembly", "⚠ Ambient audio generation failed — video will have narration only")
-            import shutil as sh
-            sh.move(str(video_path_with_narration), str(video_path))
+            if narration_volume < 1.0:
+                _apply_narration_volume(video_path_with_narration, video_path, narration_volume)
+            else:
+                import shutil as sh
+                sh.move(str(video_path_with_narration), str(video_path))
         else:
             vol = ambient_cfg.get("volume", 0.30)
             emit("assembly", f"Mixing ambient at volume {vol}...")
 
             # Mix using filter_complex with explicit volume control
             # Avoid amix which normalizes/reduces volume of both streams
+            # narration_volume allows per-channel voice softening (e.g., SomnusProtocol)
+            narr_vol_filter = f"volume={narration_volume}," if narration_volume < 1.0 else ""
             mix_cmd = [
                 "ffmpeg", "-y",
                 "-i", str(video_path_with_narration),
                 "-i", str(drone_path),
                 "-filter_complex",
                 f"[1:a]atrim=0:{video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={vol}[drone];"
-                f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo[narr];"
+                f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo,{narr_vol_filter}asetpts=PTS-STARTPTS[narr];"
                 f"[narr][drone]amerge=inputs=2,pan=stereo|c0=c0+c2|c1=c1+c3[out]",
                 "-map", "0:v",
                 "-map", "[out]",
@@ -1610,11 +1635,17 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             else:
                 log.warning(f"Ambient mix failed: {result.stderr[:300]}")
                 emit("assembly", f"⚠ Ambient mix failed — using narration only")
-                import shutil as sh
-                sh.move(str(video_path_with_narration), str(video_path))
+                if narration_volume < 1.0:
+                    _apply_narration_volume(video_path_with_narration, video_path, narration_volume)
+                else:
+                    import shutil as sh
+                    sh.move(str(video_path_with_narration), str(video_path))
     else:
-        import shutil as sh
-        sh.move(str(video_path_with_narration), str(video_path))
+        if narration_volume < 1.0:
+            _apply_narration_volume(video_path_with_narration, video_path, narration_volume)
+        else:
+            import shutil as sh
+            sh.move(str(video_path_with_narration), str(video_path))
         log.info("Ambient audio disabled for this channel")
 
     # Clean up temp files
