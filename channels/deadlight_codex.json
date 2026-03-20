@@ -103,11 +103,25 @@
       "cosmic horror",
       "creepypasta",
       "dark narration",
-      "horror",
-      "mystery",
+      "horror stories",
+      "scary stories",
       "unexplained",
-      "deadlight codex"
+      "deadlight codex",
+      "horror narration",
+      "cosmic horror stories",
+      "dark ambient horror",
+      "scary narration",
+      "eldritch horror",
+      "horror anthology",
+      "creepy stories to fall asleep to"
     ],
-    "uploaded": false
+    "uploaded": false,
+    "default_hashtags": [
+      "#CosmicHorror",
+      "#DeadlightCodex",
+      "#HorrorStories",
+      "#Creepypasta",
+      "#ScaryStories"
+    ]
   }
 }

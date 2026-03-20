@@ -1873,14 +1873,20 @@ Video length: ~{word_count} words of narration, approximately {len(scenes)} scen
 Write the following in JSON format:
 
 1. "description" — A YouTube description (150-300 words) that:
-   - Opens with a compelling 1-2 sentence hook about the video
+   - Opens with a compelling 1-2 sentence hook about the video (this is what appears in search results)
    - Briefly describes what the viewer will experience
+   - Naturally incorporates searchable keywords related to the topic
    - Includes a line: "If you enjoyed this, please like, comment, and subscribe for more."
    - Includes a call to turn on notifications
    - Matches the channel's tone perfectly
    - Ends with exactly this copyright line: "© {year} Emrose Media Studios. All rights reserved."
 
-2. "tags" — An array of 15-25 YouTube tags (individual words or short phrases) optimized for search discovery. Include a mix of broad and specific terms.
+2. "tags" — An array of 15-25 YouTube tags optimized for search discovery. Include:
+   - The exact video title as a tag
+   - 3-5 broad category terms (e.g., "horror", "psychology", "documentary")
+   - 5-10 specific long-tail phrases people actually search for (e.g., "scary stories at night", "what happens when humans disappear")
+   - 3-5 related channel/creator terms for discoverability
+   - The channel name as a tag
 
 3. "hashtags" — An array of 5-8 hashtags for the video description (with # prefix). These appear above the title on YouTube.
 

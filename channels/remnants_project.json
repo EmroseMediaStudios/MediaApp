@@ -106,14 +106,28 @@
   "youtube": {
     "category": "Entertainment",
     "default_tags": [
-      "post-human",
-      "abandoned",
-      "nature",
-      "documentary",
-      "remnants",
+      "life after people",
+      "post apocalyptic",
+      "abandoned places",
+      "what if humans disappeared",
+      "nature reclaiming",
+      "remnants project",
+      "world without humans",
+      "abandoned world",
+      "post human earth",
       "after humanity",
-      "solarpunk"
+      "liminal spaces",
+      "solarpunk",
+      "urban decay",
+      "atmospheric documentary"
     ],
-    "uploaded": false
+    "uploaded": false,
+    "default_hashtags": [
+      "#LifeAfterPeople",
+      "#RemnantsProject",
+      "#Abandoned",
+      "#PostApocalyptic",
+      "#WorldWithoutHumans"
+    ]
   }
 }

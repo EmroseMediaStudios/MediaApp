@@ -4,17 +4,17 @@
   "description": "Explores human behavior, psychology, and cognition. Examines how people think, react, and make decisions, often focusing on subtle or overlooked patterns.",
   "narrator": {
     "name": "The Thinker",
-    "description": "A warm, emotionally intelligent guide leading the listener through an idea. Thoughtful and reflective, with genuine feeling behind every observation. Speaks like a trusted mentor — educated but never cold, analytical but deeply human.",
+    "description": "A warm, emotionally intelligent guide leading the listener through an idea. Thoughtful and reflective, with genuine feeling behind every observation. Speaks like a trusted mentor \u2014 educated but never cold, analytical but deeply human.",
     "rules": [
       "Warm, emotionally engaged, reflective tone",
-      "Speaks with genuine feeling — not detached or clinical",
+      "Speaks with genuine feeling \u2014 not detached or clinical",
       "Guiding and encouraging, like a wise friend sharing an insight",
       "No dramatic claims or sensationalism",
       "Encourages introspection in the listener",
       "Presents ideas as observations, not conclusions",
       "Comfortable with ambiguity and open questions",
       "Treats the listener as intelligent",
-      "Educated but accessible — never condescending"
+      "Educated but accessible \u2014 never condescending"
     ]
   },
   "voice": {
@@ -107,12 +107,26 @@
     "default_tags": [
       "psychology",
       "human behavior",
-      "cognition",
+      "why we do what we do",
+      "cognitive bias",
       "decision making",
-      "introspection",
       "gray meridian",
-      "mind"
+      "psychology explained",
+      "how the mind works",
+      "behavioral psychology",
+      "thought experiment",
+      "introspection",
+      "self awareness",
+      "psychology documentary",
+      "understanding people"
     ],
-    "uploaded": false
+    "uploaded": false,
+    "default_hashtags": [
+      "#Psychology",
+      "#GrayMeridian",
+      "#HumanBehavior",
+      "#MindBlown",
+      "#ThinkDifferent"
+    ]
   }
 }

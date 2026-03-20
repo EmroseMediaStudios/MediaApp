@@ -102,13 +102,27 @@
     "category": "Entertainment",
     "default_tags": [
       "storytelling",
-      "emotional",
-      "surreal",
       "short story",
-      "dreamlike",
+      "emotional story",
+      "fiction narration",
       "the unwritten wing",
-      "fiction"
+      "original stories",
+      "dreamlike stories",
+      "surreal fiction",
+      "beautiful stories",
+      "story time",
+      "narrative fiction",
+      "atmospheric storytelling",
+      "sad stories",
+      "stories that make you think"
     ],
-    "uploaded": false
+    "uploaded": false,
+    "default_hashtags": [
+      "#Storytelling",
+      "#TheUnwrittenWing",
+      "#ShortStory",
+      "#Fiction",
+      "#StoryTime"
+    ]
   }
 }

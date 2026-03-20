@@ -101,14 +101,28 @@
   "youtube": {
     "category": "Entertainment",
     "default_tags": [
-      "unexplained",
+      "unexplained mysteries",
       "anomaly",
       "documentary",
       "mystery",
       "investigation",
       "case file",
-      "zero trace archive"
+      "zero trace archive",
+      "unsolved mysteries",
+      "strange but true",
+      "real mysteries",
+      "unexplained events",
+      "mysterious events",
+      "true mystery documentary",
+      "paranormal documentary"
     ],
-    "uploaded": false
+    "uploaded": false,
+    "default_hashtags": [
+      "#UnexplainedMysteries",
+      "#ZeroTraceArchive",
+      "#Mystery",
+      "#Unsolved",
+      "#Documentary"
+    ]
   }
 }

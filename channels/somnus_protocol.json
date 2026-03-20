@@ -27,7 +27,7 @@
       "style": 0.45,
       "use_speaker_boost": false
     },
-    "speed": 0.40,
+    "speed": 0.4,
     "narration_volume": 0.55,
     "sentence_pause_seconds": 3.0
   },
@@ -119,13 +119,17 @@
       "sleep stories",
       "bedtime stories",
       "fall asleep fast",
-      "deep sleep"
+      "deep sleep",
+      "sleep meditation",
+      "sleep hypnosis",
+      "relaxing stories for sleep"
     ],
     "default_hashtags": [
       "#SleepStories",
       "#SomnusProtocol",
       "#SleepAid",
-      "#Relaxation"
+      "#Relaxation",
+      "#FallAsleepFast"
     ],
     "uploaded": false
   }
