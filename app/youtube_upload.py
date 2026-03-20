@@ -150,6 +150,40 @@ def list_channels():
     return channels
 
 
+def _sanitize_tags(tags):
+    """Sanitize YouTube tags to avoid 'invalid video keywords' API errors.
+    
+    YouTube rejects tags containing < >, and has a 500-char combined limit.
+    Individual tags should be short phrases (no commas within a tag).
+    """
+    import re
+    if not tags:
+        return []
+    
+    sanitized = []
+    total_chars = 0
+    for tag in tags:
+        if not isinstance(tag, str):
+            continue
+        # Strip HTML-like characters and other problematic chars
+        tag = re.sub(r'[<>]', '', tag)
+        # Remove leading/trailing whitespace
+        tag = tag.strip()
+        # Skip empty tags or tags that are just punctuation
+        if not tag or len(tag) < 2:
+            continue
+        # Truncate individual tags at 100 chars
+        tag = tag[:100]
+        # Check combined limit (500 chars total, with commas between)
+        tag_cost = len(tag) + (2 if sanitized else 0)  # ", " separator
+        if total_chars + tag_cost > 500:
+            break
+        sanitized.append(tag)
+        total_chars += tag_cost
+    
+    return sanitized
+
+
 def upload_video(video_path, title, description="", tags=None, category_id="22",
                  privacy="private", thumbnail_path=None, progress=None, app_channel_id=None):
     """
@@ -169,11 +203,14 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
 
     youtube = build("youtube", "v3", credentials=creds)
 
+    # Sanitize tags to avoid YouTube API "invalid video keywords" errors
+    clean_tags = _sanitize_tags(tags)
+
     body = {
         "snippet": {
             "title": title,
             "description": description,
-            "tags": tags or [],
+            "tags": clean_tags,
             "categoryId": category_id,
         },
         "status": {
