@@ -3,9 +3,12 @@ Flask web application for multi-channel video generation.
 """
 import os
 import json
+import logging
 import queue
 import threading
 from pathlib import Path
+
+log = logging.getLogger("deadlight.app")
 
 from flask import (
     Flask, render_template, request, jsonify,
