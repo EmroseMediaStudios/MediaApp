@@ -89,7 +89,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.12,
+    "volume": 0.25,
     "style": "Very subtle warm pad, barely perceptible, like thinking music"
   },
   "shorts": {

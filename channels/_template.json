@@ -74,7 +74,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.12,
+    "volume": 0.25,
     "style": "Description of ambient audio style"
   },
   "shorts": {

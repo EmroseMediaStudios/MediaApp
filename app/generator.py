@@ -1729,7 +1729,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
                 import shutil as sh
                 sh.move(str(video_path_with_narration), str(video_path))
         else:
-            vol = ambient_cfg.get("volume", 0.12)
+            vol = ambient_cfg.get("volume", 0.25)
             emit("assembly", f"Mixing ambient at volume {vol}...")
 
             # Mix using filter_complex with explicit volume control
