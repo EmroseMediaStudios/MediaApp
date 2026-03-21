@@ -92,7 +92,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.65,
+    "volume": 0.20,
     "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
   },
   "shorts": {
