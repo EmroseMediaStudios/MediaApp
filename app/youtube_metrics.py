@@ -242,19 +242,10 @@ def refresh_all_metrics(channel_map):
 
 
 def get_metrics(force_refresh=False, channel_map=None):
-    """Get metrics, refreshing if cache is stale."""
+    """Get metrics from cache. Only refreshes when explicitly requested (force_refresh=True)."""
     cache = _load_cache()
     
     if force_refresh and channel_map:
-        return refresh_all_metrics(channel_map)
-    
-    # Check cache age
-    if cache.get("last_refresh"):
-        last = datetime.fromisoformat(cache["last_refresh"])
-        age = (datetime.now() - last).total_seconds()
-        if age > CACHE_MAX_AGE and channel_map:
-            return refresh_all_metrics(channel_map)
-    elif channel_map:
         return refresh_all_metrics(channel_map)
     
     return cache
