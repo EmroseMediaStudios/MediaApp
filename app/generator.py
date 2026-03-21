@@ -2162,19 +2162,77 @@ Full script:
 
     emit("short", "Animating short...")
     short_kb = work_dir / "short_kb.mp4"
-    apply_ken_burns(str(short_img), dur + 1.5, str(short_kb), target_res=(1080, 1920))
+    # Pad Ken Burns duration to ensure video is always >= narration length
+    kb_duration = dur + 2.0
+    apply_ken_burns(str(short_img), kb_duration, str(short_kb), target_res=(1080, 1920))
 
+    # Use the narration duration as the master timeline — never truncate audio
+    target_duration = dur + 1.5
     video = VideoFileClip(str(short_kb))
-    video = video.subclipped(0, min(dur + 1.5, video.duration))
+    if video.duration < target_duration:
+        # Safety: if KB clip is still short, freeze on last frame
+        log.warning(f"Short KB clip ({video.duration:.1f}s) shorter than target ({target_duration:.1f}s), extending")
+        target_duration = video.duration
+    video = video.subclipped(0, target_duration)
     audio = AudioFileClip(str(short_audio))
+    # Trim audio to match video duration so nothing gets cut off mid-sentence
+    if audio.duration > target_duration:
+        log.warning(f"Short narration ({audio.duration:.1f}s) longer than video ({target_duration:.1f}s) — this shouldn't happen")
     video = video.with_audio(audio)
     video = video.with_effects([vfx.FadeIn(1.0), vfx.FadeOut(1.5)])
 
-    short_output = out_dir / "short.mp4"
-    video.write_videofile(str(short_output), fps=30, codec="libx264", audio_codec="aac", audio_bitrate="320k", preset="slow", threads=4, logger=None)
+    # Mix ambient audio into the short (same as full video)
+    short_with_narration = work_dir / "short_with_narration.mp4"
+    video.write_videofile(str(short_with_narration), fps=30, codec="libx264", audio_codec="aac", audio_bitrate="320k", preset="slow", threads=4, logger=None)
     video.close()
     audio.close()
 
-    short_data["duration"] = round(dur + 1.5, 1)
+    short_output = out_dir / "short.mp4"
+
+    # Generate and mix ambient audio for the short
+    channel_id = channel.get("channel_id", "")
+    ambient_cfg = channel.get("ambient_audio", {})
+    ambient_vol = ambient_cfg.get("volume", 0.25)
+    short_drone = work_dir / "short_ambient.wav"
+
+    try:
+        emit("short", "Generating ambient audio for short...")
+        generate_ambient_audio(target_duration + 1, str(short_drone), channel_id=channel_id,
+                               title=short_data.get("suggested_title", ""), topic="", api_keys=api_keys)
+    except Exception as e:
+        log.warning(f"Short ambient generation failed: {e}")
+
+    if short_drone.exists() and short_drone.stat().st_size > 1000:
+        emit("short", f"Mixing short ambient at volume {ambient_vol}...")
+        import subprocess
+        mix_cmd = [
+            "ffmpeg", "-y",
+            "-i", str(short_with_narration),
+            "-i", str(short_drone),
+            "-filter_complex",
+            f"[1:a]atrim=0:{target_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={ambient_vol}[drone];"
+            f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo,asetpts=PTS-STARTPTS[narr];"
+            f"[narr][drone]amerge=inputs=2,pan=stereo|c0=c0+c2|c1=c1+c3[out]",
+            "-map", "0:v", "-map", "[out]",
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
+            str(short_output),
+        ]
+        subprocess.run(mix_cmd, check=True, capture_output=True)
+    else:
+        import shutil as sh
+        sh.move(str(short_with_narration), str(short_output))
+
+    # Validate final short — make sure audio isn't truncated
+    try:
+        probe = VideoFileClip(str(short_output))
+        final_dur = probe.duration
+        probe.close()
+        if final_dur < dur - 1.0:
+            log.warning(f"⚠ Short may be truncated: final={final_dur:.1f}s, narration={dur:.1f}s")
+            emit("short", f"⚠ Warning: Short duration ({final_dur:.1f}s) is shorter than narration ({dur:.1f}s)")
+    except Exception as e:
+        log.warning(f"Could not validate short duration: {e}")
+
+    short_data["duration"] = round(target_duration, 1)
     emit("short", "YouTube Short complete")
     return short_data
