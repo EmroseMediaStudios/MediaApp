@@ -227,59 +227,16 @@ def _do_upload(youtube, video_path, title, description, tags, category_id, priva
 
 
 def _find_bad_tags_by_elimination(youtube, video_path, title, description, tags, category_id, privacy):
-    """Find bad tags by testing each one individually.
+    """When tags are rejected, just drop them all rather than testing each one.
     
-    YouTube validates metadata on the first chunk request, so we catch the error
-    before any significant data is uploaded. Each test costs minimal bandwidth.
+    Testing each tag individually costs 1,600 quota units per tag (videos.insert),
+    which would obliterate the 10,000 daily quota. Instead, log the rejected tags
+    for manual review and retry with no tags.
     """
-    from googleapiclient.errors import HttpError
-    from googleapiclient.http import MediaFileUpload
-
-    bad_tags = []
-    good_tags = []
-
-    for tag in tags:
-        # Test this single tag
-        body = {
-            "snippet": {
-                "title": title,
-                "description": description,
-                "tags": [tag],
-                "categoryId": category_id,
-            },
-            "status": {
-                "privacyStatus": privacy,
-                "selfDeclaredMadeForKids": False,
-            },
-        }
-        media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True, chunksize=10 * 1024 * 1024)
-        request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
-
-        try:
-            # The first next_chunk() sends metadata + first data chunk
-            # If tags are invalid, YouTube rejects before processing video data
-            status, response = request.next_chunk()
-            # Tag is valid — but we started an upload. Delete it.
-            if response:
-                vid_id = response.get("id")
-                if vid_id:
-                    try:
-                        youtube.videos().delete(id=vid_id).execute()
-                        log.info(f"Cleaned up test upload for tag '{tag}'")
-                    except Exception:
-                        log.warning(f"Could not delete test upload {vid_id} for tag '{tag}'")
-            good_tags.append(tag)
-        except HttpError as e:
-            if _is_invalid_tags_error(e):
-                log.warning(f"BAD TAG FOUND: '{tag}'")
-                bad_tags.append(tag)
-            else:
-                # Some other error — assume tag is fine, problem is elsewhere
-                good_tags.append(tag)
-
-        time.sleep(0.3)  # Brief pause between tests
-
-    return good_tags, bad_tags
+    log.warning(f"Tags rejected by YouTube — dropping all {len(tags)} tags to preserve quota")
+    log.warning(f"Rejected tags were: {tags}")
+    log.warning("Review these tags manually and update your tag lists")
+    return [], tags  # All tags treated as bad
 
 
 def upload_video(video_path, title, description="", tags=None, category_id="22",

@@ -7,7 +7,8 @@ Quota costs:
 - channels.list (statistics) = 1 point per call
 - videos.list (statistics) = 1 point per call (up to 50 video IDs per request)
 - Daily quota: 10,000 points
-- Hourly refresh across 7 channels ≈ ~30 points/hour = ~720/day (well within limits)
+- Refresh every 6h across 7 channels ≈ ~42 points/refresh × 4/day = ~168/day
+- Leaves ~9,800 for uploads (1,600 per upload = ~6 uploads/day)
 """
 import json
 import logging
@@ -18,7 +19,7 @@ from datetime import datetime
 log = logging.getLogger("youtube_metrics")
 
 CACHE_PATH = Path(__file__).parent.parent / "metrics_cache.json"
-CACHE_MAX_AGE = 3600  # 1 hour in seconds
+CACHE_MAX_AGE = 21600  # 6 hours in seconds (saves ~800 quota units/day vs 1hr)
 
 
 def _load_cache():

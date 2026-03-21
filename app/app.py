@@ -507,18 +507,18 @@ def api_channel_metrics(channel_id):
 # --- Auto-refresh metrics on startup and hourly ---
 
 def _start_metrics_scheduler():
-    """Background thread that refreshes metrics every hour."""
+    """Background thread that refreshes metrics every 6 hours (saves quota for uploads)."""
     import time as _time
     def _refresh_loop():
-        _time.sleep(10)  # Wait for app startup
+        _time.sleep(30)  # Wait for app startup
         while True:
             try:
-                log.info("Hourly metrics refresh starting...")
+                log.info("Metrics refresh starting...")
                 youtube_metrics.refresh_all_metrics(youtube_upload.YOUTUBE_CHANNEL_MAP)
-                log.info("Hourly metrics refresh complete")
+                log.info("Metrics refresh complete")
             except Exception as e:
                 log.warning(f"Metrics refresh failed: {e}")
-            _time.sleep(3600)  # 1 hour
+            _time.sleep(21600)  # 6 hours
 
     t = threading.Thread(target=_refresh_loop, daemon=True, name="metrics-refresh")
     t.start()
