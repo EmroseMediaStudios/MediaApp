@@ -191,21 +191,26 @@ CHANNEL_FOCUS = {
     },
     "loreletics": {
         "focus": [
-            "Legendary sports moments told as mythology",
+            "Legendary sports moments told as mythology — ALL sports are fair game",
             "Underdog stories and impossible comebacks",
             "The human drama behind iconic sports events",
             "Cinematic, emotional sports storytelling",
             "Athletes who defied fate, physics, or expectation",
+            "Cover the full spectrum: football, basketball, baseball, soccer, hockey, boxing, MMA, tennis, golf, Olympic sports, motorsport, cricket, rugby, swimming, track & field, and any other sport with a great story",
         ],
         "avoid": [
             "Stats-heavy analysis or play-by-play breakdowns",
             "Current sports news or commentary",
             "Generic highlight reels without narrative depth",
+            "Repeating the same sport too often — rotate across different sports",
         ],
         "examples": [
             "The Night the Ice Cracked: Miracle on Ice Retold",
             "The Barefoot God of Rome: Abebe Bikila's Marathon",
             "The Ball That Bent Physics: Roberto Carlos Free Kick",
+            "The Rumble in the Jungle: When Ali Rewrote Boxing",
+            "The Catch That Haunted a City: Steve Bartman and the Cubs",
+            "The Impossible 28-3: Super Bowl LI's Greatest Comeback",
         ],
     },
 }
