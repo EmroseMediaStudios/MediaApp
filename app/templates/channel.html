@@ -156,6 +156,9 @@
     <div class="actions">
       {% if v.youtube_uploaded %}
       <a href="{{ v.youtube_url|default('#') }}" class="btn btn-sm" style="color: #22c55e;" target="_blank" title="View on YouTube">✓ YouTube</a>
+      <button class="btn btn-sm" style="color: #f59e0b;" title="Re-upload to YouTube"
+        data-has-short="{{ 'true' if v.has_short else 'false' }}"
+        onclick="if(confirm('Re-upload \'{{ v.title }}\'? This will upload a new copy to YouTube.')) uploadToYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this, true);">⬆ Re-upload</button>
       {% else %}
       <button class="btn btn-sm btn-secondary" title="Upload to YouTube"
         data-has-short="{{ 'true' if v.has_short else 'false' }}"
@@ -183,9 +186,11 @@
 {% endif %}
 
 <script>
-function uploadToYouTube(channelId, dirName, btn) {
+function uploadToYouTube(channelId, dirName, btn, isReupload) {
   const hasShort = btn.dataset.hasShort === 'true';
-  const msg = hasShort
+  const msg = isReupload
+    ? 'Re-upload this video to YouTube as Public?'
+    : hasShort
     ? 'Upload this video + Short to YouTube as Public?'
     : 'Upload this video to YouTube as Public?';
   if (!confirm(msg)) return;
@@ -193,12 +198,12 @@ function uploadToYouTube(channelId, dirName, btn) {
   btn.disabled = true;
   fetch('/api/youtube_upload', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({channel_id: channelId, dir_name: dirName, privacy: 'public', include_short: hasShort})
+    body: JSON.stringify({channel_id: channelId, dir_name: dirName, privacy: 'public', include_short: hasShort, force_reupload: !!isReupload})
   }).then(r => r.json()).then(data => {
     if (data.ok) {
-      btn.outerHTML = `<a href="${data.url}" class="btn btn-sm" style="color: #22c55e;" target="_blank">✓ YouTube</a>`;
+      location.reload();
     } else {
-      btn.innerHTML = '⬆ Upload';
+      btn.innerHTML = isReupload ? '⬆ Re-upload' : '⬆ Upload';
       btn.disabled = false;
       if (data.error.includes('Not authenticated')) {
         if (confirm('YouTube not connected yet. Open auth page?')) {
@@ -209,7 +214,7 @@ function uploadToYouTube(channelId, dirName, btn) {
       }
     }
   }).catch(e => {
-    btn.innerHTML = '⬆ Upload';
+    btn.innerHTML = isReupload ? '⬆ Re-upload' : '⬆ Upload';
     btn.disabled = false;
     alert('Upload failed: ' + e);
   });

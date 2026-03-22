@@ -96,14 +96,27 @@ def complete_auth(auth_code):
 
 
 def run_local_auth(youtube_channel_id=None):
-    """Run the full OAuth2 flow using a local server (opens browser)."""
+    """Run the full OAuth2 flow using a local server (opens browser).
+    
+    For Brand Accounts: switch to the correct channel in YouTube BEFORE authorizing.
+    Each channel needs its own separate auth with the correct account selected.
+    """
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     if not CLIENT_SECRET_PATH.exists():
         raise RuntimeError("client_secret.json not found")
 
-    flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRET_PATH), SCOPES)
-    creds = flow.run_local_server(port=8090, open_browser=True)
+    flow = InstalledAppFlow.from_client_secrets_file(
+        str(CLIENT_SECRET_PATH),
+        SCOPES,
+        # Force account selection every time so user picks the right Brand Account
+    )
+    creds = flow.run_local_server(
+        port=8090,
+        open_browser=True,
+        authorization_prompt_message="Opening browser for YouTube auth...\nSwitch to the correct Brand Account channel BEFORE clicking authorize.",
+        prompt="consent",  # Force re-consent to ensure correct account
+    )
     
     token_path = _token_path_for_channel(youtube_channel_id)
     token_path.write_text(creds.to_json())

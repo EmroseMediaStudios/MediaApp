@@ -335,6 +335,7 @@ def youtube_upload_video():
     channel_id = data.get("channel_id")
     dir_name = data.get("dir_name")
     privacy = data.get("privacy", "private")
+    force_reupload = data.get("force_reupload", False)
 
     if not channel_id or not dir_name:
         return jsonify({"ok": False, "error": "Missing channel_id or dir_name"})
