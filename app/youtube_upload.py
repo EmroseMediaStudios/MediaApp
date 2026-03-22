@@ -336,7 +336,7 @@ YOUTUBE_CHANNEL_MAP = {
     "autonomous_stack": "UCzZU7Gn_5eQAfUz6a9rXPAA",
     "somnus_protocol": "UCukqYDdDPGG8G_jNvkb_2VQ",
     "deadlight_codex": "UCeR5uvuGWIQgxHsCg6KOYlg",
-    "softlight_kingdom": "",
-    "echelon_veil": "",
-    "loreletics": "",
+    "softlight_kingdom": "UC7AI57ebEXWAXw6Uhku0hJQ",
+    "echelon_veil": "UChiZ0p3OOyBfk8gWC9DJ0NQ",
+    "loreletics": "UCkabQW3XUx83Cnj25LJcf3A",
 }

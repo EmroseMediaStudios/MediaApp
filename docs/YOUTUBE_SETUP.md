@@ -65,9 +65,9 @@ This should show `authenticated: true` and list all accessible channels.
 | `the_unwritten_wing` | `UCyjZXmPy4gG1xX2RJVJpfGA` | TheUnwrittenWing |
 | `somnus_protocol` | `UCukqYDdDPGG8G_jNvkb_2VQ` | SomnusProtocol |
 | `autonomous_stack` | `UCzZU7Gn_5eQAfUz6a9rXPAA` | AutonomousStack |
-| `softlight_kingdom` | *(pending)* | SoftlightKingdom |
-| `echelon_veil` | *(pending)* | EchelonVeil |
-| `loreletics` | *(pending)* | Loreletics |
+| `softlight_kingdom` | `UC7AI57ebEXWAXw6Uhku0hJQ` | SoftlightKingdom |
+| `echelon_veil` | `UChiZ0p3OOyBfk8gWC9DJ0NQ` | EchelonVeil |
+| `loreletics` | `UCkabQW3XUx83Cnj25LJcf3A` | Loreletics |
 
 ## Re-authentication
 
