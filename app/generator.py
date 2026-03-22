@@ -1939,7 +1939,7 @@ Write the following in JSON format:
 1. "description" — A YouTube description (150-300 words) that:
    - Opens with a compelling 1-2 sentence hook about the video (this is what appears in search results)
    - Briefly describes what the viewer will experience
-   - Naturally incorporates searchable keywords related to the topic
+   - Weaves searchable keywords NATURALLY into the prose — NEVER list keywords explicitly, never write "Keywords:", never break the fourth wall about SEO. The description should read like a human wrote it, not a marketing bot.
    - Includes a line: "If you enjoyed this, please like, comment, and subscribe for more."
    - Includes a call to turn on notifications
    - Matches the channel's tone perfectly
