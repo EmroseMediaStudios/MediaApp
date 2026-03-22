@@ -731,7 +731,7 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
         "zero_trace_archive": "quiet empty room tone with distant ventilation hum, fluorescent light buzz, occasional muffled footstep echo, tense investigative atmosphere, low frequency tension",
         "the_unwritten_wing": "warm vinyl crackle, soft rain on windows, gentle piano room reverb, nostalgic and intimate, library ambiance with distant clock ticking",
         "remnants_project": "wind through abandoned buildings, distant creaking metal, birdsong echoing in empty spaces, dripping water, nature slowly reclaiming silence",
-        "somnus_protocol": "gentle ocean waves on distant shore, soft warm brown noise, quiet nighttime crickets fading in and out, deeply calming and sleep-inducing, no sudden sounds",
+        "somnus_protocol": "soft warm ambient drone, deeply calming and sleep-inducing, slow evolving texture, no sudden sounds, gentle and meditative",
         "autonomous_stack": "clean server room hum, soft digital processing sounds, minimal electronic textures, cool and precise data center ambient",
         "gray_meridian": "quiet contemplative room tone, soft warm analog hum, gentle breathing space, psychological stillness, minimal and introspective",
         "softlight_kingdom": "gentle music box melody with soft wind chimes, quiet nighttime crickets, warm cozy fireplace crackle, magical fairy dust shimmer sounds, calming and safe",
