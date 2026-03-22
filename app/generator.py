@@ -114,12 +114,24 @@ CHANNEL_FOCUS = {
     },
     "deadlight_codex": {
         "focus": [
-            "Cosmic horror entities and anomalies",
-            "Abstract existential concepts",
-            "Things that defy comprehension",
+            "Grounded creepypasta-style horror storytelling",
+            "Real-feeling locations, people, and events that turn sinister",
+            "Slow-burn dread — things that feel wrong before you know why",
+            "Urban legends, cursed places, found footage style narratives",
+            "Horror rooted in the familiar — houses, roads, small towns, jobs",
         ],
-        "avoid": ["Standard horror tropes or jumpscares"],
-        "examples": ["The Observer Paradox Entity"],
+        "avoid": [
+            "Abstract cosmic entities without grounding",
+            "Standard horror tropes or jumpscares",
+            "Gore or shock value",
+            "Overly supernatural without a real-world anchor",
+        ],
+        "examples": [
+            "The House That Grew a Room Nobody Built",
+            "I Found My Neighbor's Journal. He Was Writing About Me.",
+            "The Road That Doesn't Show Up on Any Map",
+            "There's a Reason Nobody Fishes at Mirror Lake Anymore",
+        ],
     },
     "softlight_kingdom": {
         "focus": [
