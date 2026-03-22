@@ -377,6 +377,7 @@ def youtube_upload_video():
                 f"📑 Chapters:\n{chapters_block}\n\n"
                 f"If you enjoyed this, please like, comment, and subscribe for more.\n"
                 f"🔔 Turn on notifications so you never miss an upload.\n\n"
+                f"———\n\n"
                 f"This video includes AI-assisted narration and visual generation.\n"
                 f"All content is original and created for entertainment purposes.\n\n"
                 f"© {year} Emrose Media Studios. All rights reserved."
@@ -442,6 +443,7 @@ def youtube_upload_video():
                 short_desc += short_caption + "\n\n"
             short_desc += f"Full video: {result['url']}\n\n"
             short_desc += f"Subscribe for more from {meta.get('channel_name', '')}!\n\n"
+            short_desc += "———\n\n"
             short_desc += "This video includes AI-assisted narration and visual generation.\n"
             short_desc += "All content is original and created for entertainment purposes.\n\n"
             year = __import__("datetime").datetime.now().year

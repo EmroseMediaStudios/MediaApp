@@ -1943,8 +1943,10 @@ Write the following in JSON format:
    - Includes a line: "If you enjoyed this, please like, comment, and subscribe for more."
    - Includes a call to turn on notifications
    - Matches the channel's tone perfectly
-   - MUST include this exact AI disclosure block near the end (before the copyright): "{ai_disclosure}"
-   - Ends with exactly this copyright line: "© {year} Emrose Media Studios. All rights reserved."
+   - After the main video description and CTA, add a blank line separator, then "———" on its own line, then another blank line
+   - BELOW the separator, include this exact AI disclosure block: "{ai_disclosure}"
+   - Then a blank line, then exactly this copyright line: "© {year} Emrose Media Studios. All rights reserved."
+   - The structure MUST be: [video description + CTA] → blank line → ——— → blank line → [AI disclosure] → blank line → [copyright]
 
 2. "tags" — An array of 15-25 YouTube tags optimized for search discovery. Include:
    - The exact video title as a tag
@@ -1986,7 +1988,7 @@ Respond with ONLY valid JSON, no markdown fences:
     except Exception as e:
         log.warning(f"YouTube metadata generation failed: {e}")
         return {
-            "description": f"{title}\n\nThis video includes AI-assisted narration and visual generation.\nAll content is original and created for entertainment purposes.\n\n© {year} Emrose Media Studios. All rights reserved.",
+            "description": f"{title}\n\n———\n\nThis video includes AI-assisted narration and visual generation.\nAll content is original and created for entertainment purposes.\n\n© {year} Emrose Media Studios. All rights reserved.",
             "tags": default_tags,
             "hashtags": [f"#{channel_name}"],
             "category": category,
