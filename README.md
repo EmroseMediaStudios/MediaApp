@@ -4,6 +4,8 @@ Local multi-channel automated video generator. Generates narrated videos with AI
 
 ## Quick Start (Mac)
 
+> **Full setup guide:** [docs/SETUP.md](docs/SETUP.md) — from zero to generating videos on a fresh machine.
+
 ### 1. Prerequisites
 - Python 3.10+ (comes with macOS or `brew install python`)
 - ffmpeg (`brew install ffmpeg`)
