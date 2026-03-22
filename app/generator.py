@@ -2347,16 +2347,25 @@ Full script:
     target_duration = dur + 1.5
     video = VideoFileClip(str(short_kb))
     if video.duration < target_duration:
-        # Safety: if KB clip is still short, freeze on last frame
-        log.warning(f"Short KB clip ({video.duration:.1f}s) shorter than target ({target_duration:.1f}s), extending")
-        target_duration = video.duration
+        # KB clip came out short — extend by freezing on last frame
+        log.warning(f"Short KB clip ({video.duration:.1f}s) shorter than target ({target_duration:.1f}s), extending with freeze frame")
+        from moviepy import ImageClip as _IC
+        # Grab last frame and freeze it for the remaining time
+        last_frame = video.get_frame(video.duration - 0.1)
+        freeze = _IC(last_frame).with_duration(target_duration - video.duration + 0.5)
+        from moviepy import concatenate_videoclips
+        video = concatenate_videoclips([video, freeze])
     video = video.subclipped(0, target_duration)
     audio = AudioFileClip(str(short_audio))
     # Trim audio to match video duration so nothing gets cut off mid-sentence
     if audio.duration > target_duration:
         log.warning(f"Short narration ({audio.duration:.1f}s) longer than video ({target_duration:.1f}s) — this shouldn't happen")
     video = video.with_audio(audio)
-    video = video.with_effects([vfx.FadeIn(1.0), vfx.FadeOut(1.5)])
+    # Apply fade only to the visual — do NOT fade the audio (causes narration to drop)
+    video = video.with_effects([vfx.FadeIn(1.0)])
+    # For fade out: apply to a copy without audio, then re-attach audio
+    faded_video = video.without_audio().with_effects([vfx.FadeOut(1.5)])
+    video = faded_video.with_audio(video.audio)
 
     # Mix ambient audio into the short (same as full video)
     short_with_narration = work_dir / "short_with_narration.mp4"
