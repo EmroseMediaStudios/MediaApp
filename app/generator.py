@@ -1078,6 +1078,82 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
 
 # --- Title card generation ---
 
+def _get_channel_font(channel_id, size=62):
+    """Get the channel-specific font at the requested size. Returns (font, path_used)."""
+    from PIL import ImageFont
+    
+    channel_font_prefs = {
+        "deadlight_codex": [
+            "/System/Library/Fonts/Supplemental/Copperplate.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+        ],
+        "zero_trace_archive": [
+            "/System/Library/Fonts/Supplemental/Courier New.ttf",
+            "/System/Library/Fonts/Courier.dfont",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+        ],
+        "the_unwritten_wing": [
+            "/System/Library/Fonts/Supplemental/Baskerville.ttc",
+            "/System/Library/Fonts/Supplemental/Palatino.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        ],
+        "remnants_project": [
+            "/System/Library/Fonts/Supplemental/Futura.ttc",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ],
+        "somnus_protocol": [
+            "/System/Library/Fonts/Supplemental/Didot.ttc",
+            "/System/Library/Fonts/Supplemental/Georgia.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        ],
+        "autonomous_stack": [
+            "/System/Library/Fonts/SFMono-Regular.otf",
+            "/System/Library/Fonts/Supplemental/Menlo.ttc",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+        ],
+        "gray_meridian": [
+            "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
+            "/System/Library/Fonts/Supplemental/Gill Sans.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf",
+        ],
+        "softlight_kingdom": [
+            "/System/Library/Fonts/Supplemental/Cochin.ttc",
+            "/System/Library/Fonts/Supplemental/Savoye LET.ttc",
+            "/System/Library/Fonts/Supplemental/Georgia.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        ],
+        "echelon_veil": [
+            "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/System/Library/Fonts/SFNSMono.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ],
+        "loreletics": [
+            "/System/Library/Fonts/Supplemental/Rockwell.ttc",
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ],
+    }
+
+    generic_fonts = [
+        "/System/Library/Fonts/Supplemental/Georgia.ttf",
+        "/System/Library/Fonts/Georgia.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+    ]
+
+    font_prefs = channel_font_prefs.get(channel_id, [])
+    for fp in font_prefs + generic_fonts:
+        if Path(fp).exists():
+            try:
+                return ImageFont.truetype(fp, size)
+            except Exception:
+                continue
+    return ImageFont.load_default()
+
+
 def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token, res=(1920, 1080)):
     """Generate a cinematic title card with channel-specific FLUX background.
     Shows only the video title (no channel name) with a channel-specific font."""
@@ -1141,65 +1217,7 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        # Channel-specific font preferences
-        # Each channel gets a distinct font family for brand differentiation
-        channel_font_prefs = {
-            "deadlight_codex": [
-                "/System/Library/Fonts/Supplemental/Copperplate.ttc",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
-            ],
-            "zero_trace_archive": [
-                "/System/Library/Fonts/Supplemental/Courier New.ttf",
-                "/System/Library/Fonts/Courier.dfont",
-                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
-            ],
-            "the_unwritten_wing": [
-                "/System/Library/Fonts/Supplemental/Baskerville.ttc",
-                "/System/Library/Fonts/Supplemental/Palatino.ttc",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-            ],
-            "remnants_project": [
-                "/System/Library/Fonts/Supplemental/Futura.ttc",
-                "/System/Library/Fonts/Helvetica.ttc",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            ],
-            "somnus_protocol": [
-                "/System/Library/Fonts/Supplemental/Didot.ttc",
-                "/System/Library/Fonts/Supplemental/Georgia.ttf",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-            ],
-            "autonomous_stack": [
-                "/System/Library/Fonts/SFMono-Regular.otf",
-                "/System/Library/Fonts/Supplemental/Menlo.ttc",
-                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
-            ],
-            "gray_meridian": [
-                "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
-                "/System/Library/Fonts/Supplemental/Gill Sans.ttc",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf",
-            ],
-        }
-
-        # Find the right font for this channel
-        font_prefs = channel_font_prefs.get(channel_id, [])
-        generic_fonts = [
-            "/System/Library/Fonts/Supplemental/Georgia.ttf",
-            "/System/Library/Fonts/Georgia.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
-        ]
-
-        title_font = None
-        for fp in font_prefs + generic_fonts:
-            if Path(fp).exists():
-                try:
-                    title_font = ImageFont.truetype(fp, 62)
-                    break
-                except Exception:
-                    continue
-
-        if not title_font:
-            title_font = ImageFont.load_default()
+        title_font = _get_channel_font(channel_id, 62)
 
         gold = (212, 168, 84)
 
@@ -1266,38 +1284,8 @@ def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        # Same channel-specific font system as title card
-        channel_font_prefs = {
-            "deadlight_codex": ["/System/Library/Fonts/Supplemental/Copperplate.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"],
-            "zero_trace_archive": ["/System/Library/Fonts/Supplemental/Courier New.ttf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
-            "the_unwritten_wing": ["/System/Library/Fonts/Supplemental/Baskerville.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
-            "remnants_project": ["/System/Library/Fonts/Supplemental/Futura.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"],
-            "somnus_protocol": ["/System/Library/Fonts/Supplemental/Didot.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
-            "autonomous_stack": ["/System/Library/Fonts/SFMono-Regular.otf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
-            "gray_meridian": ["/System/Library/Fonts/Supplemental/Avenir Next.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf"],
-        }
-
-        font_prefs = channel_font_prefs.get(channel_id, [])
-        generic_fonts = [
-            "/System/Library/Fonts/Supplemental/Georgia.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
-        ]
-
-        main_font = None
-        sub_font = None
-        for fp in font_prefs + generic_fonts:
-            if Path(fp).exists():
-                try:
-                    main_font = ImageFont.truetype(fp, 52)
-                    sub_font = ImageFont.truetype(fp, 28)
-                    break
-                except Exception:
-                    continue
-        if not main_font:
-            main_font = ImageFont.load_default()
-            sub_font = main_font
-
+        main_font = _get_channel_font(channel_id, 52)
+        sub_font = _get_channel_font(channel_id, 28)
         gold = (212, 168, 84)
         dim_gold = (160, 130, 70)
 
@@ -1371,34 +1359,7 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        # Channel-specific fonts — LARGER for thumbnails
-        channel_font_prefs = {
-            "deadlight_codex": ["/System/Library/Fonts/Supplemental/Copperplate.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"],
-            "zero_trace_archive": ["/System/Library/Fonts/Supplemental/Courier New.ttf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
-            "the_unwritten_wing": ["/System/Library/Fonts/Supplemental/Baskerville.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
-            "remnants_project": ["/System/Library/Fonts/Supplemental/Futura.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"],
-            "somnus_protocol": ["/System/Library/Fonts/Supplemental/Didot.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
-            "autonomous_stack": ["/System/Library/Fonts/SFMono-Regular.otf", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"],
-            "gray_meridian": ["/System/Library/Fonts/Supplemental/Avenir Next.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf"],
-        }
-
-        font_prefs = channel_font_prefs.get(channel_id, [])
-        generic_fonts = [
-            "/System/Library/Fonts/Supplemental/Georgia.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
-        ]
-
-        title_font = None
-        for fp in font_prefs + generic_fonts:
-            if Path(fp).exists():
-                try:
-                    title_font = ImageFont.truetype(fp, 72)
-                    break
-                except Exception:
-                    continue
-        if not title_font:
-            title_font = ImageFont.load_default()
+        title_font = _get_channel_font(channel_id, 80)
 
         # UPPERCASE title for thumbnail impact
         words = title.upper().split()
