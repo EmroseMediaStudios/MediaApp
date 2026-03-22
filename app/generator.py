@@ -323,9 +323,28 @@ The narrator is drifting off too. Each sentence should feel like it takes effort
 Example style: "The sky... is very still tonight... Nothing moves... nothing needs to... Just the quiet... and the dark... settling in around you..."
 """
 
+    min_words = vs.get('target_word_count_min', 1000)
+    max_words = vs.get('target_word_count_max', 1300)
+    min_scenes = vs.get('scene_count_min', 12)
+    max_scenes = vs.get('scene_count_max', 16)
+    target_per_scene = max(min_words // min_scenes, 80)
+
     return f"""You are the creative director for {c['channel_name']}.
 {c.get('description', '')}
 {pacing_note}
+
+*** CRITICAL LENGTH REQUIREMENT — READ THIS FIRST ***
+This video MUST be 8+ minutes for YouTube mid-roll ad eligibility. This is a hard business requirement.
+- Write EXACTLY {min_scenes} to {max_scenes} scenes (no fewer than {min_scenes})
+- Each scene MUST be 80-100 words of narration (5-8 sentences). Count your words.
+- Total word count MUST be {min_words}-{max_words} words across all scenes
+- Target: {min_scenes} scenes × {target_per_scene} words = {min_scenes * target_per_scene} words minimum
+- If you write fewer than {min_words} total words, the output will be rejected and regenerated at additional cost
+- duration_hint = 15 for every scene
+- WRITE LONG. Err heavily toward {max_words} words, not {min_words}
+
+EXAMPLE of a properly-sized scene narration (85 words):
+"The structure was first documented in the spring of 1987, though local accounts suggest it had been present for far longer. Its surface was smooth, almost polished, and yet no tool marks could be identified under magnification. Researchers noted that photographs of the object consistently failed to capture its true dimensions. Measurements taken on different days produced different results, sometimes by as much as several centimeters. The surrounding soil showed no signs of excavation or placement. It was simply there, as though it had always been."
 
 NARRATOR: {n.get('name', 'Narrator')}
 {n.get('description', '')}
@@ -362,62 +381,89 @@ OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
   "subject": "brief subject line used in the opening",
   "scenes": [
     {{
-      "narration": "Narration text for this scene",
+      "narration": "Narration text for this scene (80-100 words, 5-8 sentences)",
       "image_prompt": "Detailed image generation prompt",
-      "duration_hint": 10
+      "duration_hint": 15
     }}
   ]
 }}
 
-TARGET LENGTH — THIS IS THE MOST IMPORTANT REQUIREMENT:
-The final video MUST be between {vs.get('target_duration_min', 8)} and {vs.get('target_duration_max', 10)} minutes long. Videos MUST be at least 8 minutes for mid-roll ad eligibility.
-- You MUST write EXACTLY {vs.get('scene_count_min', 12)} to {vs.get('scene_count_max', 16)} scenes. No fewer than {vs.get('scene_count_min', 12)}.
-- Each scene's narration MUST be 5-8 sentences and 70-100 words. SHORT SCENES ARE NOT ACCEPTABLE.
-- Total narration across ALL scenes MUST be {vs.get('target_word_count_min', 1000)}-{vs.get('target_word_count_max', 1300)} words.
-- If your total word count is under {vs.get('target_word_count_min', 1000)}, you have FAILED. Add more detail, atmosphere, and description.
-- Do NOT write short 1-2 sentence narration. Every scene needs substance.
-- Err on the side of LONGER, not shorter. Any video under 8 minutes is a failure — mid-roll ads require 8+ minutes.
-- duration_hint should be 15 for each scene."""
+FINAL REMINDER: You MUST write {min_scenes}+ scenes with {min_words}+ total words. Count them before responding."""
 
 
 def generate_script(channel, topic, api_key):
     system = _build_director_prompt(channel)
+    vs = channel.get("video_settings", {})
+    min_words = vs.get("target_word_count_min", 1000)
+    max_words = vs.get("target_word_count_max", 1300)
+    min_scenes = vs.get("scene_count_min", 12)
+
+    # Use higher temperature on first call to encourage longer output
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": f"Create an entry about:\n\n{topic}\n\nRemember: {min_scenes}+ scenes, {min_words}+ total words, 80-100 words per scene. Count before responding."},
+    ]
+
+    result = _call_openai_sync(messages, api_key)
+    result = result.strip()
+    if result.startswith("```"):
+        result = result.split("\n", 1)[1]
+    if result.endswith("```"):
+        result = result.rsplit("```", 1)[0]
+    script = json.loads(result.strip())
+
+    # Validate length
+    total_words = sum(len(s.get("narration", "").split()) for s in script.get("scenes", []))
+    scene_count = len(script.get("scenes", []))
+
+    if total_words >= min_words and scene_count >= min_scenes:
+        log.info(f"Script accepted: {total_words} words, {scene_count} scenes")
+        return script
+
+    # If short, try to expand in-place rather than full regeneration
+    log.warning(f"Script short: {total_words} words, {scene_count} scenes. Expanding...")
+
+    # Calculate how many more words/scenes we need
+    words_needed = min_words - total_words
+    scenes_needed = max(0, min_scenes - scene_count)
+
+    expand_prompt = f"""The script below has {total_words} words across {scene_count} scenes.
+I need AT LEAST {min_words} words across at least {min_scenes} scenes.
+
+{"Add " + str(scenes_needed) + " more scenes to reach " + str(min_scenes) + " total." if scenes_needed > 0 else ""}
+{"Expand existing scenes — each needs 80-100 words (5-8 sentences). Add atmospheric detail, sensory description, and deliberate pacing." if words_needed > 200 else "Slightly expand the shorter scenes to reach the word count target."}
+
+IMPORTANT: Return the COMPLETE updated script as a full JSON object with ALL scenes (existing + new), not just the additions.
+Same JSON format as before. No markdown fences."""
+
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": f"Create an entry about:\n\n{topic}"},
+        {"role": "assistant", "content": result},
+        {"role": "user", "content": expand_prompt},
     ]
 
-    vs = channel.get("video_settings", {})
-    min_words = vs.get("target_word_count_min", 700)
-    min_scenes = vs.get("scene_count_min", 10)
+    result2 = _call_openai_sync(messages, api_key)
+    result2 = result2.strip()
+    if result2.startswith("```"):
+        result2 = result2.split("\n", 1)[1]
+    if result2.endswith("```"):
+        result2 = result2.rsplit("```", 1)[0]
 
-    # Try up to 3 times to get a script that meets length requirements
-    for attempt in range(3):
-        result = _call_openai_sync(messages, api_key)
-        result = result.strip()
-        if result.startswith("```"):
-            result = result.split("\n", 1)[1]
-        if result.endswith("```"):
-            result = result.rsplit("```", 1)[0]
-        script = json.loads(result.strip())
+    try:
+        script2 = json.loads(result2.strip())
+        total_words2 = sum(len(s.get("narration", "").split()) for s in script2.get("scenes", []))
+        scene_count2 = len(script2.get("scenes", []))
+        log.info(f"Expanded script: {total_words2} words, {scene_count2} scenes (was {total_words}w/{scene_count}s)")
 
-        # Validate length
-        total_words = sum(len(s.get("narration", "").split()) for s in script.get("scenes", []))
-        scene_count = len(script.get("scenes", []))
+        # Use expanded version if it's actually better
+        if total_words2 > total_words:
+            return script2
+    except (json.JSONDecodeError, Exception) as e:
+        log.warning(f"Expansion parse failed: {e}")
 
-        if total_words >= min_words and scene_count >= min_scenes:
-            log.info(f"Script accepted: {total_words} words, {scene_count} scenes (attempt {attempt+1})")
-            return script
-
-        log.warning(f"Script too short: {total_words} words, {scene_count} scenes (attempt {attempt+1}). Retrying...")
-        messages = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": f"Create an entry about:\n\n{topic}"},
-            {"role": "assistant", "content": result},
-            {"role": "user", "content": f"This script is TOO SHORT. It has only {total_words} words and {scene_count} scenes. I need AT LEAST {min_words} words across at least {min_scenes} scenes. Each scene needs 60-90 words of narration. Rewrite the ENTIRE script longer and more detailed."},
-        ]
-
-    log.warning(f"Script still short after 3 attempts, using last result")
+    # Fall back to original
+    log.warning(f"Using original script: {total_words} words, {scene_count} scenes")
     return script
 
 
