@@ -198,6 +198,7 @@ def _do_upload(youtube, video_path, title, description, tags, category_id, priva
         "status": {
             "privacyStatus": privacy,
             "selfDeclaredMadeForKids": False,
+            "containsSyntheticMedia": True,
         },
     }
 

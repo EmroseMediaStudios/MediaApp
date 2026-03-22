@@ -173,10 +173,10 @@ OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
   ]
 }
 
-TARGET LENGTH: The final video MUST be between 5 and 7 minutes long. Err on the side of going longer rather than shorter.
-- Aim for 10-14 scenes.
-- Each scene's narration MUST be 4-6 sentences and 50-80 words. This is critical.
-- Total narration across all scenes MUST be 700-900 words. This is NON-NEGOTIABLE.
+TARGET LENGTH: The final video MUST be between 8 and 10 minutes long. Videos MUST be at least 8 minutes for mid-roll ad eligibility.
+- Aim for 12-16 scenes.
+- Each scene's narration MUST be 5-8 sentences and 70-100 words. This is critical.
+- Total narration across all scenes MUST be 1000-1300 words. This is NON-NEGOTIABLE.
 - Do NOT write short 1-2 sentence narration. The Keeper speaks in measured, deliberate detail.
 - duration_hint should be 10."""
 

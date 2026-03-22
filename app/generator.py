@@ -370,13 +370,13 @@ OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
 }}
 
 TARGET LENGTH — THIS IS THE MOST IMPORTANT REQUIREMENT:
-The final video MUST be between {vs.get('target_duration_min', 5)} and {vs.get('target_duration_max', 7)} minutes long.
-- You MUST write EXACTLY {vs.get('scene_count_min', 10)} to {vs.get('scene_count_max', 14)} scenes. No fewer than {vs.get('scene_count_min', 10)}.
-- Each scene's narration MUST be 5-7 sentences and 60-90 words. SHORT SCENES ARE NOT ACCEPTABLE.
-- Total narration across ALL scenes MUST be {vs.get('target_word_count_min', 700)}-{vs.get('target_word_count_max', 900)} words.
-- If your total word count is under {vs.get('target_word_count_min', 700)}, you have FAILED. Add more detail, atmosphere, and description.
+The final video MUST be between {vs.get('target_duration_min', 8)} and {vs.get('target_duration_max', 10)} minutes long. Videos MUST be at least 8 minutes for mid-roll ad eligibility.
+- You MUST write EXACTLY {vs.get('scene_count_min', 12)} to {vs.get('scene_count_max', 16)} scenes. No fewer than {vs.get('scene_count_min', 12)}.
+- Each scene's narration MUST be 5-8 sentences and 70-100 words. SHORT SCENES ARE NOT ACCEPTABLE.
+- Total narration across ALL scenes MUST be {vs.get('target_word_count_min', 1000)}-{vs.get('target_word_count_max', 1300)} words.
+- If your total word count is under {vs.get('target_word_count_min', 1000)}, you have FAILED. Add more detail, atmosphere, and description.
 - Do NOT write short 1-2 sentence narration. Every scene needs substance.
-- Err on the side of LONGER, not shorter. A 3-minute video is a failure.
+- Err on the side of LONGER, not shorter. Any video under 8 minutes is a failure — mid-roll ads require 8+ minutes.
 - duration_hint should be 15 for each scene."""
 
 
@@ -1878,6 +1878,8 @@ def _generate_youtube_metadata(channel, title, topic, scenes, openai_key):
     full_narration = " ".join(s.get("narration", "") for s in scenes)
     word_count = len(full_narration.split())
 
+    ai_disclosure = "This video includes AI-assisted narration and visual generation.\nAll content is original and created for entertainment purposes."
+
     prompt = f"""You are writing YouTube upload metadata for a video.
 
 Channel: {channel_name}
@@ -1895,6 +1897,7 @@ Write the following in JSON format:
    - Includes a line: "If you enjoyed this, please like, comment, and subscribe for more."
    - Includes a call to turn on notifications
    - Matches the channel's tone perfectly
+   - MUST include this exact AI disclosure block near the end (before the copyright): "{ai_disclosure}"
    - Ends with exactly this copyright line: "© {year} Emrose Media Studios. All rights reserved."
 
 2. "tags" — An array of 15-25 YouTube tags optimized for search discovery. Include:
@@ -1937,7 +1940,7 @@ Respond with ONLY valid JSON, no markdown fences:
     except Exception as e:
         log.warning(f"YouTube metadata generation failed: {e}")
         return {
-            "description": f"{title}\n\n© {year} Emrose Media Studios. All rights reserved.",
+            "description": f"{title}\n\nThis video includes AI-assisted narration and visual generation.\nAll content is original and created for entertainment purposes.\n\n© {year} Emrose Media Studios. All rights reserved.",
             "tags": default_tags,
             "hashtags": [f"#{channel_name}"],
             "category": category,

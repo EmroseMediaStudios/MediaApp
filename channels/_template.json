@@ -57,12 +57,12 @@
     "image_prompt_suffix": "Keywords appended to every image generation prompt"
   },
   "video_settings": {
-    "target_duration_min": 5,
-    "target_duration_max": 7,
-    "scene_count_min": 10,
-    "scene_count_max": 14,
-    "target_word_count_min": 700,
-    "target_word_count_max": 900,
+    "target_duration_min": 8,
+    "target_duration_max": 10,
+    "scene_count_min": 12,
+    "scene_count_max": 16,
+    "target_word_count_min": 1000,
+    "target_word_count_max": 1300,
     "resolution": [
       1920,
       1080
