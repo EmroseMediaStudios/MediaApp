@@ -20,7 +20,25 @@
 <div class="card mb-8">
   <h3>{{ script.title }}</h3>
   <p style="color: var(--text2);">{{ script.subject }}</p>
-  <div class="meta mt-16">{{ script.scenes|length }} scenes · ~{{ (script.scenes|map(attribute='narration')|join(' ')).split(' ')|length }} words</div>
+  {% set total_words = (script.scenes|map(attribute='narration')|join(' ')).split(' ')|length %}
+  {% set voice_speed = channel.voice.speed|default(0.85) %}
+  {% set words_per_sec = 2.4 * voice_speed %}
+  {% set narration_secs = total_words / words_per_sec %}
+  {% set scene_pause = channel.video_settings.scene_pause_seconds|default(0) %}
+  {% set pause_secs = scene_pause * (script.scenes|length - 1) %}
+  {% set overhead_secs = 5 + 6 + (script.scenes|length * 2.5) %}
+  {% set est_seconds = narration_secs + pause_secs + overhead_secs %}
+  {% set est_minutes = (est_seconds / 60)|round(1) %}
+  {% set min_target = channel.video_settings.target_duration_min|default(8) %}
+  <div class="meta mt-16" id="live-estimate">
+    {{ script.scenes|length }} scenes · ~{{ total_words }} words ·
+    <span style="{% if est_minutes < min_target %}color: #ef4444; font-weight: 600;{% elif est_minutes < min_target + 1 %}color: #f59e0b; font-weight: 600;{% else %}color: #22c55e; font-weight: 600;{% endif %}">
+      ~{{ est_minutes }} min estimated
+    </span>
+    {% if est_minutes < min_target %}
+    <span style="color: #ef4444;"> ⚠ Below {{ min_target }}-min target (mid-roll ads require 8+ min)</span>
+    {% endif %}
+  </div>
 </div>
 
 <form method="POST" action="/channel/{{ channel.channel_id }}/generate">
@@ -80,11 +98,59 @@ function buildScenesJson() {
   scenes.push({
     narration: document.querySelector('[name="narration_{{ loop.index0 }}"]').value,
     image_prompt: document.querySelector('[name="image_prompt_{{ loop.index0 }}"]').value,
-    duration_hint: {{ scene.duration_hint|default(10) }}
+    duration_hint: {{ scene.duration_hint|default(15) }}
   });
   {% endfor %}
   document.getElementById('scenes_json').value = JSON.stringify(scenes);
 }
+
+// Live duration estimate
+function updateEstimate() {
+  let totalWords = 0;
+  const sceneCount = {{ script.scenes|length }};
+  const voiceSpeed = {{ channel.voice.speed|default(0.85) }};
+  const wordsPerSec = 2.4 * voiceSpeed;
+  const scenePause = {{ channel.video_settings.scene_pause_seconds|default(0) }};
+  const minTarget = {{ channel.video_settings.target_duration_min|default(8) }};
+
+  for (let i = 0; i < sceneCount; i++) {
+    const el = document.querySelector('[name="narration_' + i + '"]');
+    if (el) {
+      const words = el.value.trim().split(/\s+/).filter(w => w.length > 0).length;
+      totalWords += words;
+      // Update per-scene word badge
+      const badge = el.closest('.card').querySelector('.badge');
+      if (badge) badge.textContent = words + ' words';
+    }
+  }
+
+  const narrationSecs = totalWords / wordsPerSec;
+  const pauseSecs = scenePause * (sceneCount - 1);
+  const overheadSecs = 5 + 6 + (sceneCount * 2.5);
+  const estMinutes = ((narrationSecs + pauseSecs + overheadSecs) / 60).toFixed(1);
+
+  const el = document.getElementById('live-estimate');
+  if (el) {
+    let color = '#22c55e';
+    let warning = '';
+    if (estMinutes < minTarget) {
+      color = '#ef4444';
+      warning = ' ⚠ Below ' + minTarget + '-min target (mid-roll ads require 8+ min)';
+    } else if (estMinutes < minTarget + 1) {
+      color = '#f59e0b';
+    }
+    el.innerHTML = sceneCount + ' scenes · ~' + totalWords + ' words · ' +
+      '<span style="color:' + color + '; font-weight:600;">~' + estMinutes + ' min estimated</span>' +
+      (warning ? '<span style="color:#ef4444;">' + warning + '</span>' : '');
+  }
+}
+
+// Attach live updates to all narration textareas
+document.addEventListener('DOMContentLoaded', function() {
+  {% for scene in script.scenes %}
+  document.querySelector('[name="narration_{{ loop.index0 }}"]').addEventListener('input', updateEstimate);
+  {% endfor %}
+});
 
 // Fetch ElevenLabs quota and show estimates
 (function() {
