@@ -8,8 +8,10 @@
 
 {# ---- STUDIO STATS HEADER ---- #}
 {% if metrics %}
-{% set ns = namespace(total_views=0, full_views=0, shorts_views=0, total_subs=0, total_likes=0, total_comments=0, total_videos=0) %}
+{% set visible_ids = channels|map(attribute='channel_id')|list %}
+{% set ns = namespace(total_views=0, full_views=0, shorts_views=0, total_subs=0, total_likes=0, total_comments=0, total_videos=0, ch_count=0) %}
 {% for ch_id, m in metrics.items() %}
+  {% if ch_id in visible_ids %}
   {% set ns.total_views = ns.total_views + m.total_views %}
   {% set ns.full_views = ns.full_views + m.full_length_views %}
   {% set ns.shorts_views = ns.shorts_views + m.shorts_views %}
@@ -17,6 +19,8 @@
   {% set ns.total_likes = ns.total_likes + m.total_likes %}
   {% set ns.total_comments = ns.total_comments + m.total_comments %}
   {% set ns.total_videos = ns.total_videos + m.video_count %}
+  {% set ns.ch_count = ns.ch_count + 1 %}
+  {% endif %}
 {% endfor %}
 <div style="text-align: center; margin-bottom: 24px;">
   <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
@@ -57,7 +61,7 @@
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">🎬 Videos</div>
     </div>
     <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
-      <div style="font-size: 1.1em; font-weight: 700; color: var(--gold);">{{ metrics|length }}</div>
+      <div style="font-size: 1.1em; font-weight: 700; color: var(--gold);">{{ ns.ch_count }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">📡 Channels</div>
     </div>
   </div>
