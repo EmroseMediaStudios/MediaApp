@@ -415,7 +415,7 @@ The narrator is drifting off too. Each sentence should feel like it takes effort
 Example style: "The sky... is very still tonight... Nothing moves... nothing needs to... Just the quiet... and the dark... settling in around you..."
 """
 
-    min_words = vs.get('target_word_count_min', 1000)
+    min_words = vs.get('target_word_count_min', 1100)
     max_words = vs.get('target_word_count_max', 1300)
     min_scenes = vs.get('scene_count_min', 12)
     max_scenes = vs.get('scene_count_max', 16)
@@ -498,8 +498,8 @@ FINAL REMINDER: You MUST write {min_scenes}+ scenes with {min_words}+ total word
 def generate_script(channel, topic, api_key):
     system = _build_director_prompt(channel)
     vs = channel.get("video_settings", {})
-    min_words = vs.get("target_word_count_min", 1000)
-    max_words = vs.get("target_word_count_max", 1300)
+    min_words = vs.get("target_word_count_min", 1100)
+    max_words = vs.get("target_word_count_max", 1400)
     min_scenes = vs.get("scene_count_min", 12)
 
     # Use higher temperature on first call to encourage longer output

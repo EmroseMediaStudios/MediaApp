@@ -1,21 +1,21 @@
 {
   "channel_id": "softlight_kingdom",
   "channel_name": "SoftlightKingdom",
-  "description": "Gentle, imaginative bedtime fantasy stories for young children (ages 3-8). Each entry is a complete story designed to help children relax, feel safe, and drift to sleep. Written at a level accessible to preschoolers — simple words, short sentences, and clear ideas that even a 3-year-old being read to can follow.",
+  "description": "Gentle, imaginative bedtime fantasy stories for young children (ages 3-8). Each entry is a complete story designed to help children relax, feel safe, and drift to sleep. Written at a level accessible to preschoolers \u2014 simple words, short sentences, and clear ideas that even a 3-year-old being read to can follow.",
   "narrator": {
     "name": "The Storyteller",
     "description": "A warm, velvety voice reading a bedtime story by a cozy fire. Gentle, nurturing, and magical. Speaks as though tucking a child into bed.",
     "rules": [
-      "Write for YOUNG CHILDREN (ages 3-8) — use simple, everyday words only",
+      "Write for YOUNG CHILDREN (ages 3-8) \u2014 use simple, everyday words only",
       "Short sentences. No sentence longer than 15 words.",
-      "No complex vocabulary — if a 4-year-old wouldn't know the word, don't use it",
+      "No complex vocabulary \u2014 if a 4-year-old wouldn't know the word, don't use it",
       "Soft, warm, soothing tone throughout",
       "Slow pacing with natural breathing pauses",
       "Reassuring and nurturing language",
-      "Slight magical whimsy — Disney-like but calmer",
+      "Slight magical whimsy \u2014 Disney-like but calmer",
       "Use soft descriptive language: glowing, drifting, quiet, warm",
       "Avoid sharp, loud, or harsh words",
-      "Keep sentences rhythmic and flowing — like a parent reading aloud",
+      "Keep sentences rhythmic and flowing \u2014 like a parent reading aloud",
       "No intense danger, villains, or frightening imagery",
       "Emotional emphasis on kindness, bravery, and friendship",
       "Ending should always encourage sleep and safety",
@@ -28,7 +28,7 @@
     "elevenlabs_voice_name": "Lily",
     "model_id": "eleven_multilingual_v2",
     "settings": {
-      "stability": 0.80,
+      "stability": 0.8,
       "similarity_boost": 0.75,
       "style": 0.35,
       "use_speaker_boost": false
@@ -37,7 +37,7 @@
   },
   "opening_format": {
     "template": "In a quiet corner of the world, where the stars whispered softly... a story begins.\n\nThis is the tale of {subject}.",
-    "notes": "Always opens with a calm, inviting scene. Gentle and magical. No channel name — just warmth."
+    "notes": "Always opens with a calm, inviting scene. Gentle and magical. No channel name \u2014 just warmth."
   },
   "closing_format": {
     "templates": [
@@ -86,9 +86,12 @@
     "target_duration_max": 10,
     "scene_count_min": 12,
     "scene_count_max": 16,
-    "target_word_count_min": 1000,
-    "target_word_count_max": 1300,
-    "resolution": [1920, 1080],
+    "target_word_count_min": 1100,
+    "target_word_count_max": 1400,
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 2.0,
     "fade_in_seconds": 3.0,
@@ -96,7 +99,7 @@
   },
   "ambient_audio": {
     "enabled": true,
-    "volume": 0.20,
+    "volume": 0.2,
     "style": "Gentle music box melody with soft wind chimes and quiet nighttime sounds"
   },
   "shorts": {
@@ -104,7 +107,10 @@
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
   "youtube": {
     "category": "Entertainment",

@@ -1,21 +1,21 @@
 {
   "channel_id": "echelon_veil",
   "channel_name": "EchelonVeil",
-  "description": "Investigative storytelling covering real-world unexplained phenomena, human anomalies, and grounded conspiracies. X-Files meets journalism — paranormal, surveillance, data, AI, and things happening without you noticing.",
+  "description": "Investigative storytelling covering real-world unexplained phenomena, human anomalies, and grounded conspiracies. X-Files meets journalism \u2014 paranormal, surveillance, data, AI, and things happening without you noticing.",
   "narrator": {
     "name": "The Informant",
     "description": "Someone who knows more than they should. Calm, measured, but with an undercurrent of quiet urgency. Like a trusted source pulling you aside to tell you something off the record.",
     "rules": [
       "Calm, controlled, investigative tone",
-      "Slight tension — never exaggerated, always earned",
-      "Credible and grounded — treats every subject seriously",
-      "Maintains ambiguity — avoids definitive claims unless factual",
+      "Slight tension \u2014 never exaggerated, always earned",
+      "Credible and grounded \u2014 treats every subject seriously",
+      "Maintains ambiguity \u2014 avoids definitive claims unless factual",
       "Uses phrases like 'What makes this unusual...' and 'What remains unexplained...'",
       "No dramatic overacting or sensationalism",
       "Measured pace with subtle emphasis on key phrases",
       "Feels like a confidential briefing, not a performance",
       "Neutral but with slight paranoia beneath the surface",
-      "Never dismissive — everything deserves investigation"
+      "Never dismissive \u2014 everything deserves investigation"
     ]
   },
   "voice": {
@@ -24,11 +24,11 @@
     "model_id": "eleven_multilingual_v2",
     "settings": {
       "stability": 0.65,
-      "similarity_boost": 0.80,
-      "style": 0.30,
+      "similarity_boost": 0.8,
+      "style": 0.3,
       "use_speaker_boost": true
     },
-    "speed": 0.90
+    "speed": 0.9
   },
   "opening_format": {
     "template": "You weren't supposed to hear this. But now that you're here... let me tell you about {subject}.",
@@ -67,12 +67,12 @@
       "Fantasy or supernatural imagery",
       "Bright or cheerful colors",
       "Cartoon or illustrated styles",
-      "Obvious conspiracy clichés (tinfoil hats, illuminati symbols)",
+      "Obvious conspiracy clich\u00e9s (tinfoil hats, illuminati symbols)",
       "Text or readable documents",
       "Human faces as focal point",
       "Aliens or UFOs (unless topic-specific)"
     ],
-    "camera": "Slow surveillance-style pan. Security camera drift. Feels like you're being watched — or watching.",
+    "camera": "Slow surveillance-style pan. Security camera drift. Feels like you're being watched \u2014 or watching.",
     "mood": "Uneasy, credible, quietly paranoid, modern, grounded",
     "image_prompt_suffix": "cinematic still, surveillance aesthetic, cold lighting, modern, investigative, 4k, film grain, slightly unsettling"
   },
@@ -81,9 +81,12 @@
     "target_duration_max": 10,
     "scene_count_min": 12,
     "scene_count_max": 16,
-    "target_word_count_min": 1000,
-    "target_word_count_max": 1300,
-    "resolution": [1920, 1080],
+    "target_word_count_min": 1100,
+    "target_word_count_max": 1400,
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
@@ -99,7 +102,10 @@
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
   "youtube": {
     "category": "Entertainment",

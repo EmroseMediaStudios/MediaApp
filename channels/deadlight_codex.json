@@ -4,17 +4,17 @@
   "description": "Dark horror storytelling rooted in the creepypasta tradition. Each entry is a recovered account, a found record, or a story that someone wishes had stayed buried. Real places, real people, unexplainable things.",
   "narrator": {
     "name": "The Keeper",
-    "description": "Deep, controlled, deliberate. Speaks like someone who has read too many of these files and can no longer be surprised. Not theatrical — just someone who knows what happened and is telling you plainly.",
+    "description": "Deep, controlled, deliberate. Speaks like someone who has read too many of these files and can no longer be surprised. Not theatrical \u2014 just someone who knows what happened and is telling you plainly.",
     "rules": [
-      "Slow, measured pacing — let the horror land naturally",
-      "Controlled delivery — tension comes from the story, not the voice",
-      "Grounded and personal — these things happened to real people in real places",
-      "Can express restrained unease — the Keeper is not emotionless, just composed",
+      "Slow, measured pacing \u2014 let the horror land naturally",
+      "Controlled delivery \u2014 tension comes from the story, not the voice",
+      "Grounded and personal \u2014 these things happened to real people in real places",
+      "Can express restrained unease \u2014 the Keeper is not emotionless, just composed",
       "Occasional rhetorical questions are allowed to pull the listener in",
       "No over-the-top dramatic delivery or jump-scare energy",
-      "No flowery or purple prose — keep language direct and sharp",
+      "No flowery or purple prose \u2014 keep language direct and sharp",
       "Modern phrasing is fine when it serves the story",
-      "Describe what people saw, heard, and felt — make it visceral and relatable",
+      "Describe what people saw, heard, and felt \u2014 make it visceral and relatable",
       "The scariest things are the ones that could happen to the listener"
     ]
   },
@@ -32,7 +32,7 @@
   },
   "opening_format": {
     "template": "Good evening. I am the Keeper, and you are listening to the DeadlightCodex.\n\nThis is the account of {subject}.",
-    "notes": "The greeting stays — it's the channel's signature. But 'account' instead of 'entry' signals a human story, not an abstract record."
+    "notes": "The greeting stays \u2014 it's the channel's signature. But 'account' instead of 'entry' signals a human story, not an abstract record."
   },
   "closing_format": {
     "templates": [
@@ -58,7 +58,7 @@
       "Dark forests and rural roads at night",
       "Empty hallways and stairwells",
       "Fog, rain, and mist",
-      "Objects left behind — shoes, letters, phones",
+      "Objects left behind \u2014 shoes, letters, phones",
       "Open doors that shouldn't be open",
       "Distant figures barely visible in darkness",
       "Cars parked on the side of nowhere"
@@ -70,7 +70,7 @@
       "Bright colors or daylight scenes",
       "Human faces as focal point",
       "Cartoon or illustrated styles",
-      "Cliché horror (blood, gore, zombies, demons)",
+      "Clich\u00e9 horror (blood, gore, zombies, demons)",
       "Anything that looks AI-generated or plastic"
     ],
     "camera": "Slow push-in or lateral drift. Feels like approaching something you shouldn't. Security camera stillness.",
@@ -82,9 +82,12 @@
     "target_duration_max": 10,
     "scene_count_min": 12,
     "scene_count_max": 16,
-    "target_word_count_min": 1000,
-    "target_word_count_max": 1300,
-    "resolution": [1920, 1080],
+    "target_word_count_min": 1100,
+    "target_word_count_max": 1400,
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
@@ -100,7 +103,10 @@
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
   "youtube": {
     "category": "Entertainment",

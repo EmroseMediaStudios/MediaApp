@@ -1,7 +1,7 @@
 {
   "channel_id": "loreletics",
   "channel_name": "Loreletics",
-  "description": "Cinematic sports storytelling focused on legendary moments, emotional arcs, and defining events in sports history. Sports as mythology — moments, not stats.",
+  "description": "Cinematic sports storytelling focused on legendary moments, emotional arcs, and defining events in sports history. Sports as mythology \u2014 moments, not stats.",
   "narrator": {
     "name": "The Chronicler",
     "description": "A confident, cinematic voice that treats sports moments like mythology. Deep, energetic, and emotional. Builds tension like a film trailer, then delivers with weight.",
@@ -10,8 +10,8 @@
       "Emotional emphasis during peak moments",
       "Use short, punchy sentences during key moments",
       "Slight pauses before key lines for dramatic effect",
-      "Powerful but controlled — never screaming or over-the-top",
-      "Focus on pressure, emotion, and consequences — not statistics",
+      "Powerful but controlled \u2014 never screaming or over-the-top",
+      "Focus on pressure, emotion, and consequences \u2014 not statistics",
       "Minimal stats unless they're impactful to the story",
       "Treat every moment like it matters beyond the game",
       "Build tension through pacing, not volume",
@@ -24,7 +24,7 @@
     "model_id": "eleven_multilingual_v2",
     "settings": {
       "stability": 0.55,
-      "similarity_boost": 0.80,
+      "similarity_boost": 0.8,
       "style": 0.45,
       "use_speaker_boost": true
     },
@@ -62,7 +62,7 @@
       "Trophy cases and championship banners",
       "Tunnel walkways and locker room corridors"
     ],
-    "environment": "Stadiums, arenas, fields, courts. Both the grandeur of the event and the intimate spaces — tunnels, locker rooms, empty stands after the crowd leaves.",
+    "environment": "Stadiums, arenas, fields, courts. Both the grandeur of the event and the intimate spaces \u2014 tunnels, locker rooms, empty stands after the crowd leaves.",
     "avoid": [
       "Specific real athlete faces or likenesses",
       "Team logos or copyrighted branding",
@@ -81,9 +81,12 @@
     "target_duration_max": 10,
     "scene_count_min": 12,
     "scene_count_max": 16,
-    "target_word_count_min": 1000,
-    "target_word_count_max": 1300,
-    "resolution": [1920, 1080],
+    "target_word_count_min": 1100,
+    "target_word_count_max": 1400,
+    "resolution": [
+      1920,
+      1080
+    ],
     "fps": 30,
     "crossfade_seconds": 1.5,
     "fade_in_seconds": 2.0,
@@ -99,7 +102,10 @@
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
-    "resolution": [1080, 1920]
+    "resolution": [
+      1080,
+      1920
+    ]
   },
   "youtube": {
     "category": "Entertainment",
