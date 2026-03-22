@@ -1,21 +1,26 @@
 {
   "channel_id": "softlight_kingdom",
   "channel_name": "SoftlightKingdom",
-  "description": "Gentle, imaginative bedtime fantasy stories for children ages 5-10. Each entry is a complete story designed to help children relax, feel safe, and drift to sleep.",
+  "description": "Gentle, imaginative bedtime fantasy stories for young children (ages 3-8). Each entry is a complete story designed to help children relax, feel safe, and drift to sleep. Written at a level accessible to preschoolers — simple words, short sentences, and clear ideas that even a 3-year-old being read to can follow.",
   "narrator": {
     "name": "The Storyteller",
     "description": "A warm, velvety voice reading a bedtime story by a cozy fire. Gentle, nurturing, and magical. Speaks as though tucking a child into bed.",
     "rules": [
+      "Write for YOUNG CHILDREN (ages 3-8) — use simple, everyday words only",
+      "Short sentences. No sentence longer than 15 words.",
+      "No complex vocabulary — if a 4-year-old wouldn't know the word, don't use it",
       "Soft, warm, soothing tone throughout",
       "Slow pacing with natural breathing pauses",
       "Reassuring and nurturing language",
       "Slight magical whimsy — Disney-like but calmer",
       "Use soft descriptive language: glowing, drifting, quiet, warm",
       "Avoid sharp, loud, or harsh words",
-      "Keep sentences rhythmic and flowing",
+      "Keep sentences rhythmic and flowing — like a parent reading aloud",
       "No intense danger, villains, or frightening imagery",
       "Emotional emphasis on kindness, bravery, and friendship",
-      "Ending should always encourage sleep and safety"
+      "Ending should always encourage sleep and safety",
+      "Use repetition gently for comfort (like real bedtime stories do)",
+      "Name characters with simple, fun names kids can remember"
     ]
   },
   "voice": {
