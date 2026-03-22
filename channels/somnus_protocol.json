@@ -96,7 +96,7 @@
     "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
   },
   "shorts": {
-    "enabled": false,
+    "enabled": true,
     "duration_min": 20,
     "duration_max": 40,
     "aspect_ratio": "9:16",
