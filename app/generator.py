@@ -68,12 +68,25 @@ CHANNEL_FOCUS = {
     },
     "gray_meridian": {
         "focus": [
-            "Human behavior patterns",
-            "Cognitive bias",
-            "Subtle psychological truths",
+            "Human behavior patterns and why people do what they do",
+            "Cognitive biases and mental shortcuts",
+            "Subtle psychological truths most people never notice",
+            "Social dynamics, persuasion, and influence",
+            "The gap between what people say and what they actually do",
+            "Everyday decisions that reveal deeper psychology",
         ],
-        "avoid": ["Generic self-help topics"],
-        "examples": ["Why People Defend Ideas They Know Are Wrong"],
+        "avoid": [
+            "Generic self-help or motivational content",
+            "Clinical/academic tone — keep it conversational",
+            "Pop psychology clichés",
+        ],
+        "examples": [
+            "Why People Defend Ideas They Know Are Wrong",
+            "The Reason You Can't Remember What You Walked Into the Room For",
+            "Why Strangers Trust You Less When You're Too Honest",
+            "The Psychology of Why We Root for the Underdog",
+            "Why You Always Pick the Slowest Line at the Store",
+        ],
     },
     "autonomous_stack": {
         "focus": [
