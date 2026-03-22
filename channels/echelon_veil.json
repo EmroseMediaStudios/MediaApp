@@ -1,0 +1,132 @@
+{
+  "channel_id": "echelon_veil",
+  "channel_name": "EchelonVeil",
+  "description": "Investigative storytelling covering real-world unexplained phenomena, human anomalies, and grounded conspiracies. X-Files meets journalism — paranormal, surveillance, data, AI, and things happening without you noticing.",
+  "narrator": {
+    "name": "The Informant",
+    "description": "Someone who knows more than they should. Calm, measured, but with an undercurrent of quiet urgency. Like a trusted source pulling you aside to tell you something off the record.",
+    "rules": [
+      "Calm, controlled, investigative tone",
+      "Slight tension — never exaggerated, always earned",
+      "Credible and grounded — treats every subject seriously",
+      "Maintains ambiguity — avoids definitive claims unless factual",
+      "Uses phrases like 'What makes this unusual...' and 'What remains unexplained...'",
+      "No dramatic overacting or sensationalism",
+      "Measured pace with subtle emphasis on key phrases",
+      "Feels like a confidential briefing, not a performance",
+      "Neutral but with slight paranoia beneath the surface",
+      "Never dismissive — everything deserves investigation"
+    ]
+  },
+  "voice": {
+    "elevenlabs_voice_id": "cjVigY5qzO86Huf0OWal",
+    "elevenlabs_voice_name": "Eric",
+    "model_id": "eleven_multilingual_v2",
+    "settings": {
+      "stability": 0.65,
+      "similarity_boost": 0.80,
+      "style": 0.30,
+      "use_speaker_boost": true
+    },
+    "speed": 0.90
+  },
+  "opening_format": {
+    "template": "You weren't supposed to hear this. But now that you're here... let me tell you about {subject}.",
+    "notes": "Opens with a sense of confidentiality. The viewer is being let in on something. Intimate, not theatrical."
+  },
+  "closing_format": {
+    "templates": [
+      "That's what we know. What we don't know... might be the more important question.",
+      "The file stays open. Whether anyone's still reading it... that's another matter.",
+      "Make of it what you will. But don't say you weren't told."
+    ],
+    "notes": "End with ambiguity and an unresolved question. Leave the viewer thinking. Never wrap things up neatly."
+  },
+  "visual_theme": {
+    "style": "Modern investigative, surveillance aesthetic, slightly paranoid",
+    "palette": [
+      "dark teal",
+      "muted green",
+      "concrete gray",
+      "cold blue",
+      "deep black",
+      "amber accent"
+    ],
+    "lighting": "Cold, institutional. Fluorescent flicker, monitor glow, security camera aesthetic.",
+    "elements": [
+      "Surveillance cameras and monitors",
+      "Redacted documents and file folders",
+      "Server rooms and data centers",
+      "Empty corridors and institutional spaces",
+      "Night cityscapes and highway overpasses",
+      "Static and signal interference",
+      "Satellite imagery and maps"
+    ],
+    "environment": "Modern and grounded. Government buildings, empty offices at night, server farms, suburban streets that feel slightly wrong. Real places that feel like they're hiding something.",
+    "avoid": [
+      "Fantasy or supernatural imagery",
+      "Bright or cheerful colors",
+      "Cartoon or illustrated styles",
+      "Obvious conspiracy clichés (tinfoil hats, illuminati symbols)",
+      "Text or readable documents",
+      "Human faces as focal point",
+      "Aliens or UFOs (unless topic-specific)"
+    ],
+    "camera": "Slow surveillance-style pan. Security camera drift. Feels like you're being watched — or watching.",
+    "mood": "Uneasy, credible, quietly paranoid, modern, grounded",
+    "image_prompt_suffix": "cinematic still, surveillance aesthetic, cold lighting, modern, investigative, 4k, film grain, slightly unsettling"
+  },
+  "video_settings": {
+    "target_duration_min": 8,
+    "target_duration_max": 10,
+    "scene_count_min": 12,
+    "scene_count_max": 16,
+    "target_word_count_min": 1000,
+    "target_word_count_max": 1300,
+    "resolution": [1920, 1080],
+    "fps": 30,
+    "crossfade_seconds": 1.5,
+    "fade_in_seconds": 2.0,
+    "fade_out_seconds": 3.0
+  },
+  "ambient_audio": {
+    "enabled": true,
+    "volume": 0.25,
+    "style": "Low electronic hum with distant radio static, quiet server room drone, subtle signal interference"
+  },
+  "shorts": {
+    "enabled": true,
+    "duration_min": 20,
+    "duration_max": 40,
+    "aspect_ratio": "9:16",
+    "resolution": [1080, 1920]
+  },
+  "youtube": {
+    "category": "Entertainment",
+    "default_tags": [
+      "conspiracy",
+      "unexplained",
+      "paranormal",
+      "investigation",
+      "echelon veil",
+      "surveillance",
+      "government secrets",
+      "data privacy",
+      "AI conspiracy",
+      "missing time",
+      "shadow figures",
+      "real conspiracies",
+      "grounded paranormal",
+      "unexplained phenomena",
+      "what they don't tell you"
+    ],
+    "default_hashtags": [
+      "#Conspiracy",
+      "#EchelonVeil",
+      "#Unexplained",
+      "#Paranormal",
+      "#WhatAreTheyHiding"
+    ],
+    "uploaded": false
+  }
+}

@@ -184,7 +184,7 @@ def _is_invalid_tags_error(error):
     return "invalidTags" in err_str or "invalid video keywords" in err_str
 
 
-def _do_upload(youtube, video_path, title, description, tags, category_id, privacy, progress):
+def _do_upload(youtube, video_path, title, description, tags, category_id, privacy, progress, made_for_kids=False):
     """Execute the actual YouTube upload. Returns the API response."""
     from googleapiclient.http import MediaFileUpload
 
@@ -197,7 +197,7 @@ def _do_upload(youtube, video_path, title, description, tags, category_id, priva
         },
         "status": {
             "privacyStatus": privacy,
-            "selfDeclaredMadeForKids": False,
+            "selfDeclaredMadeForKids": made_for_kids,
             "containsSyntheticMedia": True,
         },
     }
@@ -241,7 +241,8 @@ def _find_bad_tags_by_elimination(youtube, video_path, title, description, tags,
 
 
 def upload_video(video_path, title, description="", tags=None, category_id="22",
-                 privacy="private", thumbnail_path=None, progress=None, app_channel_id=None):
+                 privacy="private", thumbnail_path=None, progress=None, app_channel_id=None,
+                 made_for_kids=False):
     """
     Upload a video to YouTube.
     On invalid tags: tests each tag individually, removes bad ones, retries.
@@ -266,7 +267,7 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
 
     # First attempt with all sanitized tags
     try:
-        response = _do_upload(youtube, video_path, clean_title, description, clean_tags, category_id, privacy, progress)
+        response = _do_upload(youtube, video_path, clean_title, description, clean_tags, category_id, privacy, progress, made_for_kids)
     except HttpError as e:
         if not _is_invalid_tags_error(e):
             raise
@@ -287,7 +288,7 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
             log.warning("No individual bad tags found — might be a combination issue. Uploading with no tags.")
             good_tags = []
 
-        response = _do_upload(youtube, video_path, clean_title, description, good_tags, category_id, privacy, progress)
+        response = _do_upload(youtube, video_path, clean_title, description, good_tags, category_id, privacy, progress, made_for_kids)
 
     video_id = response["id"]
     video_url = f"https://www.youtube.com/watch?v={video_id}"
@@ -335,4 +336,7 @@ YOUTUBE_CHANNEL_MAP = {
     "autonomous_stack": "UCzZU7Gn_5eQAfUz6a9rXPAA",
     "somnus_protocol": "UCukqYDdDPGG8G_jNvkb_2VQ",
     "deadlight_codex": "UCeR5uvuGWIQgxHsCg6KOYlg",
+    "softlight_kingdom": "",
+    "echelon_veil": "",
+    "loreletics": "",
 }

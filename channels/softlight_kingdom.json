@@ -1,0 +1,133 @@
+{
+  "channel_id": "softlight_kingdom",
+  "channel_name": "SoftlightKingdom",
+  "description": "Gentle, imaginative bedtime fantasy stories for children ages 5-10. Each entry is a complete story designed to help children relax, feel safe, and drift to sleep.",
+  "narrator": {
+    "name": "The Storyteller",
+    "description": "A warm, velvety voice reading a bedtime story by a cozy fire. Gentle, nurturing, and magical. Speaks as though tucking a child into bed.",
+    "rules": [
+      "Soft, warm, soothing tone throughout",
+      "Slow pacing with natural breathing pauses",
+      "Reassuring and nurturing language",
+      "Slight magical whimsy — Disney-like but calmer",
+      "Use soft descriptive language: glowing, drifting, quiet, warm",
+      "Avoid sharp, loud, or harsh words",
+      "Keep sentences rhythmic and flowing",
+      "No intense danger, villains, or frightening imagery",
+      "Emotional emphasis on kindness, bravery, and friendship",
+      "Ending should always encourage sleep and safety"
+    ]
+  },
+  "voice": {
+    "elevenlabs_voice_id": "pFZP5JQG7iQjIQuC4Bku",
+    "elevenlabs_voice_name": "Lily",
+    "model_id": "eleven_multilingual_v2",
+    "settings": {
+      "stability": 0.80,
+      "similarity_boost": 0.75,
+      "style": 0.35,
+      "use_speaker_boost": false
+    },
+    "speed": 0.85
+  },
+  "opening_format": {
+    "template": "In a quiet corner of the world, where the stars whispered softly... a story begins.\n\nThis is the tale of {subject}.",
+    "notes": "Always opens with a calm, inviting scene. Gentle and magical. No channel name — just warmth."
+  },
+  "closing_format": {
+    "templates": [
+      "And so, wrapped in warmth and starlight, everything was peaceful once more.",
+      "The world grew quiet... and the night held them gently, until morning came.",
+      "And with that, the stars smiled down... and it was time to sleep."
+    ],
+    "notes": "End with a peaceful resolution that encourages sleep. Always reassuring. Never leave anything unresolved."
+  },
+  "visual_theme": {
+    "style": "Soft watercolor fantasy, warm and dreamy, storybook illustration",
+    "palette": [
+      "soft lavender",
+      "warm gold",
+      "gentle pink",
+      "powder blue",
+      "cream white",
+      "sage green"
+    ],
+    "lighting": "Warm, soft, golden glow. Moonlight and lantern light. No harsh shadows.",
+    "elements": [
+      "Storybook landscapes",
+      "Gentle animals and woodland creatures",
+      "Cozy cottages and treehouse villages",
+      "Starry night skies",
+      "Soft clouds and rolling hills",
+      "Glowing fireflies and lanterns",
+      "Flower meadows and quiet streams"
+    ],
+    "environment": "Magical but safe. Enchanted forests, cozy villages, moonlit meadows. Everything should feel like a place a child would want to visit.",
+    "avoid": [
+      "Anything dark, scary, or threatening",
+      "Sharp edges or harsh contrasts",
+      "Monsters, villains, or dangerous creatures",
+      "Realistic violence or conflict",
+      "Text or readable words",
+      "Human faces as focal point",
+      "Modern or urban environments"
+    ],
+    "camera": "Gentle slow drift. Feels like turning the page of a storybook.",
+    "mood": "Warm, magical, safe, sleepy, full of wonder",
+    "image_prompt_suffix": "soft watercolor illustration, storybook art, warm golden light, dreamy, gentle, children's fantasy, 4k"
+  },
+  "video_settings": {
+    "target_duration_min": 8,
+    "target_duration_max": 10,
+    "scene_count_min": 12,
+    "scene_count_max": 16,
+    "target_word_count_min": 1000,
+    "target_word_count_max": 1300,
+    "resolution": [1920, 1080],
+    "fps": 30,
+    "crossfade_seconds": 2.0,
+    "fade_in_seconds": 3.0,
+    "fade_out_seconds": 4.0
+  },
+  "ambient_audio": {
+    "enabled": true,
+    "volume": 0.20,
+    "style": "Gentle music box melody with soft wind chimes and quiet nighttime sounds"
+  },
+  "shorts": {
+    "enabled": true,
+    "duration_min": 20,
+    "duration_max": 40,
+    "aspect_ratio": "9:16",
+    "resolution": [1080, 1920]
+  },
+  "youtube": {
+    "category": "Entertainment",
+    "made_for_kids": true,
+    "default_tags": [
+      "bedtime stories",
+      "kids bedtime stories",
+      "children stories",
+      "sleep stories for kids",
+      "bedtime story",
+      "softlight kingdom",
+      "fairy tales",
+      "kids sleep stories",
+      "calming stories for children",
+      "gentle bedtime stories",
+      "stories for kids to fall asleep",
+      "fantasy stories for kids",
+      "children's storytelling",
+      "relaxing kids stories",
+      "storybook narration"
+    ],
+    "default_hashtags": [
+      "#BedtimeStories",
+      "#SoftlightKingdom",
+      "#KidsStories",
+      "#SleepStoriesForKids",
+      "#ChildrensFairyTales"
+    ],
+    "uploaded": false
+  }
+}

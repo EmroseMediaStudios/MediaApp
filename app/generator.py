@@ -642,6 +642,9 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
         "somnus_protocol": "gentle ocean waves on distant shore, soft warm brown noise, quiet nighttime crickets fading in and out, deeply calming and sleep-inducing, no sudden sounds",
         "autonomous_stack": "clean server room hum, soft digital processing sounds, minimal electronic textures, cool and precise data center ambient",
         "gray_meridian": "quiet contemplative room tone, soft warm analog hum, gentle breathing space, psychological stillness, minimal and introspective",
+        "softlight_kingdom": "gentle music box melody with soft wind chimes, quiet nighttime crickets, warm cozy fireplace crackle, magical fairy dust shimmer sounds, calming and safe",
+        "echelon_veil": "low electronic hum with distant radio static, quiet server room drone, subtle signal interference and data transmission sounds, slightly unsettling modern ambient",
+        "loreletics": "distant stadium crowd murmur building slowly, dramatic orchestral undertone, heartbeat tension pulse, cinematic sports atmosphere, epic and emotional",
     }
     
     base_desc = channel_ambient_base.get(channel_id, "cinematic atmospheric ambient soundscape, slow evolving drone, moody and immersive")

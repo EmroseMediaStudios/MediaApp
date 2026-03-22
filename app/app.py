@@ -397,6 +397,12 @@ def youtube_upload_video():
         "24"
     )
 
+    # Check if channel is marked as made for kids
+    ch = generator.load_channel(channel_id)
+    made_for_kids = False
+    if ch:
+        made_for_kids = ch.get("youtube", {}).get("made_for_kids", False)
+
     try:
         result = youtube_upload.upload_video(
             video_path=str(video_path),
@@ -407,6 +413,7 @@ def youtube_upload_video():
             privacy=privacy,
             thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
             app_channel_id=channel_id,
+            made_for_kids=made_for_kids,
         )
 
         # Update metadata
@@ -460,6 +467,7 @@ def youtube_upload_video():
                     category_id=category,
                     privacy=privacy,
                     app_channel_id=channel_id,
+                    made_for_kids=made_for_kids,
                 )
                 meta["youtube_short_id"] = short_result["video_id"]
                 meta["youtube_short_url"] = short_result["url"]
