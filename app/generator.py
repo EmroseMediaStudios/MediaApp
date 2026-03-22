@@ -329,6 +329,17 @@ Example style: "The sky... is very still tonight... Nothing moves... nothing nee
     max_scenes = vs.get('scene_count_max', 16)
     target_per_scene = max(min_words // min_scenes, 80)
 
+    # Anti-repetition rule (skip for sleep/meditation channels where repetition is intentional)
+    repetition_rule = ""
+    if c.get("channel_id") != "somnus_protocol":
+        repetition_rule = """
+CRITICAL QUALITY RULE — NO REPETITION:
+- Do NOT repeat the same idea, sentence, or phrase across scenes to pad word count
+- Each scene must introduce NEW information, a new angle, a new detail, or advance the narrative
+- If two scenes say essentially the same thing in different words, you have FAILED
+- Reach the word count through DEPTH (more detail, more atmosphere, more world-building) not through REDUNDANCY
+- Every sentence should earn its place — if removing it loses nothing, it shouldn't be there"""
+
     return f"""You are the creative director for {c['channel_name']}.
 {c.get('description', '')}
 {pacing_note}
@@ -342,6 +353,7 @@ This video MUST be 8+ minutes for YouTube mid-roll ad eligibility. This is a har
 - If you write fewer than {min_words} total words, the output will be rejected and regenerated at additional cost
 - duration_hint = 15 for every scene
 - WRITE LONG. Err heavily toward {max_words} words, not {min_words}
+{repetition_rule}
 
 EXAMPLE of a properly-sized scene narration (85 words):
 "The structure was first documented in the spring of 1987, though local accounts suggest it had been present for far longer. Its surface was smooth, almost polished, and yet no tool marks could be identified under magnification. Researchers noted that photographs of the object consistently failed to capture its true dimensions. Measurements taken on different days produced different results, sometimes by as much as several centimeters. The surrounding soil showed no signs of excavation or placement. It was simply there, as though it had always been."
