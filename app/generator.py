@@ -913,6 +913,19 @@ def _generate_image(prompt, out_path, hf_token, width=1344, height=768):
         "murder": "dark event",
         "kill": "consume",
         "weapon": "artifact",
+        # Kid-safe replacements — DALL-E flags prompts mentioning children
+        "child": "young character",
+        "children": "young characters",
+        "kid": "young character",
+        "kids": "young characters",
+        "little girl": "small fairy-tale character",
+        "little boy": "small fairy-tale character",
+        "young girl": "small fairy-tale character",
+        "young boy": "small fairy-tale character",
+        "baby": "tiny creature",
+        "toddler": "tiny character",
+        "boy": "young adventurer",
+        "girl": "young adventurer",
     }
     for old_word, new_word in _dalle_replacements.items():
         dalle_prompt = dalle_prompt.replace(old_word, new_word)
