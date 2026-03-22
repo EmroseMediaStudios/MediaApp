@@ -633,28 +633,26 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
     Falls back to procedural synthesis if the API is unavailable.
     """
     
-    # Build a content-aware ambient description
-    # Base style per channel sets the mood, then topic/title customizes it per video
+    # Build rich, specific ambient descriptions — the more detail, the better the output
     channel_ambient_base = {
-        "deadlight_codex": "dark cosmic horror ambient soundscape, deep ominous drone, eerie atmosphere",
-        "zero_trace_archive": "tense investigative ambient, low frequency hum, documentary atmosphere",
-        "the_unwritten_wing": "warm nostalgic ambient, gentle emotional atmosphere, soft and intimate",
-        "remnants_project": "post-apocalyptic ambient, nature reclaiming, desolate atmosphere",
-        "somnus_protocol": "ultra calming sleep ambient, peaceful and drowsy atmosphere, no harsh or sudden sounds",
-        "autonomous_stack": "clean futuristic ambient, minimal digital textures, cool and precise",
-        "gray_meridian": "contemplative ambient, soft warm tones, psychological and introspective atmosphere",
+        "deadlight_codex": "deep rumbling cosmic drone, vast underground cavern reverb, distant metallic resonance, low ominous sub-bass, wind through impossible architecture, dark ambient soundscape",
+        "zero_trace_archive": "quiet empty room tone with distant ventilation hum, fluorescent light buzz, occasional muffled footstep echo, tense investigative atmosphere, low frequency tension",
+        "the_unwritten_wing": "warm vinyl crackle, soft rain on windows, gentle piano room reverb, nostalgic and intimate, library ambiance with distant clock ticking",
+        "remnants_project": "wind through abandoned buildings, distant creaking metal, birdsong echoing in empty spaces, dripping water, nature slowly reclaiming silence",
+        "somnus_protocol": "gentle ocean waves on distant shore, soft warm brown noise, quiet nighttime crickets fading in and out, deeply calming and sleep-inducing, no sudden sounds",
+        "autonomous_stack": "clean server room hum, soft digital processing sounds, minimal electronic textures, cool and precise data center ambient",
+        "gray_meridian": "quiet contemplative room tone, soft warm analog hum, gentle breathing space, psychological stillness, minimal and introspective",
     }
     
-    base_desc = channel_ambient_base.get(channel_id, "atmospheric ambient soundscape, cinematic, moody")
+    base_desc = channel_ambient_base.get(channel_id, "cinematic atmospheric ambient soundscape, slow evolving drone, moody and immersive")
     
-    # Make ambient content-aware for ALL channels — match the video's actual topic
+    # Make ambient content-aware — match the video's actual topic
     if topic:
-        base_desc = f"{base_desc}, with sounds and textures matching the theme of {topic}"
+        base_desc = f"{base_desc}, evoking the feeling of {topic}"
     elif title:
-        base_desc = f"{base_desc}, with sounds and textures matching the theme of {title}"
+        base_desc = f"{base_desc}, evoking the feeling of {title}"
     
-    # ElevenLabs Sound Generation can do max ~22 seconds per call
-    # We'll generate segments and loop/crossfade them
+    # ElevenLabs Sound Generation
     elevenlabs_key = None
     if api_keys:
         elevenlabs_key = api_keys.get("elevenlabs", "")
@@ -666,66 +664,92 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
             import httpx as hx
             import subprocess
             
-            # Generate a 22-second ambient clip
+            # Generate two different clips and crossfade them together
+            # This avoids the obvious loop seam from repeating one 22s clip
             log.info(f"Generating ambient audio via ElevenLabs Sound Generation...")
-            log.info(f"  Prompt: {base_desc[:100]}...")
+            log.info(f"  Prompt: {base_desc[:120]}...")
             
-            resp = hx.post(
-                "https://api.elevenlabs.io/v1/sound-generation",
-                headers={"xi-api-key": elevenlabs_key, "Content-Type": "application/json"},
-                json={"text": base_desc, "duration_seconds": 22},
-                timeout=60,
-            )
+            clips = []
+            for clip_idx in range(2):
+                # Vary the prompt slightly for the second clip to get variation
+                clip_prompt = base_desc if clip_idx == 0 else f"{base_desc}, slowly evolving and shifting"
+                
+                resp = hx.post(
+                    "https://api.elevenlabs.io/v1/sound-generation",
+                    headers={"xi-api-key": elevenlabs_key, "Content-Type": "application/json"},
+                    json={"text": clip_prompt, "duration_seconds": 22},
+                    timeout=60,
+                )
+                
+                if resp.status_code == 200 and len(resp.content) > 1000:
+                    clip_path = str(out_path) + f".clip{clip_idx}.mp3"
+                    Path(clip_path).write_bytes(resp.content)
+                    clips.append(clip_path)
+                    log.info(f"ElevenLabs SFX clip {clip_idx+1}: {len(resp.content)} bytes")
+                    time.sleep(1)  # Rate limit courtesy
+                else:
+                    log.warning(f"ElevenLabs Sound Generation clip {clip_idx+1} failed ({resp.status_code}): {resp.text[:200]}")
+                    break
             
-            if resp.status_code == 200:
-                # Save the generated clip
-                clip_path = str(out_path) + ".clip.mp3"
-                Path(clip_path).write_bytes(resp.content)
-                log.info(f"ElevenLabs SFX clip saved: {len(resp.content)} bytes")
+            if clips:
+                # Convert clips to WAV
+                wav_clips = []
+                for cp in clips:
+                    wav_path = cp.replace(".mp3", ".wav")
+                    subprocess.run([
+                        "ffmpeg", "-y", "-i", cp,
+                        "-ar", "44100", "-ac", "1", wav_path,
+                    ], capture_output=True)
+                    wav_clips.append(wav_path)
                 
-                # Convert to WAV
-                clip_wav = str(out_path) + ".clip.wav"
-                conv_result = subprocess.run([
-                    "ffmpeg", "-y", "-i", clip_path,
-                    "-ar", "44100", "-ac", "1", clip_wav,
-                ], capture_output=True, text=True)
+                if len(wav_clips) == 2:
+                    # Crossfade the two clips into one longer seamless base (~40s)
+                    merged_path = str(out_path) + ".merged.wav"
+                    subprocess.run([
+                        "ffmpeg", "-y",
+                        "-i", wav_clips[0], "-i", wav_clips[1],
+                        "-filter_complex",
+                        f"[0:a][1:a]acrossfade=d=4:c1=tri:c2=tri[out]",
+                        "-map", "[out]",
+                        "-ar", "44100", "-ac", "1",
+                        merged_path,
+                    ], capture_output=True)
+                    base_clip = merged_path
+                else:
+                    base_clip = wav_clips[0]
                 
-                if conv_result.returncode != 0:
-                    log.warning(f"SFX clip conversion failed: {conv_result.stderr[:200]}")
-                    raise Exception("SFX clip conversion failed")
-                
-                log.info(f"SFX clip converted to WAV: {Path(clip_wav).stat().st_size} bytes")
-                
-                # Loop the clip to fill the full duration with crossfade
+                # Loop the base clip with crossfade to fill full duration
+                loops_needed = int(duration / 35) + 2
                 loop_result = subprocess.run([
                     "ffmpeg", "-y",
-                    "-stream_loop", str(int(duration / 20) + 2),
-                    "-i", clip_wav,
-                    "-af", f"afade=t=in:d=3,afade=t=out:st={duration - 3}:d=3,atrim=0:{duration}",
+                    "-stream_loop", str(loops_needed),
+                    "-i", base_clip,
+                    "-af", (
+                        f"afade=t=in:d=4,"
+                        f"afade=t=out:st={max(duration - 4, 1)}:d=4,"
+                        f"atrim=0:{duration}"
+                    ),
                     "-ar", "44100", "-ac", "1",
                     str(out_path),
                 ], capture_output=True, text=True)
                 
-                if loop_result.returncode != 0:
-                    log.warning(f"SFX loop failed: {loop_result.stderr[:200]}")
-                    raise Exception("SFX loop failed")
-                
                 # Cleanup temp files
-                Path(clip_path).unlink(missing_ok=True)
-                Path(clip_wav).unlink(missing_ok=True)
+                for cp in clips:
+                    Path(cp).unlink(missing_ok=True)
+                for wp in wav_clips:
+                    Path(wp).unlink(missing_ok=True)
+                Path(str(out_path) + ".merged.wav").unlink(missing_ok=True)
                 
-                if Path(out_path).exists() and Path(out_path).stat().st_size > 1000:
-                    log.info(f"Ambient audio generated via ElevenLabs SFX ({duration:.0f}s)")
+                if loop_result.returncode == 0 and Path(out_path).exists() and Path(out_path).stat().st_size > 1000:
+                    log.info(f"Ambient audio generated via ElevenLabs SFX ({duration:.0f}s, {len(clips)} clips merged)")
                     return
                 else:
-                    log.warning("ElevenLabs SFX output too small, falling back to procedural")
-            else:
-                log.warning(f"ElevenLabs Sound Generation failed ({resp.status_code}): {resp.text[:200]}")
-                
+                    log.warning(f"SFX loop failed: {loop_result.stderr[:200] if loop_result.returncode != 0 else 'output too small'}")
+            
         except Exception as e:
             log.warning(f"ElevenLabs Sound Generation failed: {str(e)[:150]}")
     
-    # FALLBACK: Procedural synthesis (helicopter-free version, kept simple)
+    # FALLBACK: Procedural synthesis
     log.info("Falling back to procedural ambient generation...")
     _generate_procedural_ambient(duration, out_path, channel_id)
 
