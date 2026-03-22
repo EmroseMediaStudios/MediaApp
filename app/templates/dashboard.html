@@ -5,28 +5,83 @@
   <img src="/static/img/banner.png" alt="Emrose Media Studio">
 </div>
 <hr class="divider">
+
+{# ---- STUDIO STATS HEADER ---- #}
+{% if metrics %}
+{% set ns = namespace(total_views=0, full_views=0, shorts_views=0, total_subs=0, total_likes=0, total_comments=0, total_videos=0) %}
+{% for ch_id, m in metrics.items() %}
+  {% set ns.total_views = ns.total_views + m.total_views %}
+  {% set ns.full_views = ns.full_views + m.full_length_views %}
+  {% set ns.shorts_views = ns.shorts_views + m.shorts_views %}
+  {% set ns.total_subs = ns.total_subs + m.subscribers %}
+  {% set ns.total_likes = ns.total_likes + m.total_likes %}
+  {% set ns.total_comments = ns.total_comments + m.total_comments %}
+  {% set ns.total_videos = ns.total_videos + m.video_count %}
+{% endfor %}
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+    <div id="yt-status" class="meta"></div>
+    {% if last_refresh %}
+    <span style="font-size: 0.72em; color: var(--text3);">
+      · Updated <span id="metrics-time">{{ last_refresh }}</span>
+    </span>
+    {% endif %}
+    <button onclick="refreshMetrics(this)" class="btn btn-sm" style="font-size: 0.75em; padding: 4px 10px; background: transparent; color: var(--gold); border: 1px solid var(--border2);">🔄 Refresh</button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 500px; margin: 0 auto;">
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+      <div style="font-size: 1.2em; font-weight: 700; color: var(--text1);">{{ "{:,}".format(ns.total_subs) }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">👥 Subscribers</div>
+    </div>
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+      <div style="font-size: 1.2em; font-weight: 700; color: #3b82f6;">{{ "{:,}".format(ns.full_views) }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">▶ Long-Form</div>
+    </div>
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+      <div style="font-size: 1.2em; font-weight: 700; color: #f59e0b;">{{ "{:,}".format(ns.shorts_views) }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">📱 Shorts</div>
+    </div>
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+      <div style="font-size: 1.2em; font-weight: 700; color: #ec4899;">{{ "{:,}".format(ns.total_likes) }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">❤️ Likes</div>
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 380px; margin: 8px auto 0;">
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
+      <div style="font-size: 1.1em; font-weight: 700; color: #8b5cf6;">{{ "{:,}".format(ns.total_comments) }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">💬 Comments</div>
+    </div>
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
+      <div style="font-size: 1.1em; font-weight: 700; color: #22c55e;">{{ ns.total_videos }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">🎬 Videos</div>
+    </div>
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
+      <div style="font-size: 1.1em; font-weight: 700; color: var(--gold);">{{ metrics|length }}</div>
+      <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">📡 Channels</div>
+    </div>
+  </div>
+</div>
+
+{% else %}
 <div class="page-header" style="text-align: center;">
   <p style="color: var(--text2);">Select a channel to begin.</p>
   <div id="yt-status" class="meta mt-8"></div>
-  {% if last_refresh %}
-  <div class="meta mt-4" style="font-size: 0.75em; color: var(--text3);">
-    📊 Metrics updated: <span id="metrics-time">{{ last_refresh }}</span>
-    <button onclick="refreshMetrics(this)" class="btn btn-sm" style="margin-left: 8px; font-size: 0.85em; background: transparent; color: var(--gold); border: 1px solid var(--border2);">🔄 Refresh</button>
-  </div>
-  <script>
-  (function(){
-    const el = document.getElementById('metrics-time');
-    if(el && el.textContent.trim()){
-      const d = new Date(el.textContent.trim());
-      if(!isNaN(d)){
-        el.textContent = d.toLocaleString('en-US', {timeZone:'America/New_York', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true}) + ' ET';
-      }
-    }
-  })();
-  </script>
-  {% endif %}
 </div>
+{% endif %}
+
 <script>
+{% if last_refresh %}
+(function(){
+  const el = document.getElementById('metrics-time');
+  if(el && el.textContent.trim()){
+    const d = new Date(el.textContent.trim());
+    if(!isNaN(d)){
+      el.textContent = d.toLocaleString('en-US', {timeZone:'America/New_York', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true}) + ' ET';
+    }
+  }
+})();
+{% endif %}
 fetch('/youtube/status').then(r=>r.json()).then(d=>{
   const el = document.getElementById('yt-status');
   if(d.authenticated){
@@ -36,59 +91,14 @@ fetch('/youtube/status').then(r=>r.json()).then(d=>{
   }
 });
 function refreshMetrics(btn) {
-  btn.innerHTML = '<span class="spinner"></span> Refreshing...';
+  btn.innerHTML = '<span class="spinner"></span>';
   btn.disabled = true;
   fetch('/api/metrics/refresh', {method: 'POST'})
     .then(r => r.json())
     .then(d => { if(d.ok) location.reload(); })
     .catch(() => { btn.innerHTML = '🔄 Refresh'; btn.disabled = false; });
 }
-function formatNum(n) {
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
-  return n.toString();
-}
 </script>
-
-{% if metrics %}
-{% set ns = namespace(total_views=0, total_subs=0, total_likes=0, total_comments=0, total_videos=0) %}
-{% for ch_id, m in metrics.items() %}
-  {% set ns.total_views = ns.total_views + m.total_views %}
-  {% set ns.total_subs = ns.total_subs + m.subscribers %}
-  {% set ns.total_likes = ns.total_likes + m.total_likes %}
-  {% set ns.total_comments = ns.total_comments + m.total_comments %}
-  {% set ns.total_videos = ns.total_videos + m.video_count %}
-{% endfor %}
-<div class="card card-highlight mt-24" style="padding: 24px 32px;">
-  <h3 style="text-align: center; font-size: 1em; margin-bottom: 20px; letter-spacing: 2px;">MEDIA STUDIO STATISTICS</h3>
-  <div style="display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; text-align: center;">
-    <div>
-      <div style="font-size: 1.8em; font-weight: 700; color: var(--text1);">{{ "{:,}".format(ns.total_views) }}</div>
-      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">👁 Total Views</div>
-    </div>
-    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
-      <div style="font-size: 1.8em; font-weight: 700; color: var(--text1);">{{ "{:,}".format(ns.total_subs) }}</div>
-      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">👥 Total Subscribers</div>
-    </div>
-    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
-      <div style="font-size: 1.8em; font-weight: 700; color: #ec4899;">{{ "{:,}".format(ns.total_likes) }}</div>
-      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">❤️ Total Likes</div>
-    </div>
-    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
-      <div style="font-size: 1.8em; font-weight: 700; color: #8b5cf6;">{{ "{:,}".format(ns.total_comments) }}</div>
-      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">💬 Total Comments</div>
-    </div>
-    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
-      <div style="font-size: 1.8em; font-weight: 700; color: #22c55e;">{{ ns.total_videos }}</div>
-      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">🎬 Total Videos</div>
-    </div>
-    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
-      <div style="font-size: 1.8em; font-weight: 700; color: var(--gold);">{{ metrics|length }}</div>
-      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">📡 Active Channels</div>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 <div class="grid">
 {% for ch in channels %}
