@@ -49,6 +49,47 @@ function formatNum(n) {
   return n.toString();
 }
 </script>
+
+{% if metrics %}
+{% set ns = namespace(total_views=0, total_subs=0, total_likes=0, total_comments=0, total_videos=0) %}
+{% for ch_id, m in metrics.items() %}
+  {% set ns.total_views = ns.total_views + m.total_views %}
+  {% set ns.total_subs = ns.total_subs + m.subscribers %}
+  {% set ns.total_likes = ns.total_likes + m.total_likes %}
+  {% set ns.total_comments = ns.total_comments + m.total_comments %}
+  {% set ns.total_videos = ns.total_videos + m.video_count %}
+{% endfor %}
+<div class="card card-highlight mt-24" style="padding: 24px 32px;">
+  <h3 style="text-align: center; font-size: 1em; margin-bottom: 20px; letter-spacing: 2px;">MEDIA STUDIO STATISTICS</h3>
+  <div style="display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; text-align: center;">
+    <div>
+      <div style="font-size: 1.8em; font-weight: 700; color: var(--text1);">{{ "{:,}".format(ns.total_views) }}</div>
+      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">👁 Total Views</div>
+    </div>
+    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+      <div style="font-size: 1.8em; font-weight: 700; color: var(--text1);">{{ "{:,}".format(ns.total_subs) }}</div>
+      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">👥 Total Subscribers</div>
+    </div>
+    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+      <div style="font-size: 1.8em; font-weight: 700; color: #ec4899;">{{ "{:,}".format(ns.total_likes) }}</div>
+      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">❤️ Total Likes</div>
+    </div>
+    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+      <div style="font-size: 1.8em; font-weight: 700; color: #8b5cf6;">{{ "{:,}".format(ns.total_comments) }}</div>
+      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">💬 Total Comments</div>
+    </div>
+    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+      <div style="font-size: 1.8em; font-weight: 700; color: #22c55e;">{{ ns.total_videos }}</div>
+      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">🎬 Total Videos</div>
+    </div>
+    <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+      <div style="font-size: 1.8em; font-weight: 700; color: var(--gold);">{{ metrics|length }}</div>
+      <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">📡 Active Channels</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="grid">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
