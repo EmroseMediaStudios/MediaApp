@@ -181,7 +181,10 @@ def _sanitize_tags(tags):
         if tag_lower in seen:
             continue
         seen.add(tag_lower)
-        tag = tag[:30].rstrip()
+        if len(tag) > 30:
+            tag = tag[:30].rsplit(' ', 1)[0].rstrip()
+            if not tag:
+                continue
         tag_cost = len(tag) + (1 if sanitized else 0)
         if total_chars + tag_cost > 480:
             break
