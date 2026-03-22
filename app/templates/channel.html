@@ -47,6 +47,29 @@
     <div style="font-size: 1.5em; font-weight: 700; color: var(--text1);">{{ ch_stats.total_videos }}</div>
     <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">🎬 Videos</div>
   </div>
+  {% set all_vids = vid_data.get('videos', []) %}
+  {% set total_likes = all_vids|sum(attribute='likes') %}
+  {% set total_comments = all_vids|sum(attribute='comments') %}
+  {% set total_v = vid_data.get('total_views', 0) or ch_stats.total_views %}
+  {% if total_likes > 0 %}
+  <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+    <div style="font-size: 1.5em; font-weight: 700; color: #ec4899;">{{ "{:,}".format(total_likes) }}</div>
+    <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">❤️ Total Likes</div>
+  </div>
+  {% endif %}
+  {% if total_comments > 0 %}
+  <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+    <div style="font-size: 1.5em; font-weight: 700; color: #8b5cf6;">{{ "{:,}".format(total_comments) }}</div>
+    <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">💬 Comments</div>
+  </div>
+  {% endif %}
+  {% if total_v > 0 %}
+  {% set eng_pct = ((total_likes + total_comments) / total_v * 100)|round(1) %}
+  <div style="border-left: 1px solid var(--border2); padding-left: 32px;">
+    <div style="font-size: 1.5em; font-weight: 700; color: {% if eng_pct >= 5 %}#22c55e{% elif eng_pct >= 2 %}#f59e0b{% else %}var(--text1){% endif %};">{{ eng_pct }}%</div>
+    <div style="font-size: 0.78em; color: var(--text3); margin-top: 2px;">📊 Engagement</div>
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -67,6 +90,7 @@
         <th style="text-align: right; padding: 6px 8px;">Views</th>
         <th style="text-align: right; padding: 6px 8px;">Likes</th>
         <th style="text-align: right; padding: 6px 8px;">Comments</th>
+        <th style="text-align: right; padding: 6px 8px;">Engage%</th>
         <th style="text-align: center; padding: 6px 8px;">Published</th>
       </tr>
     </thead>
@@ -86,6 +110,7 @@
         <td style="text-align: right; padding: 8px; font-weight: 600; color: var(--text1);">{{ "{:,}".format(yv.views) }}</td>
         <td style="text-align: right; padding: 8px; color: var(--text2);">{{ "{:,}".format(yv.likes) }}</td>
         <td style="text-align: right; padding: 8px; color: var(--text2);">{{ "{:,}".format(yv.comments) }}</td>
+        <td style="text-align: right; padding: 8px; font-weight: 600; color: {% if yv.views > 0 %}{% if ((yv.likes + yv.comments) / yv.views * 100) >= 5 %}#22c55e{% elif ((yv.likes + yv.comments) / yv.views * 100) >= 2 %}#f59e0b{% else %}var(--text2){% endif %}{% else %}var(--text3){% endif %};">{% if yv.views > 0 %}{{ ((yv.likes + yv.comments) / yv.views * 100)|round(1) }}%{% else %}—{% endif %}</td>
         <td style="text-align: center; padding: 8px; color: var(--text3); font-size: 0.9em;">{{ yv.published_at[:10] }}</td>
       </tr>
       {% endfor %}

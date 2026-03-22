@@ -256,13 +256,27 @@ def get_dashboard_summary(cache):
     summary = {}
     for app_id, ch_data in cache.get("channels", {}).items():
         vid_data = cache.get("videos", {}).get(app_id, {})
+        videos = vid_data.get("videos", [])
+
+        total_likes = sum(v.get("likes", 0) for v in videos)
+        total_comments = sum(v.get("comments", 0) for v in videos)
+        total_views = vid_data.get("total_views", 0) or ch_data.get("total_views", 0)
+
+        # Engagement rate = (likes + comments) / views × 100
+        engagement_pct = 0.0
+        if total_views > 0:
+            engagement_pct = round((total_likes + total_comments) / total_views * 100, 1)
+
         summary[app_id] = {
             "subscribers": ch_data.get("subscribers", 0),
             "total_views": ch_data.get("total_views", 0),
             "full_length_views": vid_data.get("full_length_views", 0),
             "shorts_views": vid_data.get("shorts_views", 0),
             "video_count": vid_data.get("video_count", 0),
-            "top_videos": vid_data.get("videos", [])[:5],
+            "total_likes": total_likes,
+            "total_comments": total_comments,
+            "engagement_pct": engagement_pct,
+            "top_videos": videos[:5],
         }
     return summary
 
