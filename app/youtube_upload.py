@@ -144,6 +144,7 @@ def list_channels():
         })
     
     try:
+        # managedByMe requires Content Manager role — skip if not available
         resp2 = youtube.channels().list(part="snippet,contentDetails", managedByMe=True, maxResults=50).execute()
         for ch in resp2.get("items", []):
             if ch["id"] not in [c["id"] for c in channels]:
@@ -152,8 +153,8 @@ def list_channels():
                     "title": ch["snippet"]["title"],
                     "description": ch["snippet"].get("description", ""),
                 })
-    except Exception as e:
-        log.warning(f"Could not list managed channels: {e}")
+    except Exception:
+        pass  # Not a Content Manager — that's fine
     
     return channels
 

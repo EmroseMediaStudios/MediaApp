@@ -650,10 +650,15 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
     base_desc = channel_ambient_base.get(channel_id, "cinematic atmospheric ambient soundscape, slow evolving drone, moody and immersive")
     
     # Make ambient content-aware — match the video's actual topic
+    # ElevenLabs Sound Generation has a 450 char limit
     if topic:
-        base_desc = f"{base_desc}, evoking the feeling of {topic}"
+        base_desc = f"{base_desc}, evoking {topic[:80]}"
     elif title:
-        base_desc = f"{base_desc}, evoking the feeling of {title}"
+        base_desc = f"{base_desc}, evoking {title[:80]}"
+    
+    # Enforce 450 char limit
+    if len(base_desc) > 440:
+        base_desc = base_desc[:440]
     
     # ElevenLabs Sound Generation
     elevenlabs_key = None
