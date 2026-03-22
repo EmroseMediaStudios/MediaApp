@@ -428,7 +428,7 @@ def youtube_upload_video():
         short_result = None
         short_path = video_dir / "short.mp4"
         if data.get("include_short", True) and short_path.exists():
-            short_meta = meta.get("short", {})
+            short_meta = meta.get("short") or {}
             short_title = short_meta.get("suggested_title", title + " #Shorts")
             if not short_title.endswith("#Shorts"):
                 short_title += " #Shorts"
