@@ -94,6 +94,13 @@ function formatNum(n) {
             <span style="color: var(--text3);">likes</span>
           </div>
           {% endif %}
+          {% if m.total_comments > 0 %}
+          <div style="display: flex; align-items: center; gap: 4px;" title="Total comments across all videos">
+            <span style="color: #8b5cf6;">💬</span>
+            <span style="color: var(--text2); font-weight: 600;">{{ "{:,}".format(m.total_comments) }}</span>
+            <span style="color: var(--text3);">comments</span>
+          </div>
+          {% endif %}
           {% if m.engagement_pct > 0 %}
           <div style="display: flex; align-items: center; gap: 4px;" title="Engagement rate: (likes + comments) / views">
             <span style="color: #8b5cf6;">📊</span>
