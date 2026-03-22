@@ -121,6 +121,68 @@ CHANNEL_FOCUS = {
         "avoid": ["Standard horror tropes or jumpscares"],
         "examples": ["The Observer Paradox Entity"],
     },
+    "softlight_kingdom": {
+        "focus": [
+            "Classic children's fantasy: princesses, kings, queens, castles",
+            "Talking animal friends on gentle adventures",
+            "Magical creatures: friendly dragons, unicorns, fairies, wise owls",
+            "Enchanted forests, hidden kingdoms, cozy villages",
+            "Simple lessons: kindness, sharing, bravery, being yourself",
+            "Bedtime-appropriate stories that wind down toward sleep",
+        ],
+        "avoid": [
+            "Anything scary, dark, or threatening",
+            "Complex plots or twists",
+            "Villains or real danger",
+            "Adult themes or abstract concepts",
+            "Modern technology or real-world settings",
+        ],
+        "examples": [
+            "The Little Bear Who Learned to Share the Stars",
+            "Princess Rosepetal and the Sleepy Dragon",
+            "The Bunny Who Found a Secret Garden",
+            "The Owl King's Moonlight Festival",
+            "The Kitten and the Friendly Cloud",
+        ],
+    },
+    "echelon_veil": {
+        "focus": [
+            "Government cover-ups and classified programs",
+            "Surveillance, AI monitoring, hidden networks",
+            "Unexplained disappearances and missing time",
+            "Shadow organizations and secret societies",
+            "Grounded conspiracy theories with real-world anchors",
+        ],
+        "avoid": [
+            "Aliens or UFOs as the main subject (too close to ZeroTrace)",
+            "Pure science fiction without conspiracy angle",
+            "Debunking tone — maintain mystery and intrigue",
+        ],
+        "examples": [
+            "The Phone Number That Connects to No One",
+            "The Town That Forgot 48 Hours",
+            "The Signal They Told You Was Static",
+        ],
+    },
+    "loreletics": {
+        "focus": [
+            "Legendary sports moments told as mythology",
+            "Underdog stories and impossible comebacks",
+            "The human drama behind iconic sports events",
+            "Cinematic, emotional sports storytelling",
+            "Athletes who defied fate, physics, or expectation",
+        ],
+        "avoid": [
+            "Stats-heavy analysis or play-by-play breakdowns",
+            "Current sports news or commentary",
+            "Generic highlight reels without narrative depth",
+        ],
+        "examples": [
+            "The Night the Ice Cracked: Miracle on Ice Retold",
+            "The Barefoot God of Rome: Abebe Bikila's Marathon",
+            "The Ball That Bent Physics: Roberto Carlos Free Kick",
+        ],
+    },
 }
 
 
