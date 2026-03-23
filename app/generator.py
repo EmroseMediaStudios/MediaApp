@@ -1235,40 +1235,83 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
                 dalle_size = "1024x1792"  # vertical for Shorts
 
             log.info(f"Generating image via DALL-E 3 ({dalle_size})...")
-            r = hx.post(
-                "https://api.openai.com/v1/images/generations",
-                headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
-                json={
-                    "model": "dall-e-3",
-                    "prompt": dalle_prompt,
-                    "n": 1,
-                    "size": dalle_size,
-                    "quality": "hd",
-                    "response_format": "url",
-                },
-                timeout=120,
-            )
-            if r.status_code == 200:
-                img_url = r.json()["data"][0]["url"]
-                # Download the image
-                img_resp = hx.get(img_url, timeout=60)
-                if img_resp.status_code == 200:
-                    with open(str(out_path), "wb") as f:
-                        f.write(img_resp.content)
-                    img = Image.open(str(out_path))
-                    img.save(str(out_path), "PNG")
-                    log.info(f"Image generated via DALL-E 3: {img.size[0]}x{img.size[1]}")
-                    return True
+            
+            # Try DALL-E up to 3 times — on content filter blocks, progressively
+            # strip the prompt down to pass the filter while staying on DALL-E
+            dalle_attempts = [
+                dalle_prompt,  # Attempt 1: already-softened prompt
+                None,          # Attempt 2: further stripped (built on failure)
+                None,          # Attempt 3: maximally generic (built on failure)
+            ]
+            
+            for attempt_idx, attempt_prompt in enumerate(dalle_attempts):
+                if attempt_prompt is None:
+                    break
+                    
+                r = hx.post(
+                    "https://api.openai.com/v1/images/generations",
+                    headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": "dall-e-3",
+                        "prompt": attempt_prompt,
+                        "n": 1,
+                        "size": dalle_size,
+                        "quality": "hd",
+                        "response_format": "url",
+                    },
+                    timeout=120,
+                )
+                if r.status_code == 200:
+                    img_url = r.json()["data"][0]["url"]
+                    img_resp = hx.get(img_url, timeout=60)
+                    if img_resp.status_code == 200:
+                        with open(str(out_path), "wb") as f:
+                            f.write(img_resp.content)
+                        img = Image.open(str(out_path))
+                        img.save(str(out_path), "PNG")
+                        if attempt_idx > 0:
+                            log.info(f"Image generated via DALL-E 3 (attempt {attempt_idx+1}, softened): {img.size[0]}x{img.size[1]}")
+                        else:
+                            log.info(f"Image generated via DALL-E 3: {img.size[0]}x{img.size[1]}")
+                        return True
+                    else:
+                        log.warning(f"DALL-E 3 image download failed: {img_resp.status_code}")
+                        break  # download issue, not content filter — move to fallback
                 else:
-                    log.warning(f"DALL-E 3 image download failed: {img_resp.status_code}")
-            else:
-                error_msg = r.text[:200]
-                log.warning(f"DALL-E 3 failed ({r.status_code}): {error_msg}")
-                # Don't fall through on billing/auth errors
-                if r.status_code == 401:
-                    log.error("OpenAI API key invalid for DALL-E 3")
-                elif "billing" in error_msg.lower() or "quota" in error_msg.lower():
-                    log.warning("OpenAI billing/quota issue — falling back to FLUX")
+                    error_msg = r.text[:300]
+                    
+                    # Content filter block — retry with progressively softer prompt
+                    if r.status_code == 400 and "content" in error_msg.lower() and "filter" in error_msg.lower():
+                        log.warning(f"DALL-E 3 content filter block (attempt {attempt_idx+1}/3)")
+                        
+                        if attempt_idx == 0:
+                            # Attempt 2: Strip to just visual descriptors, remove narrative elements
+                            stripped = re.sub(r'(?i)(mysterious|eerie|sinister|dark|creepy|haunted|ominous|threatening|menacing|disturbing|unsettling|foreboding|dread|horror|scary|frightening|terrifying|nightmarish)', 'atmospheric', attempt_prompt)
+                            stripped = re.sub(r'(?i)(abandoned|decaying|rotting|crumbling|ruined|decrepit|desolate|forsaken)', 'weathered', stripped)
+                            stripped = re.sub(r'(?i)(figure|silhouette|shadow figure|shadowy|lurking|watching|stalking)', 'form', stripped)
+                            dalle_attempts[1] = stripped
+                            log.info("Retrying DALL-E with further softened prompt...")
+                        elif attempt_idx == 1:
+                            # Attempt 3: Maximally generic — just the visual style and setting
+                            # Extract the image_prompt_suffix (always at end) and build minimal prompt
+                            generic = f"Atmospheric cinematic scene, moody lighting, {dalle_size.replace('x', ' by ')} composition, "
+                            # Try to keep the last part (usually the style suffix)
+                            parts = attempt_prompt.rsplit(',', 5)
+                            if len(parts) > 3:
+                                generic += ', '.join(parts[-3:])
+                            else:
+                                generic += "4k, film grain, cinematic photography"
+                            dalle_attempts[2] = generic
+                            log.info("Retrying DALL-E with generic fallback prompt...")
+                        continue
+                    
+                    # Non-content-filter error
+                    log.warning(f"DALL-E 3 failed ({r.status_code}): {error_msg[:200]}")
+                    if r.status_code == 401:
+                        log.error("OpenAI API key invalid for DALL-E 3")
+                    elif "billing" in error_msg.lower() or "quota" in error_msg.lower():
+                        log.warning("OpenAI billing/quota issue — falling back to FLUX")
+                    break  # Don't retry on auth/billing errors
         except Exception as e:
             log.warning(f"DALL-E 3 failed: {str(e)[:150]}")
 
