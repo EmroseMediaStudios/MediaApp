@@ -891,7 +891,7 @@ def _generate_procedural_ambient(duration, out_path, channel_id=None):
 
 # --- Image generation ---
 
-def _generate_image(prompt, out_path, hf_token, width=1344, height=768):
+def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
     """Generate image. Tries DALL-E 3 first (best quality), falls back to FLUX via HuggingFace."""
 
     # Soften prompts for DALL-E to avoid safety filter rejections on darker themes
@@ -1072,7 +1072,7 @@ def _generate_image(prompt, out_path, hf_token, width=1344, height=768):
     return False
 
 
-def _generate_fallback_image(out_path, scene_index, width=1344, height=768):
+def _generate_fallback_image(out_path, scene_index, width=1792, height=1024):
     img = np.zeros((height, width, 3), dtype=np.float32)
     for y in range(height):
         v = 0.02 + 0.03 * math.exp(-((y - height * 0.4) ** 2) / (2 * (height * 0.3) ** 2))
@@ -1296,7 +1296,7 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
     title_bg_prompt += f" Relating to the concept of '{title}'. Dark, atmospheric, space for text overlay in center. No text, no letters, no words, no readable symbols."
 
     bg_path = str(out_path).replace(".png", "_bg.png")
-    ok = _generate_image(title_bg_prompt, bg_path, hf_token, width=1344, height=768)
+    ok = _generate_image(title_bg_prompt, bg_path, hf_token, width=1792, height=1024)
 
     if ok:
         pil_img = Image.open(bg_path)
@@ -1660,16 +1660,16 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     for i, scene in enumerate(scenes):
         emit("images", f"Generating image for scene {i+1}/{len(scenes)}...")
         img_path = images_dir / f"scene_{i:03d}.png"
-        # Generate at FLUX-native resolution (1344x768) for best quality
+        # Generate at 1792x1024 to match DALL-E 3 output size across all sources
         ok = _generate_image(
             scene["image_prompt"], str(img_path),
             api_keys.get("hf_token", ""),
-            width=1344, height=768,
+            width=1792, height=1024,
         )
         if not ok:
             fallback_count += 1
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
-            _generate_fallback_image(str(img_path), i, width=1344, height=768)
+            _generate_fallback_image(str(img_path), i, width=1792, height=1024)
 
         # Upscale for Ken Burns headroom — 2x gives good balance between
         # showing the full scene composition and having room for zoom/pan.
