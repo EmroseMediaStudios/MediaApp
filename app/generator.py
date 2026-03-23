@@ -1432,9 +1432,87 @@ def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
     return str(out_path)
 
 
+def _get_thumbnail_font(channel_id, size=90):
+    """Get a bold/heavy font for thumbnails — impact matters more than channel branding here."""
+    from PIL import ImageFont
+
+    # Prefer bold/heavy fonts for thumbnail punch — channel-specific where possible
+    channel_thumb_fonts = {
+        "deadlight_codex": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+            "/System/Library/Fonts/Supplemental/Copperplate.ttc",
+        ],
+        "zero_trace_archive": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+            "/System/Library/Fonts/Supplemental/Courier New Bold.ttf",
+        ],
+        "the_unwritten_wing": [
+            "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+        ],
+        "remnants_project": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Futura.ttc",
+        ],
+        "somnus_protocol": [
+            "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Didot.ttc",
+        ],
+        "softlight_kingdom": [
+            "/System/Library/Fonts/Supplemental/Arial Rounded Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+        ],
+        "autonomous_stack": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/SFMono-Bold.otf",
+        ],
+        "gray_meridian": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
+        ],
+        "echelon_veil": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
+        ],
+        "loreletics": [
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Rockwell.ttc",
+            "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+        ],
+    }
+
+    # Universal bold fallbacks
+    bold_fallbacks = [
+        "/System/Library/Fonts/Supplemental/Impact.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    ]
+
+    font_prefs = channel_thumb_fonts.get(channel_id, [])
+    for fp in font_prefs + bold_fallbacks:
+        if Path(fp).exists():
+            try:
+                return ImageFont.truetype(fp, size)
+            except Exception:
+                continue
+    return ImageFont.load_default()
+
+
 def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 720)):
     """Generate a YouTube thumbnail from a scene image + title text overlay.
-    YouTube recommends 1280x720 (16:9), minimum 640x360."""
+    YouTube recommends 1280x720 (16:9), minimum 640x360.
+
+    Design principles:
+    - Bold, high-contrast text that's readable at tiny sizes (mobile feed)
+    - Strong bottom gradient so text pops against any background
+    - Semi-transparent dark bar behind text for guaranteed readability
+    - Channel-specific accent colors with outer glow for depth
+    - Max 2 lines of text — fewer words = more impact
+    """
     w, h = res
     channel_id = channel.get("channel_id", "")
 
@@ -1445,42 +1523,44 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
     except Exception:
         bg = Image.fromarray(np.zeros((h, w, 3), dtype=np.uint8))
 
-    # Increase contrast and saturation for thumbnail pop
-    from PIL import ImageEnhance
-    bg = ImageEnhance.Contrast(bg).enhance(1.3)
-    bg = ImageEnhance.Color(bg).enhance(1.2)
-    bg = ImageEnhance.Brightness(bg).enhance(0.85)
+    # Boost contrast and saturation for thumbnail pop
+    from PIL import ImageEnhance, ImageDraw, ImageFont, ImageFilter
+    bg = ImageEnhance.Contrast(bg).enhance(1.4)
+    bg = ImageEnhance.Color(bg).enhance(1.3)
+    bg = ImageEnhance.Brightness(bg).enhance(0.8)
 
     img_array = np.array(bg).astype(np.float32)
 
-    # Strong bottom gradient for text readability
+    # Strong bottom gradient — heavier than before for text readability
     for y in range(h):
-        fade = max(0, (y - h * 0.5) / (h * 0.5))
-        img_array[y] *= (1.0 - fade * 0.7)
+        fade = max(0, (y - h * 0.35) / (h * 0.65))
+        img_array[y] *= (1.0 - fade * 0.85)
 
-    # Subtle vignette
-    cy, cx = h // 2, w // 2
+    # Vignette — stronger on edges to draw eye to center
+    cy, cx = h * 0.4, w // 2
     Y, X = np.ogrid[:h, :w]
-    dist = np.sqrt(((X - cx) / (w * 0.7)) ** 2 + ((Y - cy) / (h * 0.7)) ** 2)
-    vignette = np.clip(1.0 - dist * 0.3, 0.4, 1.0)
+    dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
+    vignette = np.clip(1.0 - dist * 0.4, 0.25, 1.0)
     img_array *= vignette[:, :, None]
 
     pil_img = Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
 
     try:
-        from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        title_font = _get_channel_font(channel_id, 80)
+        # Use a bold/heavy font at larger size for thumbnail impact
+        title_font = _get_thumbnail_font(channel_id, 90)
 
-        # UPPERCASE title for thumbnail impact
-        words = title.upper().split()
+        # UPPERCASE title — wrap to max 2 lines for readability at small sizes
+        title_upper = title.upper()
+        words = title_upper.split()
         lines = []
         current = ""
+        max_text_width = w - 120  # generous padding
         for word in words:
             test = f"{current} {word}".strip()
             bbox = draw.textbbox((0, 0), test, font=title_font)
-            if bbox[2] - bbox[0] > w - 100:
+            if bbox[2] - bbox[0] > max_text_width:
                 if current:
                     lines.append(current)
                 current = word
@@ -1489,44 +1569,86 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
         if current:
             lines.append(current)
 
-        # Max 3 lines for readability
-        if len(lines) > 3:
-            lines = lines[:3]
-            lines[2] = lines[2][:20] + "..."
+        # Hard cap at 2 lines — truncate with ellipsis if needed
+        if len(lines) > 2:
+            # Try to fit on 2 lines by trimming
+            lines = lines[:2]
+            # Don't add ellipsis — just cut cleanly
 
-        # Position text in bottom third
-        line_height = 82
+        # Measure text block
+        line_height = 95
         total_text_h = len(lines) * line_height
-        y_start = h - total_text_h - 50
+        text_block_top = h - total_text_h - 55
+        text_block_bottom = h - 25
 
-        # Channel-specific accent colors
+        # Semi-transparent dark bar behind text
+        bar_img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        bar_draw = ImageDraw.Draw(bar_img)
+        bar_top = text_block_top - 20
+        bar_draw.rectangle(
+            [(0, bar_top), (w, text_block_bottom + 10)],
+            fill=(0, 0, 0, 140),
+        )
+        # Feather the top edge of the bar with gradient transparency
+        for y_off in range(30):
+            alpha = int(140 * (y_off / 30))
+            bar_draw.line([(0, bar_top - 30 + y_off), (w, bar_top - 30 + y_off)], fill=(0, 0, 0, alpha))
+
+        pil_img = pil_img.convert("RGBA")
+        pil_img = Image.alpha_composite(pil_img, bar_img)
+        draw = ImageDraw.Draw(pil_img)
+
+        # Channel-specific accent colors (brighter/more saturated for thumbnails)
         accent_colors = {
-            "deadlight_codex": (200, 50, 50),
-            "zero_trace_archive": (200, 200, 180),
-            "the_unwritten_wing": (255, 220, 150),
-            "remnants_project": (120, 180, 100),
-            "somnus_protocol": (150, 170, 220),
-            "autonomous_stack": (100, 200, 255),
-            "gray_meridian": (200, 180, 200),
+            "deadlight_codex": (220, 40, 40),
+            "zero_trace_archive": (220, 215, 190),
+            "the_unwritten_wing": (255, 215, 120),
+            "remnants_project": (100, 200, 80),
+            "somnus_protocol": (140, 160, 230),
+            "autonomous_stack": (80, 210, 255),
+            "gray_meridian": (210, 190, 220),
+            "softlight_kingdom": (255, 200, 230),
+            "echelon_veil": (180, 220, 180),
+            "loreletics": (255, 180, 60),
         }
         text_color = accent_colors.get(channel_id, (255, 255, 255))
-        outline_color = (0, 0, 0)
+
+        # Glow color — tinted version of accent, used for outer glow
+        glow_color = tuple(max(0, c - 60) for c in text_color) + (80,)
 
         for i, line in enumerate(lines):
             bbox = draw.textbbox((0, 0), line, font=title_font)
             lw = bbox[2] - bbox[0]
             x = (w - lw) // 2
-            y = y_start + i * line_height
+            y = text_block_top + i * line_height
 
-            # Thick outline (8 directions)
-            for ox in range(-3, 4):
-                for oy in range(-3, 4):
-                    if ox != 0 or oy != 0:
+            # Layer 1: Outer glow (blurred large outline for depth)
+            glow_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            glow_draw = ImageDraw.Draw(glow_layer)
+            for ox in range(-6, 7):
+                for oy in range(-6, 7):
+                    if abs(ox) + abs(oy) > 3:  # only outer ring
+                        glow_draw.text((x + ox, y + oy), line, fill=glow_color, font=title_font)
+            glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=3))
+            pil_img = Image.alpha_composite(pil_img, glow_layer)
+            draw = ImageDraw.Draw(pil_img)
+
+            # Layer 2: Thick black outline for crisp separation
+            outline_color = (0, 0, 0, 255)
+            for ox in range(-4, 5):
+                for oy in range(-4, 5):
+                    if ox * ox + oy * oy <= 20:  # circular outline
                         draw.text((x + ox, y + oy), line, fill=outline_color, font=title_font)
-            draw.text((x, y), line, fill=text_color, font=title_font)
+
+            # Layer 3: Main text in accent color
+            draw.text((x, y), line, fill=text_color + (255,), font=title_font)
+
+        # Convert back to RGB for PNG save
+        pil_img = pil_img.convert("RGB")
 
     except Exception as e:
         log.warning(f"Thumbnail text rendering failed: {e}")
+        pil_img = pil_img.convert("RGB") if pil_img.mode != "RGB" else pil_img
 
     pil_img.save(str(out_path), "PNG")
     log.info(f"Thumbnail generated: {out_path}")
