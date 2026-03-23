@@ -109,12 +109,33 @@ CHANNEL_FOCUS = {
     },
     "remnants_project": {
         "focus": [
-            "Post-human environments",
-            "Systems continuing without humans",
-            "Nature reclaiming civilization",
+            "Systems and machines that continue operating without human oversight",
+            "The last signals, broadcasts, or transmissions from abandoned places",
+            "Animals adapting to and repurposing human-built environments",
+            "Automated processes that outlive their creators — satellites, servers, dams",
+            "What specific objects experience after humans leave — a clock, a traffic light, a vending machine",
+            "The sociology of abandoned places — why some decay and others are preserved",
+            "Time capsules, buried archives, and messages left for no one",
+            "How different materials and technologies age at different rates",
+            "The eerie beauty of liminal spaces — empty malls, silent highways, dark stadiums",
+            "What the last day looks like in a specific place before it's abandoned forever",
         ],
-        "avoid": ["Action or survival narratives"],
-        "examples": ["What Happens to Airports After Humans Disappear"],
+        "avoid": [
+            "Action or survival narratives",
+            "Generic 'nature reclaims civilization' without a specific angle",
+            "Just describing buildings crumbling and plants growing — that's the backdrop, not the story",
+            "Repeating the same infrastructure-decay premise with different locations",
+        ],
+        "examples": [
+            "The Satellite That Will Outlast Everything We've Ever Built",
+            "What a Traffic Light Does After the Last Car Drives Away",
+            "The Vending Machine at the Edge of the Exclusion Zone",
+            "Why Elevators Are the First Thing to Die in an Abandoned Building",
+            "The Last Radio Station Still Broadcasting to No One",
+            "What Happens Inside a Server Room When the Power Finally Goes Out",
+            "The Animals That Moved Into Chernobyl's Swimming Pool",
+            "A Hotel Room That Hasn't Been Opened in 40 Years",
+        ],
     },
     "somnus_protocol": {
         "focus": [
