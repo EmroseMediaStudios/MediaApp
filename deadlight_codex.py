@@ -80,8 +80,8 @@ IMAGE_GEN_WIDTH = 2048
 IMAGE_GEN_HEIGHT = 1365
 
 # Ken Burns animation
-KB_ZOOM_RANGE = (1.05, 1.18)  # Min/max zoom factor
-KB_PAN_RANGE = 0.08  # Max pan as fraction of image size
+KB_ZOOM_RANGE = (1.06, 1.18)  # Min/max zoom factor
+KB_PAN_RANGE = 0.10  # Max pan as fraction of image size
 
 # Video assembly
 OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "./output")

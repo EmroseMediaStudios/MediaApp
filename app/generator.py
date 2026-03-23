@@ -235,8 +235,8 @@ TARGET_FPS = 30
 TARGET_RESOLUTION = (1920, 1080)
 IMAGE_GEN_WIDTH = 1920
 IMAGE_GEN_HEIGHT = 1080
-KB_ZOOM_RANGE = (1.02, 1.08)
-KB_PAN_RANGE = 0.04
+KB_ZOOM_RANGE = (1.06, 1.18)
+KB_PAN_RANGE = 0.10
 CROSSFADE_DURATION = 1.5
 FLUX_SPACES = [
     os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
@@ -1108,8 +1108,10 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
     if img_w < img_h:
         target_w, target_h = 1080, 1920
 
-    # Ensure source image is large enough for quality cropping
-    min_dim = max(target_w, target_h) * 1.5
+    # Ensure source image has enough headroom for Ken Burns zoom/pan.
+    # Target ~1.4x the output res so the initial view shows most of the image
+    # while leaving room for the motion range.
+    min_dim = max(target_w, target_h) * 1.4
     if img_w < min_dim or img_h < min_dim:
         scale = min_dim / min(img_w, img_h)
         img = img.resize((int(img_w * scale), int(img_h * scale)), Image.LANCZOS)
@@ -1669,10 +1671,12 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
             _generate_fallback_image(str(img_path), i, width=1344, height=768)
 
-        # Upscale to ~3x for Ken Burns headroom (more visible scene, less cropping)
+        # Upscale for Ken Burns headroom — 2x gives good balance between
+        # showing the full scene composition and having room for zoom/pan.
+        # (Was 3360x1920 = ~2.5x which cropped too aggressively, hiding content)
         try:
             raw_img = Image.open(str(img_path))
-            upscaled = raw_img.resize((3360, 1920), Image.LANCZOS)
+            upscaled = raw_img.resize((2688, 1536), Image.LANCZOS)
             upscaled.save(str(img_path), "PNG")
         except Exception as e:
             log.warning(f"Upscale failed for scene {i}: {e}")
