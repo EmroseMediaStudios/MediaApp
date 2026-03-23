@@ -1433,60 +1433,84 @@ def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
 
 
 def _get_thumbnail_font(channel_id, size=90):
-    """Get a bold/heavy font for thumbnails — impact matters more than channel branding here."""
+    """Get a bold, thematic font for thumbnails — must be heavy enough for small-size
+    readability while matching the channel's visual identity."""
     from PIL import ImageFont
 
-    # Prefer bold/heavy fonts for thumbnail punch — channel-specific where possible
+    # Each channel gets bold/heavy variants of their thematic font family.
+    # Thumbnails need more weight than title cards — prefer Bold/Black weights
+    # of the same typeface families used in _get_channel_font.
     channel_thumb_fonts = {
         "deadlight_codex": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
-            "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+            # Copperplate is already heavy — matches title cards
             "/System/Library/Fonts/Supplemental/Copperplate.ttc",
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
         "zero_trace_archive": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
-            "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+            # Bold monospace — investigative/classified document feel
             "/System/Library/Fonts/Supplemental/Courier New Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Andale Mono.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf",
         ],
         "the_unwritten_wing": [
+            # Bold serif — literary, elegant but heavy
+            "/System/Library/Fonts/Supplemental/Baskerville.ttc",
             "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Palatino.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
         "remnants_project": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            # Bold clean sans — futuristic, post-human
             "/System/Library/Fonts/Supplemental/Futura.ttc",
+            "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         ],
         "somnus_protocol": [
-            "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+            # Bold elegant serif — soft but readable, dreamy
             "/System/Library/Fonts/Supplemental/Didot.ttc",
+            "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
         "softlight_kingdom": [
+            # Rounded, warm, storybook — friendly but bold
             "/System/Library/Fonts/Supplemental/Arial Rounded Bold.ttf",
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            "/System/Library/Fonts/Supplemental/Cochin.ttc",
+            "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
         "autonomous_stack": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            # Bold monospace — techy, code-like
             "/System/Library/Fonts/SFMono-Bold.otf",
+            "/System/Library/Fonts/Supplemental/Menlo.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf",
         ],
         "gray_meridian": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            # Bold clean sans — intellectual, modern
             "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
+            "/System/Library/Fonts/Supplemental/Gill Sans.ttc",
+            "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         ],
         "echelon_veil": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            # Bold condensed sans — governmental, classified feel
             "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         ],
         "loreletics": [
-            "/System/Library/Fonts/Supplemental/Impact.ttf",
+            # Heavy slab/impact — sports broadcast, ESPN-style
             "/System/Library/Fonts/Supplemental/Rockwell.ttc",
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
             "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         ],
     }
 
-    # Universal bold fallbacks
+    # Generic bold fallbacks if nothing channel-specific is found
     bold_fallbacks = [
-        "/System/Library/Fonts/Supplemental/Impact.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Black.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
