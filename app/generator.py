@@ -1913,13 +1913,14 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
                 "-i", str(video_path_with_narration),
                 "-i", str(drone_path),
                 "-filter_complex",
-                f"[1:a]atrim=0:{video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={vol}[drone];"
-                f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo,{narr_vol_filter}asetpts=PTS-STARTPTS[narr];"
-                f"[narr][drone]amerge=inputs=2,pan=stereo|c0=c0+c2|c1=c1+c3[out]",
+                f"[1:a]atrim=0:{video_duration:.2f},apad=whole_dur={video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={vol}[drone];"
+                f"[0:a]apad=whole_dur={video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,{narr_vol_filter}asetpts=PTS-STARTPTS[narr];"
+                f"[narr][drone]amix=inputs=2:duration=longest:normalize=0[out]",
                 "-map", "0:v",
                 "-map", "[out]",
                 "-c:v", "copy",
                 "-c:a", "aac", "-b:a", "320k",
+                "-shortest",
                 str(video_path),
             ]
             result = subprocess.run(mix_cmd, capture_output=True, text=True)
@@ -2396,11 +2397,12 @@ Full script:
             "-i", str(short_with_narration),
             "-i", str(short_drone),
             "-filter_complex",
-            f"[1:a]atrim=0:{target_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={ambient_vol}[drone];"
-            f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo,asetpts=PTS-STARTPTS[narr];"
-            f"[narr][drone]amerge=inputs=2,pan=stereo|c0=c0+c2|c1=c1+c3[out]",
+            f"[1:a]atrim=0:{target_duration:.2f},apad=whole_dur={target_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={ambient_vol}[drone];"
+            f"[0:a]apad=whole_dur={target_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,asetpts=PTS-STARTPTS[narr];"
+            f"[narr][drone]amix=inputs=2:duration=longest:normalize=0[out]",
             "-map", "0:v", "-map", "[out]",
             "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
+            "-shortest",
             str(short_output),
         ]
         subprocess.run(mix_cmd, check=True, capture_output=True)
