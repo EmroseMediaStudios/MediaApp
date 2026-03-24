@@ -1,141 +1,141 @@
 {
-  "channel_id": "somnus_protocol",
-  "channel_name": "SomnusProtocol",
-  "description": "Sleep-inducing audio experiences. Reduces cognitive load and gently guides the listener into rest through calm, repetitive narration.",
-  "narrator": {
-    "name": "The Guide",
-    "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity. Speaks as if lulling someone to sleep \u2014 barely above a whisper, with long pauses between sentences.",
-    "rules": [
-      "Extremely slow and calm delivery \u2014 as if putting someone to sleep",
-      "Soft, repetitive, soothing tone \u2014 barely above a whisper",
-      "No tension, no conflict, no surprises",
-      "Designed to lower mental activity",
-      "Gentle repetition of phrases and images",
-      "Sentences should blur together softly",
-      "No questions, no calls to action",
-      "Long, deliberate pauses between sentences and thoughts",
-      "Each word should feel like it takes effort to say, as if the narrator is also drifting off"
-    ]
-  },
-  "voice": {
-    "elevenlabs_voice_id": "XB0fDUnXU5powFXDhCwa",
-    "elevenlabs_voice_name": "Charlotte",
-    "model_id": "eleven_multilingual_v2",
-    "settings": {
-      "stability": 0.95,
-      "similarity_boost": 0.55,
-      "style": 0.45,
-      "use_speaker_boost": false
+    "channel_id": "somnus_protocol",
+    "channel_name": "SomnusProtocol",
+    "description": "Sleep-inducing audio experiences. Reduces cognitive load and gently guides the listener into rest through calm, repetitive narration.",
+    "narrator": {
+        "name": "The Guide",
+        "description": "A quiet, reassuring voice guiding the listener into stillness. Extremely slow and calm. Designed to lower mental activity. Speaks as if lulling someone to sleep \u2014 barely above a whisper, with long pauses between sentences.",
+        "rules": [
+            "Extremely slow and calm delivery \u2014 as if putting someone to sleep",
+            "Soft, repetitive, soothing tone \u2014 barely above a whisper",
+            "No tension, no conflict, no surprises",
+            "Designed to lower mental activity",
+            "Gentle repetition of phrases and images",
+            "Sentences should blur together softly",
+            "No questions, no calls to action",
+            "Long, deliberate pauses between sentences and thoughts",
+            "Each word should feel like it takes effort to say, as if the narrator is also drifting off"
+        ]
     },
-    "speed": 0.4,
-    "narration_volume": 0.55,
-    "sentence_pause_seconds": 3.0
-  },
-  "opening_format": {
-    "template": "There is nothing you need to do...",
-    "notes": "Always opens with this line or a gentle variation. No introduction, no channel name. Just immediate calm."
-  },
-  "closing_format": {
-    "templates": [
-      "And so it continues... softly... gently...",
-      "There is nothing else...",
-      "Rest now..."
-    ],
-    "notes": "Gradual fade. The narration should dissolve rather than end."
-  },
-  "visual_theme": {
-    "style": "Calming, minimal, sleep-inducing",
-    "palette": [
-      "deep navy",
-      "soft indigo",
-      "dark purple",
-      "muted midnight blue",
-      "very dark gray"
-    ],
-    "lighting": "Very low, diffused, no harsh sources. Moonlight or ambient glow only.",
-    "elements": [
-      "Night skies with stars",
-      "Soft gradients and color transitions",
-      "Slow-moving clouds",
-      "Gentle water surfaces",
-      "Minimal geometric shapes",
-      "Soft particle effects"
-    ],
-    "environment": "Abstract and minimal. Night landscapes, calm water, vast gentle skies. Nothing stimulating or complex.",
-    "avoid": [
-      "Bright colors or sudden changes",
-      "Complex scenes or details",
-      "Text or information",
-      "Human figures",
-      "Anything stimulating or attention-grabbing"
-    ],
-    "camera": "Extremely slow drift or nearly static. Barely perceptible movement. No cuts.",
-    "mood": "Peaceful, drowsy, infinite calm, weightless",
-    "image_prompt_suffix": "calming, sleep-inducing, soft gradient, night sky, minimal, peaceful, dark blue tones, 4k, ambient"
-  },
-  "video_settings": {
-    "target_duration_min": 9,
-    "target_duration_max": 11,
-    "scene_count_min": 8,
-    "scene_count_max": 14,
-    "target_word_count_min": 600,
-    "target_word_count_max": 900,
-    "scene_pause_seconds": 7.0,
-    "resolution": [
-      1920,
-      1080
-    ],
-    "fps": 30,
-    "crossfade_seconds": 4.0,
-    "fade_in_seconds": 5.0,
-    "fade_out_seconds": 8.0
-  },
-  "ambient_audio": {
-    "enabled": true,
-    "volume": 0.25,
-    "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
-  },
-  "shorts": {
-    "enabled": true,
-    "duration_min": 20,
-    "duration_max": 40,
-    "aspect_ratio": "9:16",
-    "resolution": [
-      1080,
-      1920
-    ]
-  },
-  "youtube": {
-    "category": "Entertainment",
-    "default_tags": [
-      "sleep",
-      "relaxation",
-      "calm",
-      "sleep aid",
-      "ambient",
-      "soothing",
-      "somnus protocol",
-      "ASMR",
-      "sleep stories",
-      "bedtime stories",
-      "fall asleep fast",
-      "deep sleep",
-      "sleep meditation",
-      "sleep hypnosis",
-      "relaxing stories for sleep",
-      "meditation",
-      "guided meditation",
-      "meditation for sleep",
-      "calming meditation",
-      "mindfulness"
-    ],
-    "default_hashtags": [
-      "#SleepStories",
-      "#SomnusProtocol",
-      "#SleepAid",
-      "#Relaxation",
-      "#FallAsleepFast"
-    ],
-    "uploaded": false
-  }
+    "voice": {
+        "elevenlabs_voice_id": "XB0fDUnXU5powFXDhCwa",
+        "elevenlabs_voice_name": "Charlotte",
+        "model_id": "eleven_multilingual_v2",
+        "settings": {
+            "stability": 0.95,
+            "similarity_boost": 0.55,
+            "style": 0.45,
+            "use_speaker_boost": false
+        },
+        "speed": 0.4,
+        "narration_volume": 0.55,
+        "sentence_pause_seconds": 3.0
+    },
+    "opening_format": {
+        "template": "There is nothing you need to do...",
+        "notes": "Always opens with this line or a gentle variation. No introduction, no channel name. Just immediate calm."
+    },
+    "closing_format": {
+        "templates": [
+            "And so it continues... softly... gently...",
+            "There is nothing else...",
+            "Rest now..."
+        ],
+        "notes": "Gradual fade. The narration should dissolve rather than end."
+    },
+    "visual_theme": {
+        "style": "Calming, minimal, sleep-inducing",
+        "palette": [
+            "deep navy",
+            "soft indigo",
+            "dark purple",
+            "muted midnight blue",
+            "very dark gray"
+        ],
+        "lighting": "Very low, diffused, no harsh sources. Moonlight or ambient glow only.",
+        "elements": [
+            "Night skies with stars",
+            "Soft gradients and color transitions",
+            "Slow-moving clouds",
+            "Gentle water surfaces",
+            "Minimal geometric shapes",
+            "Soft particle effects"
+        ],
+        "environment": "Abstract and minimal. Night landscapes, calm water, vast gentle skies. Nothing stimulating or complex.",
+        "avoid": [
+            "Bright colors or sudden changes",
+            "Complex scenes or details",
+            "Text or information",
+            "Human figures",
+            "Anything stimulating or attention-grabbing"
+        ],
+        "camera": "Extremely slow drift or nearly static. Barely perceptible movement. No cuts.",
+        "mood": "Peaceful, drowsy, infinite calm, weightless",
+        "image_prompt_suffix": "calming, sleep-inducing, soft gradient, night sky, minimal, peaceful, dark blue tones, 4k, ambient"
+    },
+    "video_settings": {
+        "target_duration_min": 9,
+        "target_duration_max": 11,
+        "scene_count_min": 8,
+        "scene_count_max": 14,
+        "target_word_count_min": 600,
+        "target_word_count_max": 900,
+        "scene_pause_seconds": 7.0,
+        "resolution": [
+            1920,
+            1080
+        ],
+        "fps": 30,
+        "crossfade_seconds": 4.0,
+        "fade_in_seconds": 5.0,
+        "fade_out_seconds": 8.0
+    },
+    "ambient_audio": {
+        "enabled": true,
+        "volume": 0.12,
+        "style": "Sleep-specific green noise with gentle wave wash. Ultra-calm, designed to lull the listener."
+    },
+    "shorts": {
+        "enabled": true,
+        "duration_min": 20,
+        "duration_max": 40,
+        "aspect_ratio": "9:16",
+        "resolution": [
+            1080,
+            1920
+        ]
+    },
+    "youtube": {
+        "category": "Entertainment",
+        "default_tags": [
+            "sleep",
+            "relaxation",
+            "calm",
+            "sleep aid",
+            "ambient",
+            "soothing",
+            "somnus protocol",
+            "ASMR",
+            "sleep stories",
+            "bedtime stories",
+            "fall asleep fast",
+            "deep sleep",
+            "sleep meditation",
+            "sleep hypnosis",
+            "relaxing stories for sleep",
+            "meditation",
+            "guided meditation",
+            "meditation for sleep",
+            "calming meditation",
+            "mindfulness"
+        ],
+        "default_hashtags": [
+            "#SleepStories",
+            "#SomnusProtocol",
+            "#SleepAid",
+            "#Relaxation",
+            "#FallAsleepFast"
+        ],
+        "uploaded": false
+    }
 }
