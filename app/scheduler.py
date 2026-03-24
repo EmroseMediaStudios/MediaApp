@@ -413,6 +413,12 @@ def _scheduler_loop(app, api_keys):
                     
                     # Check if this video is scheduled and ready
                     if meta.get("upload_status") == "scheduled" and meta.get("scheduled_upload"):
+                        # Skip if already uploaded (prevents double uploads)
+                        if meta.get("youtube_uploaded"):
+                            meta["upload_status"] = "uploaded"
+                            _save_metadata(channel_id, dir_name, meta)
+                            continue
+                        
                         try:
                             scheduled_dt = datetime.fromisoformat(meta["scheduled_upload"])
                             
@@ -426,6 +432,9 @@ def _scheduler_loop(app, api_keys):
                                 
                                 # Do the upload
                                 result = _do_scheduled_upload(channel_id, dir_name, api_keys)
+                                
+                                # Reload metadata — _do_scheduled_upload saves youtube_uploaded, video_id, url etc.
+                                meta = _load_metadata(channel_id, dir_name) or meta
                                 
                                 if result["success"]:
                                     meta["upload_status"] = "uploaded"

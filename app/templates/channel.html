@@ -160,7 +160,7 @@
         data-has-short="{{ 'true' if v.has_short else 'false' }}"
         onclick="if(confirm('Re-upload \'{{ v.title }}\'? This will upload a new copy to YouTube.')) uploadToYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this, true);">⬆ Re-upload</button>
       {% else %}
-      <!-- Schedule UI for videos not yet uploaded -->
+      <!-- Upload options for videos not yet uploaded -->
       {% if v.upload_status == "scheduled" %}
       <span class="badge" style="background-color: var(--gold); color: var(--bg); padding: 6px 10px; font-size: 0.85em; display: inline-flex; align-items: center; gap: 6px;">
         📅 Scheduled: {{ v.scheduled_upload|format_iso_time }}
@@ -178,6 +178,9 @@
       <button class="btn btn-sm btn-secondary" title="Retry upload"
         onclick="retryUpload('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">Retry</button>
       {% else %}
+      <button class="btn btn-sm btn-primary" title="Upload to YouTube now"
+        data-has-short="{{ 'true' if v.has_short else 'false' }}"
+        onclick="uploadToYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">⬆ Upload</button>
       <button class="btn btn-sm btn-secondary" title="Schedule upload"
         onclick="openScheduleForm('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">📅 Schedule</button>
       {% endif %}
