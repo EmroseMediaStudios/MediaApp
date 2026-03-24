@@ -198,7 +198,8 @@ Quick reference for files you'll commonly change:
 | Posting days/times | `app/scheduler.py` → `POSTING_SCHEDULE` | Restart after |
 | Channel themes/focus | `app/generator.py` → `CHANNEL_FOCUS` | Restart after |
 | Ken Burns overrides | `app/generator.py` → `CHANNEL_KB_OVERRIDES` | Restart after |
-| Channel config | `channels/<channel_id>.json` | Voice, narrator, visual style |
+| Channel config | `channels/<channel_id>.json` | Voice, narrator, visual style, ambient volume |
+| Ambient audio volume | `channels/<channel_id>.json` → `ambient_audio.volume` | 0.0–1.0, relative to narration. Default 0.25. Somnus uses 0.12. |
 | YouTube channel map | `app/youtube_upload.py` → `YOUTUBE_CHANNEL_MAP` | Restart after |
 | Default tags | YouTube Studio → Settings → Upload Defaults | Per channel, no restart |
 | API keys | `~/.zshrc` or environment | `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `HF_TOKEN` |
