@@ -147,8 +147,12 @@ def recommend_upload_time(channel_id):
     else:
         reasoning = f"First upload recommendation: {candidate.strftime('%A')} at {preferred_hour}:00 ET"
     
+    # datetime_local is formatted for HTML datetime-local inputs (no timezone suffix)
+    datetime_local = candidate.strftime("%Y-%m-%dT%H:%M")
+
     return {
         "datetime": iso_string,
+        "datetime_local": datetime_local,
         "display": display,
         "reasoning": reasoning,
     }

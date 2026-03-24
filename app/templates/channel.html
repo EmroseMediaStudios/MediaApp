@@ -279,9 +279,8 @@ function openScheduleForm(channelId, dirName, btn) {
         gap: 12px;
       `;
       
-      // Parse ISO datetime to datetime-local format
-      const dt = new Date(data.datetime);
-      const localStr = dt.toISOString().slice(0, 16);
+      // Use the ET datetime-local string from the server (no timezone conversion)
+      const localStr = data.datetime_local || data.datetime.slice(0, 16);
       
       form.innerHTML = `
         <div style="font-size: 0.9em; color: var(--text2);">
@@ -316,10 +315,8 @@ function confirmSchedule(channelId, dirName) {
   const input = document.querySelector('.schedule-input');
   const localStr = input.value;
   
-  // Convert datetime-local to ISO 8601 with ET timezone
-  const dt = new Date(localStr);
-  // Add timezone offset for ET (this is a simplification; use proper tz conversion in production)
-  const isoStr = dt.toISOString();
+  // Send the datetime-local value directly — the server will interpret it as ET
+  const isoStr = localStr;
   
   fetch('/api/schedule/set', {
     method: 'POST',

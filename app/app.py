@@ -403,6 +403,10 @@ def schedule_recommend(channel_id, dir_name):
 @app.route("/api/schedule/set", methods=["POST"])
 def schedule_set():
     """Set a scheduled upload time for a video."""
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo
+    ET = ZoneInfo("America/New_York")
+
     data = request.json
     channel_id = data.get("channel_id")
     dir_name = data.get("dir_name")
@@ -411,6 +415,15 @@ def schedule_set():
     if not channel_id or not dir_name or not scheduled_upload:
         return jsonify({"ok": False, "error": "Missing required fields"})
     
+    # If the value is a bare datetime (from datetime-local input), treat it as ET
+    try:
+        parsed = _dt.fromisoformat(scheduled_upload)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=ET)
+        scheduled_upload = parsed.isoformat()
+    except Exception:
+        pass
+
     # Load and update metadata
     meta = scheduler._load_metadata(channel_id, dir_name)
     if not meta:
