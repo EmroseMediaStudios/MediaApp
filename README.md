@@ -171,6 +171,38 @@ deadlight-codex/
 - **Estimated per video**: ~$1.50-1.80
 - **ElevenLabs plan**: Pro $99/mo, 500K chars
 
+## Boost Mode (Catalog Builder)
+
+Doubles upload frequency from 1x/week to 2x/week per channel. Designed for rapidly building catalog, then switching back.
+
+**File:** `app/scheduler.py` (top of file)
+
+```python
+BOOST_MODE = True   # 2x/week, any day, 3-day gap
+BOOST_MODE = False  # 1x/week, preferred days only, 6-day gap (default)
+```
+
+Change the variable and restart the app. That's it.
+
+- Boost: ~18 videos/week across all 9 channels
+- Normal: ~9 videos/week across all 9 channels
+- UI shows `[BOOST 2x/week]` or `[Normal 1x/week]` in schedule recommendations
+
+## Things You Edit
+
+Quick reference for files you'll commonly change:
+
+| What | File | Notes |
+|---|---|---|
+| Boost mode on/off | `app/scheduler.py` → `BOOST_MODE` | `True` or `False`, restart after |
+| Posting days/times | `app/scheduler.py` → `POSTING_SCHEDULE` | Restart after |
+| Channel themes/focus | `app/generator.py` → `CHANNEL_FOCUS` | Restart after |
+| Ken Burns overrides | `app/generator.py` → `CHANNEL_KB_OVERRIDES` | Restart after |
+| Channel config | `channels/<channel_id>.json` | Voice, narrator, visual style |
+| YouTube channel map | `app/youtube_upload.py` → `YOUTUBE_CHANNEL_MAP` | Restart after |
+| Default tags | YouTube Studio → Settings → Upload Defaults | Per channel, no restart |
+| API keys | `~/.zshrc` or environment | `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `HF_TOKEN` |
+
 ## Adding New Channels
 
 1. Copy `channels/_template.json` to `channels/your_channel.json`
