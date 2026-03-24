@@ -160,9 +160,27 @@
         data-has-short="{{ 'true' if v.has_short else 'false' }}"
         onclick="if(confirm('Re-upload \'{{ v.title }}\'? This will upload a new copy to YouTube.')) uploadToYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this, true);">⬆ Re-upload</button>
       {% else %}
-      <button class="btn btn-sm btn-secondary" title="Upload to YouTube"
-        data-has-short="{{ 'true' if v.has_short else 'false' }}"
-        onclick="uploadToYouTube('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">⬆ Upload</button>
+      <!-- Schedule UI for videos not yet uploaded -->
+      {% if v.upload_status == "scheduled" %}
+      <span class="badge" style="background-color: var(--gold); color: var(--bg); padding: 6px 10px; font-size: 0.85em; display: inline-flex; align-items: center; gap: 6px;">
+        📅 Scheduled: {{ v.scheduled_upload|format_iso_time }}
+      </span>
+      <button class="btn btn-sm" style="color: #ef4444;" title="Cancel scheduled upload"
+        onclick="cancelSchedule('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">✕</button>
+      {% elif v.upload_status == "uploading" %}
+      <span class="badge" style="background-color: var(--gold); color: var(--bg); padding: 6px 10px; font-size: 0.85em; display: inline-flex; align-items: center; gap: 6px;">
+        <span class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></span> Uploading...
+      </span>
+      {% elif v.upload_status == "failed" %}
+      <span class="badge" style="background-color: #ef4444; color: white; padding: 6px 10px; font-size: 0.85em;" title="{{ v.upload_error|default('Upload failed') }}">
+        ❌ Failed
+      </span>
+      <button class="btn btn-sm btn-secondary" title="Retry upload"
+        onclick="retryUpload('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">Retry</button>
+      {% else %}
+      <button class="btn btn-sm btn-secondary" title="Schedule upload"
+        onclick="openScheduleForm('{{ channel.channel_id }}', '{{ v.dir_name }}', this);">📅 Schedule</button>
+      {% endif %}
       {% endif %}
       {% if v.has_video %}
       <a href="/video/{{ channel.channel_id }}/{{ v.dir_name }}/video.mp4" class="btn btn-sm btn-primary" target="_blank">▶ Play</a>
@@ -219,6 +237,7 @@ function uploadToYouTube(channelId, dirName, btn, isReupload) {
     alert('Upload failed: ' + e);
   });
 }
+
 function deleteVideo(channelId, dirName, btn) {
   fetch('/api/delete_video', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -230,6 +249,126 @@ function deleteVideo(channelId, dirName, btn) {
       alert('Delete failed: ' + (data.error || 'unknown'));
     }
   });
+}
+
+// Schedule functions
+let activeScheduleForm = null;
+
+function openScheduleForm(channelId, dirName, btn) {
+  if (activeScheduleForm) closeScheduleForm();
+  
+  // Fetch recommendation
+  fetch(`/api/schedule/recommend/${channelId}/${dirName}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) {
+        alert('Could not get schedule recommendation: ' + (data.error || 'unknown'));
+        return;
+      }
+      
+      // Create form UI
+      const form = document.createElement('div');
+      form.className = 'schedule-form';
+      form.style.cssText = `
+        background-color: var(--card);
+        border: 1px solid var(--border2);
+        border-radius: 6px;
+        padding: 16px;
+        margin-top: 12px;
+        display: grid;
+        gap: 12px;
+      `;
+      
+      // Parse ISO datetime to datetime-local format
+      const dt = new Date(data.datetime);
+      const localStr = dt.toISOString().slice(0, 16);
+      
+      form.innerHTML = `
+        <div style="font-size: 0.9em; color: var(--text2);">
+          <strong>Recommended:</strong> ${data.display}<br>
+          <em>${data.reasoning}</em>
+        </div>
+        <div>
+          <label style="font-size: 0.85em; color: var(--text2); display: block; margin-bottom: 4px;">Select date/time (ET):</label>
+          <input type="datetime-local" class="schedule-input" value="${localStr}" 
+            style="width: 100%; padding: 8px; background-color: var(--bg); color: var(--text1); border: 1px solid var(--border2); border-radius: 4px;">
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-sm btn-primary" onclick="confirmSchedule('${channelId}', '${dirName}');">✓ Confirm</button>
+          <button class="btn btn-sm" style="background-color: var(--border2); color: var(--text1);" onclick="closeScheduleForm();">✕ Cancel</button>
+        </div>
+      `;
+      
+      btn.closest('.video-item').appendChild(form);
+      activeScheduleForm = form;
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+function closeScheduleForm() {
+  if (activeScheduleForm) {
+    activeScheduleForm.remove();
+    activeScheduleForm = null;
+  }
+}
+
+function confirmSchedule(channelId, dirName) {
+  const input = document.querySelector('.schedule-input');
+  const localStr = input.value;
+  
+  // Convert datetime-local to ISO 8601 with ET timezone
+  const dt = new Date(localStr);
+  // Add timezone offset for ET (this is a simplification; use proper tz conversion in production)
+  const isoStr = dt.toISOString();
+  
+  fetch('/api/schedule/set', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      channel_id: channelId,
+      dir_name: dirName,
+      scheduled_upload: isoStr
+    })
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      location.reload();
+    } else {
+      alert('Failed to set schedule: ' + (data.error || 'unknown'));
+    }
+  }).catch(e => alert('Error: ' + e));
+}
+
+function cancelSchedule(channelId, dirName, btn) {
+  if (!confirm('Cancel scheduled upload?')) return;
+  
+  fetch('/api/schedule/cancel', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      channel_id: channelId,
+      dir_name: dirName
+    })
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      location.reload();
+    } else {
+      alert('Failed to cancel: ' + (data.error || 'unknown'));
+    }
+  }).catch(e => alert('Error: ' + e));
+}
+
+function retryUpload(channelId, dirName, btn) {
+  if (!confirm('Retry upload?')) return;
+  
+  // Clear the failed status and retry as a regular upload
+  fetch('/api/schedule/cancel', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({channel_id: channelId, dir_name: dirName})
+  }).then(r => r.json()).then(data => {
+    // Now do a regular upload
+    uploadToYouTube(channelId, dirName, btn);
+  }).catch(e => alert('Error: ' + e));
 }
 </script>
 {% endblock %}

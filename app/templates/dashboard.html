@@ -171,4 +171,34 @@ function refreshMetrics(btn) {
   </a>
 {% endfor %}
 </div>
+
+{% if scheduled %}
+<div class="section-title mt-32">📅 Upcoming Uploads</div>
+<div class="card">
+  <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+    <thead>
+      <tr style="color: var(--text3); border-bottom: 1px solid var(--border2);">
+        <th style="text-align: left; padding: 8px;">Channel</th>
+        <th style="text-align: left; padding: 8px;">Video Title</th>
+        <th style="text-align: right; padding: 8px;">Scheduled Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in scheduled %}
+      <tr style="border-bottom: 1px solid var(--border1);">
+        <td style="padding: 8px;">
+          <a href="/channel/{{ item.channel_id }}" style="color: var(--gold); font-weight: 600;">{{ item.channel_name }}</a>
+        </td>
+        <td style="padding: 8px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ item.title }}
+        </td>
+        <td style="text-align: right; padding: 8px; color: var(--text2);">
+          {{ item.display_time }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 {% endblock %}

@@ -18,9 +18,21 @@ from flask import (
 from . import generator
 from . import youtube_upload
 from . import youtube_metrics
+from . import scheduler
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# Custom Jinja2 filter for formatting ISO datetime strings
+@app.template_filter('format_iso_time')
+def format_iso_time(iso_string):
+    """Convert ISO 8601 string to display format like 'Thursday, Mar 27 at 6:00 PM ET'."""
+    if not iso_string:
+        return ""
+    try:
+        return scheduler._format_display_time(iso_string)
+    except Exception:
+        return iso_string
 
 # Global progress queues for SSE
 _progress_queues = {}
@@ -40,7 +52,9 @@ def dashboard():
     cache = youtube_metrics._load_cache()
     metrics = youtube_metrics.get_dashboard_summary(cache)
     last_refresh = cache.get("last_refresh")
-    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh)
+    # Get scheduled uploads
+    scheduled = scheduler.get_all_scheduled()
+    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled)
 
 
 @app.route("/channel/<channel_id>")
@@ -345,145 +359,107 @@ def youtube_upload_video():
 
     # Load video metadata
     video_dir = generator.OUTPUT_DIR / channel_id / dir_name
-    video_path = video_dir / "video.mp4"
     meta_path = video_dir / "metadata.json"
-    yt_meta_path = video_dir / "youtube.json"
-    thumb_path = video_dir / "thumbnail.png"
-
-    if not video_path.exists():
+    
+    if not (video_dir / "video.mp4").exists():
         return jsonify({"ok": False, "error": "Video file not found"})
 
     meta = {}
     if meta_path.exists():
         meta = json.loads(meta_path.read_text())
 
-    yt_meta = {}
-    if yt_meta_path.exists():
-        yt_meta = json.loads(yt_meta_path.read_text())
-    elif meta.get("youtube_meta"):
-        yt_meta = meta["youtube_meta"]
-
-    title = meta.get("title", "Untitled")
-    description = yt_meta.get("description", "")
-
-    # For compilations, auto-generate description with chapter timestamps
-    if meta.get("is_compilation") and meta.get("chapters_text"):
-        chapters_block = meta["chapters_text"]
-        if not description:
-            year = __import__("datetime").datetime.now().year
-            channel_name = meta.get("channel_name", "")
-            description = (
-                f"{title}\n\n"
-                f"A compilation of {meta.get('source_count', '?')} episodes from {channel_name}.\n\n"
-                f"📑 Chapters:\n{chapters_block}\n\n"
-                f"If you enjoyed this, please like, comment, and subscribe for more.\n"
-                f"🔔 Turn on notifications so you never miss an upload.\n\n"
-                f"———\n\n"
-                f"This video includes AI-assisted narration and visual generation.\n"
-                f"All content is original and created for entertainment purposes.\n\n"
-                f"© {year} Emrose Media Studios. All rights reserved."
-            )
-        elif "0:00" not in description:
-            # youtube.json exists but no chapters — append them
-            description += f"\n\n📑 Chapters:\n{chapters_block}"
-
-    # Add hashtags to top of description (YouTube shows these above the title)
-    hashtags = yt_meta.get("hashtags", [])
-    if hashtags:
-        description = " ".join(hashtags) + "\n\n" + description
-
-    tags = yt_meta.get("tags", [])
-    category = youtube_upload.CATEGORIES.get(
-        yt_meta.get("category", meta.get("youtube", {}).get("category", "Entertainment")),
-        "24"
-    )
-
-    # Check if channel is marked as made for kids
-    ch = generator.load_channel(channel_id)
-    made_for_kids = False
-    if ch:
-        made_for_kids = ch.get("youtube", {}).get("made_for_kids", False)
-
+    # Use the shared upload helper (same logic as scheduler)
+    # but override privacy since this is a manual upload request
     try:
-        result = youtube_upload.upload_video(
-            video_path=str(video_path),
-            title=title,
-            description=description,
-            tags=tags,
-            category_id=category,
-            privacy=privacy,
-            thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
-            app_channel_id=channel_id,
-            made_for_kids=made_for_kids,
-        )
-
-        # Update metadata
-        meta["youtube_uploaded"] = True
-        meta["youtube_video_id"] = result["video_id"]
-        meta["youtube_url"] = result["url"]
-        meta["youtube_privacy"] = privacy
-        meta_path.write_text(json.dumps(meta, indent=2))
-
-        # Also upload Short if it exists and was requested
-        short_result = None
-        short_path = video_dir / "short.mp4"
-        if data.get("include_short", True) and short_path.exists():
-            short_meta = meta.get("short") or {}
-            short_title = short_meta.get("suggested_title", title + " #Shorts")
-            if not short_title.endswith("#Shorts"):
-                short_title += " #Shorts"
-
-            short_caption = short_meta.get("suggested_caption", "")
-            short_hashtags = short_meta.get("suggested_hashtags", ["#Shorts"])
-            if "#Shorts" not in short_hashtags:
-                short_hashtags.insert(0, "#Shorts")
-            # Merge channel default hashtags into Shorts
-            ch = generator.load_channel(channel_id)
-            if ch:
-                default_ht = ch.get("youtube", {}).get("default_hashtags", [])
-                existing = set(h.lower() for h in short_hashtags)
-                for dh in default_ht:
-                    if dh.lower() not in existing:
-                        short_hashtags.append(dh)
-
-            short_desc = " ".join(short_hashtags) + "\n\n"
-            if short_caption:
-                short_desc += short_caption + "\n\n"
-            short_desc += f"Full video: {result['url']}\n\n"
-            short_desc += f"Subscribe for more from {meta.get('channel_name', '')}!\n\n"
-            short_desc += "———\n\n"
-            short_desc += "This video includes AI-assisted narration and visual generation.\n"
-            short_desc += "All content is original and created for entertainment purposes.\n\n"
-            year = __import__("datetime").datetime.now().year
-            short_desc += f"© {year} Emrose Media Studios. All rights reserved."
-
-            short_tags = tags + ["Shorts", "YouTube Shorts"]
-
-            try:
-                short_result = youtube_upload.upload_video(
-                    video_path=str(short_path),
-                    title=short_title,
-                    description=short_desc,
-                    tags=short_tags,
-                    category_id=category,
-                    privacy=privacy,
-                    app_channel_id=channel_id,
-                    made_for_kids=made_for_kids,
-                )
-                meta["youtube_short_id"] = short_result["video_id"]
-                meta["youtube_short_url"] = short_result["url"]
-                meta_path.write_text(json.dumps(meta, indent=2))
-            except Exception as e:
-                log.warning(f"Short upload failed: {e}")
-
+        result = scheduler._do_scheduled_upload(channel_id, dir_name, API_KEYS)
+        if not result["success"]:
+            return jsonify({"ok": False, "error": result.get("error", "Upload failed")})
+        
+        # If manual upload was with different privacy, update it
+        if privacy != "public":
+            meta = scheduler._load_metadata(channel_id, dir_name)
+            if meta:
+                meta["youtube_privacy"] = privacy
+                scheduler._save_metadata(channel_id, dir_name, meta)
+        
         response = {"ok": True, "video_id": result["video_id"], "url": result["url"]}
-        if short_result:
-            response["short_id"] = short_result["video_id"]
-            response["short_url"] = short_result["url"]
         return jsonify(response)
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+
+
+# --- Scheduled Upload Endpoints ---
+
+@app.route("/api/schedule/recommend/<channel_id>/<dir_name>")
+def schedule_recommend(channel_id, dir_name):
+    """Get a recommended upload time for a video."""
+    recommendation = scheduler.recommend_upload_time(channel_id)
+    if not recommendation:
+        return jsonify({"ok": False, "error": f"No schedule configured for {channel_id}"})
+    return jsonify({"ok": True, **recommendation})
+
+
+@app.route("/api/schedule/set", methods=["POST"])
+def schedule_set():
+    """Set a scheduled upload time for a video."""
+    data = request.json
+    channel_id = data.get("channel_id")
+    dir_name = data.get("dir_name")
+    scheduled_upload = data.get("scheduled_upload")
+    
+    if not channel_id or not dir_name or not scheduled_upload:
+        return jsonify({"ok": False, "error": "Missing required fields"})
+    
+    # Load and update metadata
+    meta = scheduler._load_metadata(channel_id, dir_name)
+    if not meta:
+        meta = {}
+    
+    meta["scheduled_upload"] = scheduled_upload
+    meta["upload_status"] = "scheduled"
+    meta["upload_error"] = None
+    scheduler._save_metadata(channel_id, dir_name, meta)
+    
+    display_time = scheduler._format_display_time(scheduled_upload)
+    log.info(f"Scheduled upload for {channel_id}/{dir_name} at {display_time}")
+    
+    return jsonify({
+        "ok": True,
+        "scheduled_upload": scheduled_upload,
+        "display": display_time,
+    })
+
+
+@app.route("/api/schedule/cancel", methods=["POST"])
+def schedule_cancel():
+    """Cancel a scheduled upload for a video."""
+    data = request.json
+    channel_id = data.get("channel_id")
+    dir_name = data.get("dir_name")
+    
+    if not channel_id or not dir_name:
+        return jsonify({"ok": False, "error": "Missing required fields"})
+    
+    # Load and update metadata
+    meta = scheduler._load_metadata(channel_id, dir_name)
+    if not meta:
+        meta = {}
+    
+    meta["scheduled_upload"] = None
+    meta["upload_status"] = None
+    meta["upload_error"] = None
+    scheduler._save_metadata(channel_id, dir_name, meta)
+    
+    log.info(f"Cancelled scheduled upload for {channel_id}/{dir_name}")
+    return jsonify({"ok": True})
+
+
+@app.route("/api/schedule/upcoming")
+def schedule_upcoming():
+    """Get all scheduled uploads across all channels."""
+    scheduled = scheduler.get_all_scheduled()
+    return jsonify({"ok": True, "scheduled": scheduled})
 
 
 # --- YouTube Metrics ---
@@ -526,6 +502,9 @@ def api_channel_metrics(channel_id):
 # --- Metrics refresh is manual-only (via UI button) to preserve YouTube quota ---
 # Automatic scheduler removed — use /api/metrics/refresh POST endpoint instead.
 
+
+# Start background upload scheduler
+scheduler.start_scheduler(app, API_KEYS)
 
 if __name__ == "__main__":
     app.run(debug=True, port=7749, host="0.0.0.0")
