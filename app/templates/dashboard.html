@@ -66,6 +66,30 @@
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">📡 Channels</div>
     </div>
   </div>
+
+  {% if top_channel or top_video %}
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 500px; margin: 16px auto 0;">
+    {% if top_channel %}
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; text-align: left;">
+      <div style="font-size: 0.6em; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">🏆 Top Channel</div>
+      <div style="font-size: 0.95em; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ top_channel.channel_title }}</div>
+      <div style="font-size: 0.72em; color: var(--text2); margin-top: 4px;">
+        {{ "{:,}".format(top_channel.total_views) }} views · {{ "{:,}".format(top_channel.subscribers) }} subs
+      </div>
+    </div>
+    {% endif %}
+    {% if top_video %}
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; text-align: left;">
+      <div style="font-size: 0.6em; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
+      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 0.85em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ top_video.title }}">{{ top_video.title }}</a>
+      <div style="font-size: 0.72em; color: var(--text2); margin-top: 4px;">
+        {{ "{:,}".format(top_video.views) }} views · {{ "{:,}".format(top_video.likes) }} likes · {{ top_video.channel_title }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div>
 
 {% else %}

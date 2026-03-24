@@ -51,10 +51,11 @@ def dashboard():
     # Always load from cache — never block the dashboard on a refresh
     cache = youtube_metrics._load_cache()
     metrics = youtube_metrics.get_dashboard_summary(cache)
+    top_channel, top_video = youtube_metrics.get_top_performers(cache)
     last_refresh = cache.get("last_refresh")
     # Get scheduled uploads
     scheduled = scheduler.get_all_scheduled()
-    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled)
+    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled, top_channel=top_channel, top_video=top_video)
 
 
 @app.route("/channel/<channel_id>")

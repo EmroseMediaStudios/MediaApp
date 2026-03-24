@@ -281,6 +281,40 @@ def get_dashboard_summary(cache):
     return summary
 
 
+def get_top_performers(cache):
+    """Find the top performing channel and top performing video across all channels."""
+    top_channel = None
+    top_video = None
+    
+    for app_id, ch_data in cache.get("channels", {}).items():
+        vid_data = cache.get("videos", {}).get(app_id, {})
+        total_views = vid_data.get("total_views", 0) or ch_data.get("total_views", 0)
+        
+        if top_channel is None or total_views > top_channel.get("total_views", 0):
+            top_channel = {
+                "channel_id": app_id,
+                "channel_title": ch_data.get("channel_title", app_id),
+                "total_views": total_views,
+                "subscribers": ch_data.get("subscribers", 0),
+            }
+        
+        # Check all videos for this channel
+        videos = vid_data.get("videos", [])
+        for v in videos:
+            if top_video is None or v.get("views", 0) > top_video.get("views", 0):
+                top_video = {
+                    "video_id": v.get("video_id", ""),
+                    "title": v.get("title", ""),
+                    "views": v.get("views", 0),
+                    "likes": v.get("likes", 0),
+                    "channel_id": app_id,
+                    "channel_title": ch_data.get("channel_title", app_id),
+                    "is_short": v.get("is_short", False),
+                }
+    
+    return top_channel, top_video
+
+
 def get_channel_videos_with_stats(app_channel_id, cache):
     """Get video list with stats for a specific channel, sorted by views."""
     vid_data = cache.get("videos", {}).get(app_channel_id, {})
