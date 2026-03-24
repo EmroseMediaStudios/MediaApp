@@ -1,6 +1,7 @@
 # Posting Schedule
 
-Optimal posting times per channel. Post 1-2 hours before peak viewing so YouTube has time to process, index, and start recommending.
+1 video per channel per week. Minimum 6-day gap between uploads per channel.
+Post 1-2 hours before peak viewing so YouTube has time to process, index, and start recommending.
 
 All times are **US Eastern (EST/EDT)**.
 
