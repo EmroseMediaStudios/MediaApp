@@ -569,12 +569,12 @@ def update_video_meta(channel_id, dir_name, updates):
 
 # --- LLM calls ---
 
-def _call_openai_sync(messages, api_key):
+def _call_openai_sync(messages, api_key, temperature=0.7):
     import httpx as hx
     resp = hx.post(
         "https://api.openai.com/v1/chat/completions",
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json={"model": "gpt-4o", "messages": messages, "temperature": 0.7},
+        json={"model": "gpt-4o", "messages": messages, "temperature": temperature},
         timeout=120,
     )
     resp.raise_for_status()
@@ -585,15 +585,6 @@ def generate_topic_idea(channel, api_key):
     channel_id = channel["channel_id"]
     focus = CHANNEL_FOCUS.get(channel_id, {})
 
-    # Build focus section
-    focus_text = ""
-    if focus.get("focus"):
-        focus_text += "\nFocus on:\n" + "\n".join(f"- {f}" for f in focus["focus"])
-    if focus.get("avoid"):
-        focus_text += "\n\nAvoid:\n" + "\n".join(f"- {a}" for a in focus["avoid"])
-    if focus.get("examples"):
-        focus_text += "\n\nExamples of good topics:\n" + "\n".join(f'• "{e}"' for e in focus["examples"])
-
     # Load topic bank
     bank = _load_topic_bank()
     used_topics = bank.get(channel_id, [])
@@ -601,6 +592,22 @@ def generate_topic_idea(channel, api_key):
     if used_topics:
         used_text = "\n\nPreviously Used Topics:\n" + "\n".join(f"- {t}" for t in used_topics)
         used_text += "\n\nDo NOT generate ideas similar to anything listed above. Each idea must be completely unique and distinct from all previous topics."
+
+    # Shuffle focus areas and examples so the LLM doesn't always favour the
+    # entries listed first (which tend to be the original, narrower set).
+    import random as _rng
+    shuffled_focus = list(focus.get("focus", []))
+    _rng.shuffle(shuffled_focus)
+    shuffled_examples = list(focus.get("examples", []))
+    _rng.shuffle(shuffled_examples)
+
+    focus_text = ""
+    if shuffled_focus:
+        focus_text += "\nFocus on:\n" + "\n".join(f"- {f}" for f in shuffled_focus)
+    if focus.get("avoid"):
+        focus_text += "\n\nAvoid:\n" + "\n".join(f"- {a}" for a in focus["avoid"])
+    if shuffled_examples:
+        focus_text += "\n\nExamples of good topics (for tone/style reference — do NOT copy these):\n" + "\n".join(f'• "{e}"' for e in shuffled_examples)
 
     prompt = f"""You are generating a content idea for a YouTube channel.
 
@@ -610,6 +617,8 @@ Channel Description: {channel['description']}
 {used_text}
 
 Your task: Generate ONE high-quality video concept suitable for this channel.
+
+CRITICAL: Pick a focus area at RANDOM from the list above. Do NOT default to the same style every time. Rotate across the full range of focus areas — every category deserves equal representation over time.
 
 Requirements:
 - Must be unique and not repetitive of common topics
@@ -630,7 +639,7 @@ Output format (respond ONLY with valid JSON, no markdown fences):
 
 Do not generate generic ideas. Prioritize originality and curiosity."""
 
-    result = _call_openai_sync([{"role": "user", "content": prompt}], api_key)
+    result = _call_openai_sync([{"role": "user", "content": prompt}], api_key, temperature=0.9)
     result = result.strip()
     if result.startswith("```"):
         result = result.split("\n", 1)[1]
