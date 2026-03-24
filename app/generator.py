@@ -348,6 +348,22 @@ IMAGE_GEN_WIDTH = 1920
 IMAGE_GEN_HEIGHT = 1080
 KB_ZOOM_RANGE = (1.06, 1.18)
 KB_PAN_RANGE = 0.10
+
+# Per-channel Ken Burns overrides.  Channels not listed use the globals above.
+# upscale_size controls how large the source image is scaled before cropping —
+# smaller values mean more of the original image is visible in each frame.
+CHANNEL_KB_OVERRIDES = {
+    "softlight_kingdom": {
+        "zoom_range": (1.03, 1.08),
+        "pan_range": 0.05,
+        "upscale_size": (2304, 1312),  # ~83% visible (vs default ~71%)
+    },
+    "somnus_protocol": {
+        "zoom_range": (1.02, 1.06),
+        "pan_range": 0.03,
+        "upscale_size": (2304, 1312),
+    },
+}
 CROSSFADE_DURATION = 1.5
 FLUX_SPACES = [
     os.environ.get("FLUX_SPACE", "multimodalart/FLUX.1-merged"),
@@ -1437,7 +1453,12 @@ def _generate_fallback_image(out_path, scene_index, width=1792, height=1024):
 
 # --- Ken Burns ---
 
-def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
+def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080), channel_id=None):
+    # Resolve per-channel overrides (fall back to globals)
+    overrides = CHANNEL_KB_OVERRIDES.get(channel_id, {})
+    kb_zoom = overrides.get("zoom_range", KB_ZOOM_RANGE)
+    kb_pan = overrides.get("pan_range", KB_PAN_RANGE)
+
     img = Image.open(image_path)
     img_w, img_h = img.size
     target_w, target_h = target_res
@@ -1455,12 +1476,12 @@ def apply_ken_burns(image_path, duration, out_path, target_res=(1920, 1080)):
 
     motion = random.choice(["zoom_in", "zoom_out", "pan_left", "pan_right", "drift"])
     zoom_start = 1.0
-    zoom_end = random.uniform(*KB_ZOOM_RANGE)
+    zoom_end = random.uniform(*kb_zoom)
     if motion == "zoom_out":
         zoom_start, zoom_end = zoom_end, zoom_start
 
-    max_pan_x = int(img_w * KB_PAN_RANGE)
-    max_pan_y = int(img_h * KB_PAN_RANGE)
+    max_pan_x = int(img_w * kb_pan)
+    max_pan_y = int(img_h * kb_pan)
     if motion == "pan_left":
         start_x, end_x, start_y, end_y = max_pan_x, -max_pan_x, 0, 0
     elif motion == "pan_right":
@@ -2153,12 +2174,13 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
             _generate_fallback_image(str(img_path), i, width=1792, height=1024)
 
-        # Upscale for Ken Burns headroom — 2x gives good balance between
-        # showing the full scene composition and having room for zoom/pan.
-        # (Was 3360x1920 = ~2.5x which cropped too aggressively, hiding content)
+        # Upscale for Ken Burns headroom — use per-channel size if configured,
+        # otherwise default 2688x1536 (~71% visible at 1080p).
+        ch_overrides = CHANNEL_KB_OVERRIDES.get(channel_id, {})
+        upscale_w, upscale_h = ch_overrides.get("upscale_size", (2688, 1536))
         try:
             raw_img = Image.open(str(img_path))
-            upscaled = raw_img.resize((2688, 1536), Image.LANCZOS)
+            upscaled = raw_img.resize((upscale_w, upscale_h), Image.LANCZOS)
             upscaled.save(str(img_path), "PNG")
         except Exception as e:
             log.warning(f"Upscale failed for scene {i}: {e}")
@@ -2189,7 +2211,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         extra_buffer = max(3.0, scene_pause + 1.0) if scene_pause > 0 else 3.0
         duration = audio_dur + extra_buffer  # buffer beyond narration
         kb_path = work_dir / f"kb_{i:03d}.mp4"
-        apply_ken_burns(scene["image_path"], duration, str(kb_path), target_res=res)
+        apply_ken_burns(scene["image_path"], duration, str(kb_path), target_res=res, channel_id=channel_id)
         scene["video_path"] = str(kb_path)
 
     emit("kenburns", "All animations complete")
@@ -2828,7 +2850,7 @@ Full script:
     short_kb = work_dir / "short_kb.mp4"
     # Pad Ken Burns duration to ensure video is always >= narration length
     kb_duration = dur + 2.0
-    apply_ken_burns(str(short_img), kb_duration, str(short_kb), target_res=(1080, 1920))
+    apply_ken_burns(str(short_img), kb_duration, str(short_kb), target_res=(1080, 1920), channel_id=channel.get("channel_id"))
 
     # Use the narration duration as the master timeline — never truncate audio
     target_duration = dur + 1.5

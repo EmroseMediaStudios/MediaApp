@@ -83,6 +83,20 @@ IMAGE_GEN_HEIGHT = 1365
 KB_ZOOM_RANGE = (1.06, 1.18)  # Min/max zoom factor
 KB_PAN_RANGE = 0.10  # Max pan as fraction of image size
 
+# Per-channel Ken Burns overrides (channels not listed use globals above)
+CHANNEL_KB_OVERRIDES = {
+    "softlight_kingdom": {
+        "zoom_range": (1.03, 1.08),
+        "pan_range": 0.05,
+        "upscale_size": (2304, 1312),
+    },
+    "somnus_protocol": {
+        "zoom_range": (1.02, 1.06),
+        "pan_range": 0.03,
+        "upscale_size": (2304, 1312),
+    },
+}
+
 # Video assembly
 OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "./output")
 CROSSFADE_DURATION = 1.5
@@ -388,13 +402,18 @@ def generate_images_threaded(scenes: list[Scene], work_dir: Path):
 # Ken Burns Animation
 # ---------------------------------------------------------------------------
 
-def apply_ken_burns(image_path: str, duration: float, work_dir: Path, scene_index: int) -> str:
+def apply_ken_burns(image_path: str, duration: float, work_dir: Path, scene_index: int, channel_id: str = None) -> str:
     """
     Apply Ken Burns (slow zoom + pan) effect to a still image.
     Returns path to the generated .mp4 clip.
     """
     log.info(f"  Scene {scene_index}: Applying Ken Burns animation ({duration:.1f}s)...")
     out_path = work_dir / f"kb_{scene_index:03d}.mp4"
+
+    # Resolve per-channel overrides (fall back to globals)
+    overrides = CHANNEL_KB_OVERRIDES.get(channel_id, {})
+    kb_zoom = overrides.get("zoom_range", KB_ZOOM_RANGE)
+    kb_pan = overrides.get("pan_range", KB_PAN_RANGE)
 
     img = Image.open(image_path)
     img_w, img_h = img.size
@@ -408,13 +427,13 @@ def apply_ken_burns(image_path: str, duration: float, work_dir: Path, scene_inde
 
     # Calculate zoom parameters
     zoom_start = 1.0
-    zoom_end = random.uniform(*KB_ZOOM_RANGE)
+    zoom_end = random.uniform(*kb_zoom)
     if motion == "zoom_out":
         zoom_start, zoom_end = zoom_end, zoom_start
 
     # Calculate pan parameters
-    max_pan_x = int(img_w * KB_PAN_RANGE)
-    max_pan_y = int(img_h * KB_PAN_RANGE)
+    max_pan_x = int(img_w * kb_pan)
+    max_pan_y = int(img_h * kb_pan)
 
     if motion == "pan_left":
         start_x, end_x = max_pan_x, -max_pan_x
