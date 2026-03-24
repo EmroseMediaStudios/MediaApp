@@ -2340,8 +2340,15 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     thumb_scene_img = scenes[thumb_scene_idx].get("image_path", scenes[0].get("image_path", ""))
     thumb_path = out_dir / "thumbnail.png"
     if thumb_scene_img:
-        _generate_thumbnail(channel, title, thumb_scene_img, str(thumb_path))
-    emit("images", "Thumbnail ready")
+        try:
+            _generate_thumbnail(channel, title, thumb_scene_img, str(thumb_path))
+            emit("images", "Thumbnail ready")
+        except Exception as e:
+            emit("images", f"Thumbnail generation failed: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        emit("images", "No scene image available for thumbnail")
 
     # Step 3: Ken Burns animation
     emit("kenburns", "Applying Ken Burns animation...")
