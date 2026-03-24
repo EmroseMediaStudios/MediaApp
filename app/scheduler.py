@@ -22,7 +22,7 @@ log = logging.getLogger("scheduler")
 # This is the "easy off" switch — flip to False and restart to revert.
 BOOST_MODE = True
 BOOST_GAP_DAYS = 3   # Min days between uploads in boost mode
-NORMAL_GAP_DAYS = 6  # Min days between uploads in normal mode
+NORMAL_GAP_DAYS = 7  # Min days between uploads in normal mode (true 1x/week)
 
 POSTING_SCHEDULE = {
     "deadlight_codex": {"days": [3, 4, 5], "hour": 18},  # Thu-Sat, 6PM ET
