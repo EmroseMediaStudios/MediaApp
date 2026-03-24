@@ -1827,7 +1827,7 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        title_font = _get_channel_font(channel_id, 62)
+        title_font = _get_thumbnail_font(channel_id, 62)
 
         gold = (212, 168, 84)
 
@@ -1894,8 +1894,8 @@ def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(pil_img)
 
-        main_font = _get_channel_font(channel_id, 52)
-        sub_font = _get_channel_font(channel_id, 28)
+        main_font = _get_thumbnail_font(channel_id, 52)
+        sub_font = _get_thumbnail_font(channel_id, 28)
         gold = (212, 168, 84)
         dim_gold = (160, 130, 70)
 
@@ -3066,6 +3066,39 @@ Full script:
         import shutil as sh
         sh.move(str(short_with_narration), str(short_output))
 
+    # Append 2-second end card with "Watch the full video now"
+    emit("short", "Adding end card...")
+    end_card_img = work_dir / "short_end_card.png"
+    end_card_video = work_dir / "short_end_card.mp4"
+    short_with_end_card = work_dir / "short_final.mp4"
+    try:
+        _generate_short_end_card(channel, str(end_card_img))
+        # Create 2-second video from end card image
+        import subprocess
+        subprocess.run([
+            "ffmpeg", "-y", "-loop", "1", "-i", str(end_card_img),
+            "-t", "2", "-vf", f"scale=1080:1920,fps=30",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "slow",
+            "-an", str(end_card_video)
+        ], check=True, capture_output=True)
+        # Concatenate short + end card
+        concat_list = work_dir / "short_concat.txt"
+        concat_list.write_text(f"file '{short_output}'\nfile '{end_card_video}'\n")
+        subprocess.run([
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
+            "-c:v", "libx264", "-c:a", "aac", "-b:a", "320k", "-preset", "slow",
+            str(short_with_end_card)
+        ], check=True, capture_output=True)
+        # Replace original with version that has end card
+        import shutil as sh2
+        sh2.move(str(short_with_end_card), str(short_output))
+        target_duration += 2.0
+        emit("short", "End card added")
+    except Exception as e:
+        log.warning(f"End card generation failed (short still valid without it): {e}")
+        import traceback
+        traceback.print_exc()
+
     # Validate final short — make sure audio isn't truncated
     try:
         probe = VideoFileClip(str(short_output))
@@ -3080,3 +3113,89 @@ Full script:
     short_data["duration"] = round(target_duration, 1)
     emit("short", "YouTube Short complete")
     return short_data
+
+
+def _generate_short_end_card(channel, out_path, text="Watch the full video now", duration=2.0, res=(1080, 1920)):
+    """Generate a 2-second end card for YouTube Shorts using the channel's thumbnail font.
+    Dark background with centered text, matching the channel's visual identity."""
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    import numpy as np
+
+    w, h = res
+    channel_id = channel.get("channel_id", "")
+
+    # Channel-specific accent colors (same as thumbnails)
+    channel_colors = {
+        "deadlight_codex": (220, 50, 50),      # Blood red
+        "zero_trace_archive": (0, 200, 150),    # Teal
+        "the_unwritten_wing": (180, 140, 255),  # Lavender
+        "remnants_project": (100, 180, 255),    # Sky blue
+        "somnus_protocol": (120, 100, 220),     # Soft purple
+        "softlight_kingdom": (255, 200, 100),   # Warm gold
+        "gray_meridian": (200, 200, 200),       # Clean white
+        "echelon_veil": (0, 255, 100),          # Matrix green
+        "loreletics": (255, 180, 50),           # Athletic gold
+    }
+    accent = channel_colors.get(channel_id, (200, 200, 200))
+
+    # Dark background with subtle radial gradient
+    img = Image.new('RGB', (w, h), (8, 8, 20))
+    draw = ImageDraw.Draw(img)
+
+    # Add subtle radial glow in center
+    for r in range(300, 0, -2):
+        alpha = int(25 * (r / 300))
+        x, y = w // 2, h // 2
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=(accent[0] // 8, accent[1] // 8, accent[2] // 8))
+
+    # Get thumbnail font (same one used for thumbnails)
+    try:
+        font = _get_thumbnail_font(channel_id, 72)
+    except Exception:
+        font = ImageFont.load_default()
+
+    # Split text into lines if needed
+    lines = text.split('\n') if '\n' in text else [text]
+
+    # Calculate total text height
+    line_heights = []
+    line_widths = []
+    for line in lines:
+        bbox = font.getbbox(line)
+        lw = bbox[2] - bbox[0]
+        lh = bbox[3] - bbox[1]
+        line_widths.append(lw)
+        line_heights.append(lh)
+
+    line_spacing = 20
+    total_h = sum(line_heights) + line_spacing * (len(lines) - 1)
+    start_y = (h - total_h) // 2
+
+    # Draw text with glow effect
+    for i, line in enumerate(lines):
+        lw = line_widths[i]
+        x = (w - lw) // 2
+        y = start_y + sum(line_heights[:i]) + line_spacing * i
+
+        # Outer glow
+        glow_img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        glow_draw = ImageDraw.Draw(glow_img)
+        for offset in range(6, 0, -1):
+            glow_alpha = int(40 * (1 - offset / 6))
+            glow_color = (accent[0], accent[1], accent[2], glow_alpha)
+            glow_draw.text((x, y), line, font=font, fill=glow_color)
+        glow_img = glow_img.filter(ImageFilter.GaussianBlur(radius=8))
+        img.paste(Image.alpha_composite(Image.new('RGBA', (w, h), (0, 0, 0, 0)), glow_img).convert('RGB'),
+                  mask=glow_img.split()[3])
+
+        # Main text in white
+        draw.text((x, y), line, font=font, fill=(255, 255, 255))
+
+    # Add subtle bottom line accent
+    line_y = start_y + total_h + 40
+    line_w = max(line_widths) + 40
+    line_x = (w - line_w) // 2
+    draw.line([(line_x, line_y), (line_x + line_w, line_y)], fill=accent, width=3)
+
+    img.save(out_path, quality=95)
+    log.info(f"Short end card generated: {out_path}")
