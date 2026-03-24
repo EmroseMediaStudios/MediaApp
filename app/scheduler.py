@@ -116,8 +116,8 @@ def recommend_upload_time(channel_id):
     if candidate <= now_et:
         candidate += timedelta(days=1)
     
-    # Find the next day that matches the preferred days and is at least 2 days after last upload
-    min_gap_days = 2
+    # Find the next day that matches the preferred days and is at least 6 days after last upload (weekly cadence)
+    min_gap_days = 6
     attempts = 0
     max_attempts = 365
     
