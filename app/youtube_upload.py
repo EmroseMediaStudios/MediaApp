@@ -198,6 +198,15 @@ def _sanitize_tags(tags):
 def _is_invalid_tags_error(error):
     """Check if an HttpError is specifically about invalid tags."""
     err_str = str(error)
+    log.warning(f"YouTube API error detail: {err_str[:500]}")
+    try:
+        import json as _json
+        err_content = _json.loads(error.content.decode('utf-8'))
+        errors = err_content.get('error', {}).get('errors', [])
+        for e in errors:
+            log.warning(f"YouTube error: reason={e.get('reason')}, message={e.get('message')}, location={e.get('location')}")
+    except Exception:
+        pass
     return "invalidTags" in err_str or "invalid video keywords" in err_str
 
 
@@ -209,7 +218,6 @@ def _do_upload(youtube, video_path, title, description, tags, category_id, priva
         "snippet": {
             "title": title,
             "description": description,
-            "tags": tags,
             "categoryId": category_id,
         },
         "status": {
@@ -226,7 +234,11 @@ def _do_upload(youtube, video_path, title, description, tags, category_id, priva
         chunksize=10 * 1024 * 1024,
     )
 
-    log.info(f"Uploading '{title}' ({privacy}) with {len(tags)} tags: {tags}")
+    # Only include tags if we have valid ones — sending empty list can cause issues
+    if tags:
+        body["snippet"]["tags"] = tags
+
+    log.info(f"Uploading '{title}' ({privacy}) with {len(tags) if tags else 0} tags: {tags}")
     if progress:
         progress(0, "Starting upload...")
 

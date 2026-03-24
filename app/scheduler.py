@@ -265,6 +265,11 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
             description = " ".join(hashtags) + "\n\n" + description
         
         tags = yt_meta.get("tags", [])
+        
+        # Also inject top tags as hashtags at the bottom of description (fallback if keyword tags rejected)
+        if tags:
+            tag_hashtags = [f"#{t.replace(' ', '')}" for t in tags[:8] if t.strip()]
+            description = description.rstrip() + "\n\n" + " ".join(tag_hashtags)
         category = youtube_upload.CATEGORIES.get(
             yt_meta.get("category", meta.get("youtube", {}).get("category", "Entertainment")),
             "24"
