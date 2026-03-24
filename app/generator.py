@@ -1990,6 +1990,9 @@ def _get_thumbnail_font(channel_id, size=90):
             "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
             "/System/Library/Fonts/Supplemental/Gill Sans.ttc",
             "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Verdana Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Impact.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         ],
         "echelon_veil": [
@@ -2018,9 +2021,13 @@ def _get_thumbnail_font(channel_id, size=90):
     for fp in font_prefs + bold_fallbacks:
         if Path(fp).exists():
             try:
-                return ImageFont.truetype(fp, size)
-            except Exception:
+                f = ImageFont.truetype(fp, size)
+                log.info(f"Thumbnail font for {channel_id}: {fp} at {size}px")
+                return f
+            except Exception as e:
+                log.warning(f"Font load failed for {fp}: {e}")
                 continue
+    log.warning(f"No fonts found for {channel_id} — using default (text will be tiny!)")
     return ImageFont.load_default()
 
 
@@ -2128,7 +2135,7 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
             "remnants_project": (100, 200, 80),
             "somnus_protocol": (140, 160, 230),
             "autonomous_stack": (80, 210, 255),
-            "gray_meridian": (210, 190, 220),
+            "gray_meridian": (240, 240, 255),
             "softlight_kingdom": (255, 200, 230),
             "echelon_veil": (180, 220, 180),
             "loreletics": (255, 180, 60),
@@ -2169,7 +2176,9 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
         pil_img = pil_img.convert("RGB")
 
     except Exception as e:
-        log.warning(f"Thumbnail text rendering failed: {e}")
+        log.warning(f"Thumbnail text rendering failed for {channel_id}: {e}")
+        import traceback
+        traceback.print_exc()
         pil_img = pil_img.convert("RGB") if pil_img.mode != "RGB" else pil_img
 
     pil_img.save(str(out_path), "PNG")
