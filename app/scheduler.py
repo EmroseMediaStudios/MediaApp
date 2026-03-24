@@ -17,6 +17,13 @@ from . import youtube_upload
 log = logging.getLogger("scheduler")
 
 # Posting schedule configuration (days: 0=Mon, 6=Sun)
+# ---- BOOST MODE ----
+# Set to True for 2x/week posting (3-day gap). Set to False for normal 1x/week (6-day gap).
+# This is the "easy off" switch — flip to False and restart to revert.
+BOOST_MODE = True
+BOOST_GAP_DAYS = 3   # Min days between uploads in boost mode
+NORMAL_GAP_DAYS = 6  # Min days between uploads in normal mode
+
 POSTING_SCHEDULE = {
     "deadlight_codex": {"days": [3, 4, 5], "hour": 18},  # Thu-Sat, 6PM ET
     "zero_trace_archive": {"days": [2, 3, 4], "hour": 15},  # Wed-Fri, 3PM ET
@@ -28,6 +35,9 @@ POSTING_SCHEDULE = {
     "echelon_veil": {"days": [3, 4, 5], "hour": 18},
     "loreletics": {"days": [4, 5, 6], "hour": 13},  # Fri-Sun, 1PM ET
 }
+
+# In boost mode, all channels can post any day (keeps preferred hour)
+BOOST_DAYS = [0, 1, 2, 3, 4, 5, 6]
 
 ET = ZoneInfo("America/New_York")
 
@@ -79,7 +89,7 @@ def recommend_upload_time(channel_id):
         return None
     
     schedule = POSTING_SCHEDULE[channel_id]
-    preferred_days = schedule["days"]
+    preferred_days = BOOST_DAYS if BOOST_MODE else schedule["days"]
     preferred_hour = schedule["hour"]
     
     # Scan all videos for this channel to find the last scheduled/uploaded date
@@ -116,8 +126,8 @@ def recommend_upload_time(channel_id):
     if candidate <= now_et:
         candidate += timedelta(days=1)
     
-    # Find the next day that matches the preferred days and is at least 6 days after last upload (weekly cadence)
-    min_gap_days = 6
+    # Find the next day that matches the preferred days with appropriate gap
+    min_gap_days = BOOST_GAP_DAYS if BOOST_MODE else NORMAL_GAP_DAYS
     attempts = 0
     max_attempts = 365
     
@@ -141,11 +151,12 @@ def recommend_upload_time(channel_id):
     display = _format_display_time(iso_string)
     
     # Build reasoning
+    mode_label = "BOOST 2x/week" if BOOST_MODE else "Normal 1x/week"
     if last_scheduled:
         days_after = (candidate - last_scheduled).days
-        reasoning = f"Next available {candidate.strftime('%A')} slot, {days_after} days after last upload"
+        reasoning = f"[{mode_label}] Next available {candidate.strftime('%A')} slot, {days_after} days after last upload"
     else:
-        reasoning = f"First upload recommendation: {candidate.strftime('%A')} at {preferred_hour}:00 ET"
+        reasoning = f"[{mode_label}] First upload: {candidate.strftime('%A')} at {preferred_hour}:00 ET"
     
     # datetime_local is formatted for HTML datetime-local inputs (no timezone suffix)
     datetime_local = candidate.strftime("%Y-%m-%dT%H:%M")
