@@ -2249,7 +2249,7 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         raise RuntimeError(f"Cannot reach ElevenLabs: {e}")
 
     # Image cost estimate (DALL-E 3 HD: $0.080 per image, title card + scenes)
-    num_images = len(scenes) + 1  # scenes + title card
+    num_images = len(scenes)  # scenes only (title card reuses thumbnail)
     dalle_cost = num_images * 0.080
     emit("preflight", f"DALL-E 3 image estimate: {num_images} images × $0.08 = ~${dalle_cost:.2f}")
 
@@ -2364,10 +2364,19 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
 
     emit("kenburns", "All animations complete")
 
-    # Step 4: Title card
-    emit("assembly", "Creating title card...")
+    # Step 4: Title card (use the thumbnail — same font, same styling, no AI-garbled text)
+    emit("assembly", "Creating title card from thumbnail...")
     title_img_path = work_dir / "title_card.png"
-    _generate_title_card(channel, title, 5.0, str(title_img_path), api_keys, api_keys.get("hf_token", ""), res=res)
+    thumb_path = out_dir / "thumbnail.png"
+    if thumb_path.exists():
+        # Scale thumbnail (1280x720) up to video res (1920x1080) — same aspect ratio
+        from PIL import Image as _PILImage
+        thumb_img = _PILImage.open(str(thumb_path))
+        thumb_img = thumb_img.resize(res, _PILImage.LANCZOS)
+        thumb_img.save(str(title_img_path), quality=95)
+    else:
+        # Fallback: generate title card the old way if thumbnail doesn't exist
+        _generate_title_card(channel, title, 5.0, str(title_img_path), api_keys, api_keys.get("hf_token", ""), res=res)
     title_clip = ImageClip(str(title_img_path)).with_duration(5.0)
     title_clip = title_clip.with_effects([vfx.FadeIn(1.5), vfx.FadeOut(1.5)])
     title_clip = title_clip.with_effects([vfx.Resize(res)])
