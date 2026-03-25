@@ -480,6 +480,49 @@ def _save_topic_to_bank(channel_id, topic_title):
         bank[channel_id].append(topic_title)
     TOPIC_BANK_PATH.write_text(json.dumps(bank, indent=2))
 
+
+def _topic_is_too_similar(new_topic, used_topics, api_key, threshold=0.82):
+    """Check if a new topic is semantically too similar to any existing topic.
+    Uses OpenAI embeddings + cosine similarity. Threshold 0.82 catches
+    'cave with ancient drawings' vs 'rock with ancient drawings' level overlap
+    while allowing genuinely different topics through."""
+    if not used_topics:
+        return False, None
+
+    try:
+        import openai as _oai
+        client = _oai.OpenAI(api_key=api_key)
+
+        # Get embedding for the new topic
+        resp = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=[new_topic] + used_topics,
+        )
+        embeddings = [e.embedding for e in resp.data]
+        new_emb = embeddings[0]
+        used_embs = embeddings[1:]
+
+        # Cosine similarity
+        import math
+        def cosine_sim(a, b):
+            dot = sum(x * y for x, y in zip(a, b))
+            mag_a = math.sqrt(sum(x * x for x in a))
+            mag_b = math.sqrt(sum(x * x for x in b))
+            if mag_a == 0 or mag_b == 0:
+                return 0.0
+            return dot / (mag_a * mag_b)
+
+        for i, used_emb in enumerate(used_embs):
+            sim = cosine_sim(new_emb, used_emb)
+            if sim >= threshold:
+                return True, used_topics[i]
+
+        return False, None
+    except Exception as e:
+        print(f"[topic-dedup] Embedding check failed: {e}")
+        # Fall through — don't block topic generation if embeddings fail
+        return False, None
+
 # Defaults
 TARGET_FPS = 30
 TARGET_RESOLUTION = (1920, 1080)
@@ -696,6 +739,29 @@ Do not generate generic ideas. Prioritize originality and curiosity."""
     if result.endswith("```"):
         result = result.rsplit("```", 1)[0]
     idea = json.loads(result.strip())
+
+    # Semantic dedup: check if the generated topic is too similar to any used topic
+    # Retry up to 3 times with increasingly explicit rejection prompts
+    max_retries = 3
+    for attempt in range(max_retries):
+        too_similar, matched_topic = _topic_is_too_similar(
+            idea["title"] + " — " + idea.get("core_concept", ""),
+            used_topics,
+            api_key,
+            threshold=0.82,
+        )
+        if not too_similar:
+            break
+        print(f"[topic-dedup] Attempt {attempt+1}: '{idea['title']}' too similar to '{matched_topic}' — regenerating")
+        # Regenerate with explicit rejection of the similar topic
+        retry_prompt = prompt + f"\n\nCRITICAL: Your last suggestion was too similar to '{matched_topic}'. Generate something COMPLETELY DIFFERENT in subject matter, not just a variation."
+        result = _call_openai_sync([{"role": "user", "content": retry_prompt}], api_key, temperature=min(0.95, 0.9 + attempt * 0.05))
+        result = result.strip()
+        if result.startswith("```"):
+            result = result.split("\n", 1)[1]
+        if result.endswith("```"):
+            result = result.rsplit("```", 1)[0]
+        idea = json.loads(result.strip())
 
     # Save to topic bank
     _save_topic_to_bank(channel_id, idea["title"])
