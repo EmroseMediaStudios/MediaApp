@@ -134,7 +134,7 @@
       <div>
         <h4>{{ v.title }}</h4>
         <div class="meta">
-          {{ v.created_at[:16].replace('T', ' ') if v.created_at else v.timestamp }} · {{ (v.duration / 60)|round(1) }} min · {{ v.file_size_mb|default('?') }} MB
+          {{ v.created_at[:16].replace('T', ' ') if v.created_at else v.timestamp }} · {{ ((v.duration|default(0)) / 60)|round(1) }} min · {{ v.file_size_mb|default('?') }} MB
           {% if v.youtube_uploaded and v.youtube_video_id %}
             {% set yt_vid_views = namespace(count=0, found=false) %}
             {% for yv in yt_videos %}
