@@ -761,13 +761,20 @@ ABSOLUTE RULE — NO TEXT IN IMAGES:
 - AI image generators produce garbled, misspelled text that looks terrible — avoid it entirely
 - End every image prompt with: "No text, no words, no letters, no writing of any kind."
 
-CHARACTER VISUAL CONTINUITY:
-If the story features any recurring characters (people, creatures, animals, magical beings), you MUST define each one in the "characters" block with SPECIFIC, FIXED visual traits. Then EVERY scene's image_prompt that features that character MUST reference those exact traits verbatim.
-- Be extremely specific: species/type, size, color, distinguishing features, clothing/accessories
-- Example: NOT "a giant" → instead "a towering gentle giant with warm brown skin, a round friendly face, small kind eyes, wearing a mossy green tunic with a rope belt, and bare feet with grass-stained toes"
-- Copy-paste the character description into EVERY image prompt where they appear — do NOT paraphrase or vary it
-- This ensures the same character looks consistent across all scenes
-- If a character changes (gets a crown, finds a cloak), note the change but keep all other traits identical
+CHARACTER VISUAL CONTINUITY — THIS IS CRITICAL:
+Every story has characters. You MUST define ALL recurring characters in the "characters" JSON block.
+
+RULES FOR THE CHARACTERS BLOCK:
+- EVERY character that appears in more than one scene MUST be defined
+- Descriptions must be HYPER-SPECIFIC — imagine you're briefing a different artist for each scene who has NEVER seen this character before
+- Include ALL of these for each character: exact species/creature type, exact size relative to surroundings, exact skin/fur/scale color and texture, exact facial features, exact body shape, exact clothing with colors and materials, exact accessories or distinguishing marks
+- BAD example (too vague): "a friendly giant" — this will produce a DIFFERENT giant every single time
+- GOOD example: "A 20-foot-tall gentle giant with smooth warm brown skin, a large round face with rosy cheeks, small kind hazel eyes, a broad flat nose, short curly auburn hair, wearing a forest-green linen tunic with wooden toggle buttons, a thick brown leather belt with a brass buckle, brown canvas pants patched at the knees, and no shoes — his large bare feet have grass stains on the soles"
+
+RULES FOR IMAGE PROMPTS:
+- When a character from the "characters" block appears in a scene, you MUST paste their COMPLETE description from the characters block into that scene's image_prompt — word for word, no paraphrasing, no shortening, no rewording
+- The character description should be the FIRST thing in the image_prompt, before setting/environment details
+- If you do not copy the EXACT description, the character will look completely different in every scene and the video will be unusable
 
 OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
 {{
@@ -861,6 +868,68 @@ Same JSON format as before. No markdown fences."""
 
     # Fall back to original
     log.warning(f"Using original script: {total_words} words, {scene_count} scenes")
+    return script
+
+
+def _enforce_character_continuity(script):
+    """Post-process a script to enforce character visual continuity.
+    
+    The LLM is asked to produce a 'characters' block with fixed visual descriptions,
+    but it often ignores the instruction or paraphrases loosely. This function
+    programmatically injects each character's EXACT description into every scene's
+    image_prompt where the character's name appears in the narration.
+    
+    This is belt-and-suspenders: even if the LLM did it right, doubling up
+    the description won't hurt (DALL-E just sees more detail).
+    """
+    characters = script.get("characters", {})
+    if not characters:
+        log.info("No characters block in script — skipping continuity enforcement")
+        return script
+    
+    log.info(f"Enforcing character continuity for {len(characters)} character(s): {list(characters.keys())}")
+    
+    for scene in script.get("scenes", []):
+        narration = scene.get("narration", "").lower()
+        image_prompt = scene.get("image_prompt", "")
+        
+        # Check which characters appear in this scene's narration
+        injections = []
+        for char_name, char_desc in characters.items():
+            # Check for character name in narration (case-insensitive)
+            # Also check common variations: "the giant", "the bear", etc.
+            name_lower = char_name.lower()
+            name_parts = name_lower.split()
+            
+            # Match on full name, or last word of name (e.g. "Bramble the Giant" → also match "giant")
+            found = name_lower in narration
+            if not found and len(name_parts) > 1:
+                # Check if the last word (the character type) appears
+                found = name_parts[-1] in narration
+            if not found:
+                # Check if first word (the character's proper name) appears
+                found = name_parts[0] in narration
+            
+            if found:
+                # Check if the description is already substantially in the prompt
+                # (avoid double-injecting if the LLM already did it)
+                desc_words = set(char_desc.lower().split())
+                prompt_words = set(image_prompt.lower().split())
+                overlap = len(desc_words & prompt_words) / max(len(desc_words), 1)
+                
+                if overlap < 0.5:
+                    # Less than 50% overlap — the LLM didn't include it properly
+                    injections.append(f"[CHARACTER: {char_name} — {char_desc}]")
+                    log.debug(f"Injecting {char_name} description into scene (overlap: {overlap:.0%})")
+                else:
+                    log.debug(f"Character {char_name} already described in prompt (overlap: {overlap:.0%})")
+        
+        if injections:
+            # Prepend character descriptions to the image prompt
+            char_block = " ".join(injections)
+            scene["image_prompt"] = f"{char_block} {image_prompt}"
+            log.info(f"Injected {len(injections)} character description(s) into scene prompt")
+    
     return script
 
 
