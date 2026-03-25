@@ -1870,9 +1870,11 @@ def _get_channel_font(channel_id, size=62):
             "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
         ],
         "remnants_project": [
-            "/System/Library/Fonts/Supplemental/Futura.ttc",
-            "/System/Library/Fonts/Helvetica.ttc",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            # Warm organic sans — nature documentary, not cold/clinical
+            "/System/Library/Fonts/Supplemental/Optima.ttc",
+            "/System/Library/Fonts/Supplemental/Georgia.ttf",
+            "/System/Library/Fonts/Supplemental/Palatino.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
         ],
         "somnus_protocol": [
             "/System/Library/Fonts/Supplemental/Didot.ttc",
@@ -1890,8 +1892,9 @@ def _get_channel_font(channel_id, size=62):
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-ExtraLight.ttf",
         ],
         "softlight_kingdom": [
+            # Rounded, warm, storybook — friendly and inviting
+            "/System/Library/Fonts/Supplemental/Arial Rounded Bold.ttf",
             "/System/Library/Fonts/Supplemental/Cochin.ttc",
-            "/System/Library/Fonts/Supplemental/Savoye LET.ttc",
             "/System/Library/Fonts/Supplemental/Georgia.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
         ],
@@ -2122,10 +2125,11 @@ def _get_thumbnail_font(channel_id, size=90):
             "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
         "remnants_project": [
-            # Bold clean sans — futuristic, post-human
-            "/System/Library/Fonts/Supplemental/Futura.ttc",
-            "/System/Library/Fonts/Supplemental/Helvetica Neue.ttc",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            # Bold organic — warm nature documentary, not cold futuristic
+            "/System/Library/Fonts/Supplemental/Optima.ttc",
+            "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Palatino.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
         "somnus_protocol": [
             # Bold elegant serif — soft but readable, dreamy
