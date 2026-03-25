@@ -575,8 +575,10 @@ def api_channel_metrics(channel_id):
 # Automatic scheduler removed — use /api/metrics/refresh POST endpoint instead.
 
 
-# Start background upload scheduler
-scheduler.start_scheduler(app, API_KEYS)
+# Start background upload scheduler (only in the main process, not the reloader)
+import os as _os
+if _os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+    scheduler.start_scheduler(app, API_KEYS)
 
 if __name__ == "__main__":
     app.run(debug=True, port=7749, host="0.0.0.0")
