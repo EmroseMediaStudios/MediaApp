@@ -43,34 +43,39 @@
     "notes": "Detached closing observation. No hope, no despair \u2014 just continuation."
   },
   "visual_theme": {
-    "style": "Post-apocalyptic documentary, nature reclaiming civilization",
+    "style": "Nature-reclamation documentary, life thriving without humanity, vibrant rewilding",
     "palette": [
-      "muted green",
-      "rust",
-      "concrete gray",
-      "overgrown brown",
-      "overcast sky"
+      "lush green",
+      "golden sunlight",
+      "wildflower colors",
+      "warm amber",
+      "sky blue",
+      "soft rust accents",
+      "mossy earth tones"
     ],
-    "lighting": "Overcast natural light, diffused, no direct sun. Dawn or dusk tones.",
+    "lighting": "Rich natural light — golden hour, warm sunlight filtering through canopy, dappled light, sunrise and sunset glow. Mix of overcast softness and warm direct sun.",
     "elements": [
-      "Abandoned cities and buildings",
-      "Nature reclaiming structures (vines, trees, moss)",
-      "Empty roads and infrastructure",
-      "Decay and weathering",
-      "Still water, overgrown fields",
-      "Rusting machinery"
+      "Wildlife thriving in former human spaces — deer in lobbies, birds nesting in traffic lights, foxes on overgrown highways, fish in flooded basements",
+      "Abundant nature — wildflowers bursting through concrete, trees growing through rooftops, meadows where parking lots once were",
+      "Lush overgrowth — thick vines, moss, ferns, climbing roses, wisteria overtaking facades",
+      "Sunlight and color — golden light streaming through broken windows, rainbows in mist over ruins, vivid green against aged concrete",
+      "Water as life — clear streams running through old streets, waterfalls from crumbling dams, lily ponds in foundations",
+      "Aging infrastructure as backdrop — crumbling but secondary to the life growing over and through it",
+      "Seasonal beauty — autumn leaves filling hallways, snow on overgrown rooftops, spring blossoms on rusted bridges"
     ],
-    "environment": "Abandoned urban and suburban spaces. Nature overtaking human structures. Wide empty landscapes. No humans, no active life visible.",
+    "environment": "A world where nature has WON — not just surviving but thriving gloriously. Former cities are forests and meadows. Animals move freely through spaces once denied to them. The decay of human structures is the backdrop, not the subject — the LIFE is the subject. Vibrant, alive, beautiful.",
     "avoid": [
-      "Humans or active life",
-      "Post-apocalyptic action or violence",
-      "Bright or cheerful imagery",
+      "Humans or human activity",
+      "Post-apocalyptic bleakness or despair",
+      "Purely gray, dark, or dead imagery — every scene should have visible LIFE",
+      "Barren wastelands or scorched earth",
       "Sci-fi or futuristic elements",
-      "Text or signage"
+      "Text, signage, or readable writing",
+      "Scenes that are ONLY decay without nature thriving — always show life winning"
     ],
-    "camera": "Wide shots, slow movement. Static compositions with subtle drift. Observational distance.",
-    "mood": "Still, vast, indifferent, quietly powerful",
-    "image_prompt_suffix": "abandoned world, nature reclaiming, post-human, overgrown, cinematic photography, muted tones, 4k, desolate beauty"
+    "camera": "Wide shots, slow movement. Static compositions with subtle drift. Observational distance. Occasionally intimate close-ups of flowers, animals, or water.",
+    "mood": "Quietly triumphant, beautiful, alive, serene, nature ascendant",
+    "image_prompt_suffix": "nature reclaiming civilization, lush overgrowth, wildlife thriving, vibrant rewilding, golden sunlight, cinematic photography, rich colors, 4k, beautiful post-human world"
   },
   "video_settings": {
     "target_duration_min": 8,

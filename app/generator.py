@@ -220,26 +220,29 @@ CHANNEL_FOCUS = {
         "focus": [
             "Systems and machines that continue operating without human oversight",
             "The last signals, broadcasts, or transmissions from abandoned places",
-            "Animals adapting to and repurposing human-built environments",
+            "Animals adapting to and THRIVING in human-built environments — not just surviving but flourishing",
             "Automated processes that outlive their creators — satellites, servers, dams",
             "What specific objects experience after humans leave — a clock, a traffic light, a vending machine",
-            "The sociology of abandoned places — why some decay and others are preserved",
+            "Nature's triumphant return — forests reclaiming cities, rivers carving new paths through streets, wildlife populations exploding in former urban centers",
             "Time capsules, buried archives, and messages left for no one",
-            "How different materials and technologies age at different rates",
-            "The eerie beauty of liminal spaces — empty malls, silent highways, dark stadiums",
+            "How different materials and technologies age while nature grows over and through them",
+            "The beauty of rewilding — meadows where highways were, deer grazing in shopping malls, herons fishing in flooded subway stations",
             "What the last day looks like in a specific place before it's abandoned forever",
             "Digital remnants — websites that outlive their creators, social media profiles of the dead, abandoned servers still running, automated emails sent to no one",
             "Cultural extinction — languages with one speaker left, traditions nobody practices, recipes that die with a single person",
             "Personal objects left behind — suitcases never claimed, letters never opened, wedding dresses in attics, shoes on power lines",
             "Space remnants — Voyager's golden record, flags on the Moon, rovers on Mars, orbital debris circling a planet that may forget them",
-            "Submerged and underwater remains — flooded cities, shipwrecks with preserved cargo, forests swallowed by reservoirs",
-            "Sound and music after the end — the last record pressed, instruments in abandoned buildings, silence replacing noise",
+            "Submerged and underwater remains — flooded cities where fish swim through living rooms, shipwrecks as coral reefs, forests swallowed by reservoirs becoming underwater ecosystems",
+            "Sound and silence after humanity — birdsong filling once-noisy cities, wind through broken windows, the return of natural soundscapes",
+            "Seasons transforming human spaces — cherry blossoms in abandoned Tokyo streets, wildflowers carpeting factory floors, autumn leaves filling empty concert halls",
         ],
         "avoid": [
             "Action or survival narratives",
-            "Generic 'nature reclaims civilization' without a specific angle",
-            "Just describing buildings crumbling and plants growing — that's the backdrop, not the story",
+            "Purely bleak, dark, or depressing imagery — nature should be WINNING, not just existing",
+            "Generic 'everything is gray and dead' post-apocalyptic tone",
+            "Just describing buildings crumbling — the LIFE growing through them is the story",
             "Repeating the same infrastructure-decay premise with different locations",
+            "Imagery that's only algae and moss — show the FULL spectrum: flowers, trees, animals, sunlight, color",
         ],
         "examples": [
             "The Satellite That Will Outlast Everything We've Ever Built",
@@ -248,16 +251,20 @@ CHANNEL_FOCUS = {
             "Why Elevators Are the First Thing to Die in an Abandoned Building",
             "The Last Radio Station Still Broadcasting to No One",
             "What Happens Inside a Server Room When the Power Finally Goes Out",
-            "The Animals That Moved Into Chernobyl's Swimming Pool",
-            "A Hotel Room That Hasn't Been Opened in 40 Years",
+            "The Wolves That Moved Into Chernobyl's Swimming Pool",
+            "A Hotel Room That Hasn't Been Opened in 40 Years — and What Grew Inside",
             "The Geocities Page That's Been Online Since 1998 — and Nobody Knows Who Made It",
             "The Language That Dies When She Does",
             "The Wedding Dress in the Attic of a House Nobody Lives In",
             "Voyager Is Still Transmitting. Nobody Is Listening.",
-            "The Town They Flooded to Build the Dam — You Can Still See the Steeple",
+            "The Town They Flooded to Build the Dam — Fish Swim Through the Living Rooms Now",
             "An Automated Birthday Email Sent Every Year to Someone Who Died in 2014",
-            "The Piano in the Flood-Damaged House That Still Holds Its Tune",
+            "The Piano in the Flood-Damaged House — Wildflowers Grow Through Its Keys",
             "The Last Blockbuster Closed. The Rewound Tapes Are Still Inside.",
+            "The Highway Where Deer Walk at Sunrise — 10,000 of Them, Every Morning",
+            "The Shopping Mall Where Foxes Raise Their Young in the Food Court",
+            "Cherry Blossoms Fill the Abandoned Streets of Tokyo Every Spring",
+            "The Coral Reef That Grew on a Sunken Aircraft Carrier",
         ],
     },
     "somnus_protocol": {
@@ -747,14 +754,32 @@ Write detailed prompts for generating a STILL IMAGE. Each prompt must describe:
 {avoid}
 - End each prompt with: {v.get('image_prompt_suffix', '')}
 
+ABSOLUTE RULE — NO TEXT IN IMAGES:
+- NEVER include text, words, letters, numbers, signs, labels, titles, captions, watermarks, or any readable writing in image prompts
+- Do NOT describe text on buildings, signs, books, screens, posters, banners, or any surface
+- If a scene involves a book, letter, sign, or screen — describe it as a visual object but NEVER specify readable content on it
+- AI image generators produce garbled, misspelled text that looks terrible — avoid it entirely
+- End every image prompt with: "No text, no words, no letters, no writing of any kind."
+
+CHARACTER VISUAL CONTINUITY:
+If the story features any recurring characters (people, creatures, animals, magical beings), you MUST define each one in the "characters" block with SPECIFIC, FIXED visual traits. Then EVERY scene's image_prompt that features that character MUST reference those exact traits verbatim.
+- Be extremely specific: species/type, size, color, distinguishing features, clothing/accessories
+- Example: NOT "a giant" → instead "a towering gentle giant with warm brown skin, a round friendly face, small kind eyes, wearing a mossy green tunic with a rope belt, and bare feet with grass-stained toes"
+- Copy-paste the character description into EVERY image prompt where they appear — do NOT paraphrase or vary it
+- This ensures the same character looks consistent across all scenes
+- If a character changes (gets a crown, finds a cloak), note the change but keep all other traits identical
+
 OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
 {{
   "title": "short title for the entry",
   "subject": "brief subject line used in the opening",
+  "characters": {{
+    "character_name": "Detailed fixed visual description — species, size, color, features, clothing. Copy this EXACTLY into every image prompt featuring this character."
+  }},
   "scenes": [
     {{
       "narration": "Narration text for this scene (80-100 words, 5-8 sentences)",
-      "image_prompt": "Detailed image generation prompt",
+      "image_prompt": "Detailed image generation prompt. If a defined character appears, include their FULL description from the characters block verbatim.",
       "duration_hint": 15
     }}
   ]
@@ -998,7 +1023,7 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
         "deadlight_codex": "deep rumbling cosmic drone, vast underground cavern reverb, distant metallic resonance, low ominous sub-bass, wind through impossible architecture, dark ambient soundscape",
         "zero_trace_archive": "quiet empty room tone with distant ventilation hum, fluorescent light buzz, occasional muffled footstep echo, tense investigative atmosphere, low frequency tension",
         "the_unwritten_wing": "warm vinyl crackle, soft rain on windows, gentle piano room reverb, nostalgic and intimate, library ambiance with distant clock ticking",
-        "remnants_project": "wind through abandoned buildings, distant creaking metal, birdsong echoing in empty spaces, dripping water, nature slowly reclaiming silence",
+        "remnants_project": "birdsong echoing through empty corridors, wind rustling through overgrown streets, distant water flowing through crumbling structures, nature sounds filling silent cities, leaves rustling, insects buzzing in warm sunlight",
         "somnus_protocol": "soft warm ambient drone, deeply calming and sleep-inducing, slow evolving texture, no sudden sounds, gentle and meditative",
         "autonomous_stack": "clean server room hum, soft digital processing sounds, minimal electronic textures, cool and precise data center ambient",
         "gray_meridian": "quiet contemplative room tone, soft warm analog hum, gentle breathing space, psychological stillness, minimal and introspective",
@@ -1161,6 +1186,9 @@ def _generate_procedural_ambient(duration, out_path, channel_id=None):
 
 def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
     """Generate image. Tries DALL-E 3 first (best quality), falls back to FLUX via HuggingFace."""
+
+    # Append no-text instruction to the raw prompt (affects all generators including FLUX fallbacks)
+    prompt = prompt.rstrip() + " No text, no words, no letters, no writing of any kind in the image."
 
     # Soften prompts for DALL-E to avoid safety filter rejections.
     # DALL-E's content filter is aggressive — it blocks many words that are
@@ -1380,6 +1408,11 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
         # Case-insensitive replacement
         pattern = re.compile(re.escape(old_word), re.IGNORECASE)
         dalle_prompt = pattern.sub(new_word, dalle_prompt)
+
+    # GLOBAL: Append no-text instruction to ALL image prompts
+    # AI image generators (DALL-E, FLUX, etc.) produce garbled misspelled text
+    # that looks terrible in videos. Explicitly forbid all text in every image.
+    dalle_prompt += " Do not include any text, words, letters, numbers, writing, captions, labels, signs, titles, or readable symbols anywhere in the image."
 
     # PRIMARY: OpenAI DALL-E 3 (consistent high quality)
     openai_key = os.environ.get("OPENAI_API_KEY", "")
