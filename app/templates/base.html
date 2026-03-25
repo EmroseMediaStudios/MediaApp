@@ -35,7 +35,7 @@ a:hover { color: var(--gold-light); }
 
 h1, h2, h3, h4 { font-family: 'Cinzel', 'Georgia', serif; color: var(--gold); letter-spacing: 0.5px; }
 
-.container { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 36px; }
 
 /* ---- NAV ---- */
 nav { background: rgba(0,0,0,0.92); border-bottom: 1px solid rgba(212,168,84,0.08); padding: 0 32px; display: flex; align-items: center; gap: 20px; height: 56px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); }
@@ -50,9 +50,9 @@ nav .breadcrumb a:hover { color: var(--gold); }
 nav .breadcrumb span { margin: 0 6px; color: var(--text3); }
 
 /* ---- HEADER BANNER ---- */
-.hero-banner { text-align: center; padding: 32px 20px 16px; margin-bottom: 0; position: relative; }
-.hero-banner img { max-width: 460px; width: 100%; height: auto; filter: drop-shadow(0 4px 24px rgba(212,168,84,0.1)); }
-.hero-banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(to bottom, transparent, var(--bg)); pointer-events: none; }
+.hero-banner { text-align: center; padding: 28px 20px 8px; margin-bottom: 0; position: relative; }
+.hero-banner img { max-width: 520px; width: 100%; height: auto; filter: drop-shadow(0 4px 24px rgba(212,168,84,0.1)); mix-blend-mode: lighten; }
+.hero-banner::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--bg)); pointer-events: none; }
 
 /* ---- PAGE HEADER ---- */
 .page-header { margin-bottom: 28px; }
@@ -160,10 +160,10 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 code { font-family: 'SF Mono', Monaco, monospace; background: var(--bg3); padding: 2px 6px; border-radius: 3px; font-size: 0.85em; color: var(--gold); }
 
 /* ---- METRIC BOX (dashboard) ---- */
-.metric-box { background: linear-gradient(165deg, rgba(14,14,14,0.9) 0%, rgba(4,4,4,0.95) 100%); border: 1px solid var(--border); border-radius: 10px; padding: 16px 12px; text-align: center; transition: all 0.35s ease; position: relative; overflow: hidden; }
-.metric-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent); pointer-events: none; }
-.metric-box::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 20%, rgba(212,168,84,0.03) 0%, transparent 70%); pointer-events: none; }
-.metric-box:hover { border-color: var(--border2); box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 20px rgba(212,168,84,0.04); transform: translateY(-2px); }
+.metric-box { background: linear-gradient(165deg, rgba(16,16,16,0.95) 0%, rgba(4,4,4,0.98) 100%); border: 1px solid rgba(212,168,84,0.12); border-radius: 12px; padding: 20px 14px; text-align: center; transition: all 0.35s ease; position: relative; overflow: hidden; }
+.metric-box::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,168,84,0.15), transparent); pointer-events: none; }
+.metric-box::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(212,168,84,0.04) 0%, transparent 60%); pointer-events: none; }
+.metric-box:hover { border-color: rgba(212,168,84,0.22); box-shadow: 0 6px 28px rgba(0,0,0,0.5), 0 0 24px rgba(212,168,84,0.06); transform: translateY(-2px); }
 
 /* ---- CHANNEL CARD AVATAR ---- */
 .channel-avatar { border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border2); box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: all 0.3s; }
