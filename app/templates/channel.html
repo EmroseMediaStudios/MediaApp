@@ -165,6 +165,8 @@
         </div>
         {% if v.youtube_uploaded_at %}
         <span style="font-size: 0.68em; color: var(--text3);">Posted {{ v.youtube_uploaded_at }}</span>
+        {% elif v.youtube_uploaded %}
+        <span style="font-size: 0.68em; color: var(--text3);">Posted (date unavailable)</span>
         {% endif %}
       </div>
       {% else %}
