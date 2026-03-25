@@ -35,7 +35,7 @@
   <h3 style="text-align: center; font-size: 1.05em; letter-spacing: 3px; margin-bottom: 20px; color: var(--text3);">STUDIO METRICS</h3>
 
   {# ---- TOP ROW: 4 primary metrics ---- #}
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 620px; margin: 0 auto;">
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; margin: 0 auto;">
     <div class="metric-box">
       <div style="font-size: 1.4em; font-weight: 700; color: var(--text); letter-spacing: -0.5px;">{{ ns.total_subs | compact_number }}</div>
       <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">👥 Subscribers</div>
@@ -55,7 +55,7 @@
   </div>
 
   {# ---- SECOND ROW: 3 secondary metrics ---- #}
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 460px; margin: 14px auto 0;">
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 530px; margin: 16px auto 0;">
     <div class="metric-box">
       <div style="font-size: 1.2em; font-weight: 700; color: #8b5cf6;">{{ ns.total_comments | compact_number }}</div>
       <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">💬 Comments</div>
@@ -72,7 +72,7 @@
 
   {# ---- TOP CHANNEL / TOP VIDEO ---- #}
   {% if top_channel or top_video %}
-  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 620px; margin: 20px auto 0;">
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 720px; margin: 20px auto 0;">
     {% if top_channel %}
     <div class="metric-box" style="text-align: left; padding: 22px 20px;">
       <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🏆 Top Channel</div>
@@ -135,23 +135,23 @@ function refreshMetrics(btn) {
 
 {# ---- CHANNEL GRID ---- #}
 <div class="section-title">Channels</div>
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
-    <div class="card" style="display: flex; gap: 18px; align-items: flex-start; min-height: 190px; margin-bottom: 0; padding: 28px 24px;">
+    <div class="card" style="display: flex; gap: 20px; align-items: flex-start; min-height: 220px; margin-bottom: 0; padding: 32px 28px;">
       <img src="/static/img/{{ ch.channel_id }}.png" alt="{{ ch.channel_name }}"
-           class="channel-avatar" style="width: 76px; height: 76px;"
+           class="channel-avatar" style="width: 84px; height: 84px;"
            onerror="this.style.display='none'">
       <div style="flex: 1; min-width: 0;">
-        <h3 style="font-size: 1.15em; margin-bottom: 8px;">{{ ch.channel_name }}</h3>
-        <p style="margin-top: 0; font-size: 0.9em; line-height: 1.55; color: var(--text2);">{{ ch.description[:120] }}{% if ch.description|length > 120 %}...{% endif %}</p>
-        <div class="meta mt-10" style="gap: 10px;">
-          <span class="badge badge-gold" style="font-size: 0.78em;">{{ ch.narrator.name }}</span>
-          <span style="color: var(--text3); font-size: 0.78em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
+        <h3 style="font-size: 1.25em; margin-bottom: 10px;">{{ ch.channel_name }}</h3>
+        <p style="margin-top: 0; font-size: 0.95em; line-height: 1.6; color: var(--text2);">{{ ch.description[:140] }}{% if ch.description|length > 140 %}...{% endif %}</p>
+        <div class="meta mt-12" style="gap: 10px;">
+          <span class="badge badge-gold" style="font-size: 0.82em; padding: 5px 12px;">{{ ch.narrator.name }}</span>
+          <span style="color: var(--text3); font-size: 0.82em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
         </div>
         {% if metrics.get(ch.channel_id) %}
         {% set m = metrics[ch.channel_id] %}
-        <div class="mt-10" style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.88em;">
+        <div class="mt-12" style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.92em;">
           <span style="color: var(--text2); font-weight: 600;">👥 {{ m.subscribers | compact_number }}</span>
           <span style="color: var(--text2);">▶ {{ m.full_length_views | compact_number }}</span>
           {% if m.shorts_views > 0 %}
