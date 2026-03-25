@@ -582,13 +582,13 @@ def list_videos(channel_id):
 
         # Within each tier, sort by relevant date:
         # - Unscheduled: newest created first (reverse chronological by dir name / created_at)
-        # - Scheduled: soonest upload first (chronological by scheduled_upload)
+        # - Scheduled: furthest-out first, so next-to-post sits at bottom (right above posted)
         # - Posted: most recently posted first (reverse chronological by dir name)
         created = v.get("created_at", v.get("timestamp", v.get("dir_name", "")))
         if tier == 1 and is_scheduled:
-            # Soonest scheduled first — sort ascending by scheduled_upload
+            # Furthest scheduled first — sort descending by scheduled_upload
             sched_time = v.get("scheduled_upload", "")
-            return (tier, 0, sched_time)
+            return (tier, 0, _invert_sort_string(sched_time))
         else:
             # Newest first for unscheduled and posted — sort descending (negate with reverse trick)
             # Use a large prefix minus the timestamp string for reverse sort
