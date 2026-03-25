@@ -804,6 +804,13 @@ ABSOLUTE RULE — NO TEXT IN IMAGES:
 - AI image generators produce garbled, misspelled text that looks terrible — avoid it entirely
 - End every image prompt with: "No text, no words, no letters, no writing of any kind."
 
+SCENE RELEVANCE — NO RANDOM ELEMENTS:
+- Each image prompt must ONLY depict elements that are directly mentioned or implied in that scene's narration
+- Do NOT add animals, characters, objects, or environmental elements that aren't part of the story being told
+- If the scene is about a seashell on the ocean floor, the image should show a seashell on the ocean floor — not a deer, not a bird, not a random creature
+- "Meadow" in an underwater context means ocean floor — do not mix land and sea imagery
+- Every element in the image prompt must be traceable to something in the narration. If it's not in the story, it's not in the image.
+
 CHARACTER VISUAL CONTINUITY — THIS IS CRITICAL:
 Every story has characters. You MUST define ALL recurring characters in the "characters" JSON block.
 
