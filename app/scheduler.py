@@ -357,7 +357,7 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
                 year = datetime.now().year
                 short_desc += f"© {year} Emrose Media Studios. All rights reserved."
                 
-                short_tags = tags + ["Shorts", "YouTube Shorts"]
+                short_tags = []  # Tags disabled (same as main video)
                 
                 log.info(f"[SCHEDULER] Uploading Short for {channel_id}/{dir_name}")
                 short_result = youtube_upload.upload_video(
