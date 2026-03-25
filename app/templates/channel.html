@@ -5,7 +5,7 @@
 <div class="card card-highlight">
   <div style="display: flex; gap: 20px; align-items: flex-start;">
     <img src="/static/img/{{ channel.channel_id }}.png" alt="{{ channel.channel_name }}"
-         style="width: 80px; height: 80px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border2);"
+         class="channel-avatar" style="width: 80px; height: 80px;"
          onerror="this.style.display='none'">
     <div style="flex: 1;">
       <h2>{{ channel.channel_name }}</h2>
@@ -281,7 +281,7 @@ function openScheduleForm(channelId, dirName, btn) {
       form.style.cssText = `
         background-color: var(--card);
         border: 1px solid var(--border2);
-        border-radius: 6px;
+        border-radius: 10px;
         padding: 16px;
         margin-top: 12px;
         display: grid;
