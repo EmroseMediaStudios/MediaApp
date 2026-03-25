@@ -4,7 +4,13 @@
 {% block content %}
 <div class="page-header">
   <h2>{% if regenerating %}🔄 Regenerate Video{% else %}Script Editor{% endif %}</h2>
-  {% if regenerating %}<p style="color: #f59e0b;">Editing the original script. Modify scenes as needed, then re-generate.</p>{% endif %}
+  {% if regenerating %}
+  <p style="color: #f59e0b;">Editing the original script. Modify scenes as needed, then re-generate.</p>
+  <form method="POST" action="/channel/{{ channel.channel_id }}/script" style="display: inline-block; margin-top: 8px;">
+    <input type="hidden" name="topic" value="{{ topic }}">
+    <button type="submit" name="generate" value="1" class="btn btn-sm" style="font-size: 0.85em;" onclick="this.innerHTML='<span class=spinner></span> Generating new script...';">🎲 Re-roll Script (keep topic)</button>
+  </form>
+  {% endif %}
 </div>
 
 {% if not script %}
