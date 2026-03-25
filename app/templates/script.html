@@ -45,6 +45,20 @@
   <input type="hidden" name="title" value="{{ script.title }}">
   <input type="hidden" name="topic" value="{{ topic }}">
 
+  {% if script.characters %}
+  <div class="section-title">Characters</div>
+  <div class="card" style="border-left: 3px solid var(--gold);">
+    <p class="meta" style="margin-bottom: 12px;">These descriptions are injected into every scene's image prompt to maintain visual continuity. Edit them here if needed.</p>
+    {% for char_name, char_desc in script.characters.items() %}
+    <div class="form-group" style="{% if not loop.last %}margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);{% endif %}">
+      <label style="font-weight: 600; color: var(--gold);">{{ char_name }}</label>
+      <textarea name="character_{{ loop.index0 }}" rows="3" data-char-name="{{ char_name }}">{{ char_desc }}</textarea>
+    </div>
+    {% endfor %}
+  </div>
+  <input type="hidden" name="characters_json" id="characters_json">
+  {% endif %}
+
   <div class="section-title">Scenes</div>
   {% for scene in script.scenes %}
   <div class="card">
@@ -102,6 +116,17 @@ function buildScenesJson() {
   });
   {% endfor %}
   document.getElementById('scenes_json').value = JSON.stringify(scenes);
+
+  // Build characters JSON if characters section exists
+  const charsEl = document.getElementById('characters_json');
+  if (charsEl) {
+    const chars = {};
+    document.querySelectorAll('[name^="character_"]').forEach(ta => {
+      const name = ta.dataset.charName;
+      if (name) chars[name] = ta.value;
+    });
+    charsEl.value = JSON.stringify(chars);
+  }
 }
 
 // Live duration estimate

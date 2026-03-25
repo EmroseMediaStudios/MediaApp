@@ -115,6 +115,19 @@ def generate_page(channel_id):
         topic = request.form.get("topic", "")
         gen_short = request.form.get("generate_short") == "on"
 
+        # If characters were edited in the UI, re-inject them into scene image prompts
+        characters_json = request.form.get("characters_json", "")
+        if characters_json:
+            try:
+                characters = json.loads(characters_json)
+                if characters:
+                    # Re-run character injection with the (possibly edited) descriptions
+                    temp_script = {"characters": characters, "scenes": scenes}
+                    temp_script = generator._enforce_character_continuity(temp_script)
+                    scenes = temp_script["scenes"]
+            except (json.JSONDecodeError, Exception) as e:
+                log.warning(f"Failed to process edited characters: {e}")
+
         # Create progress queue
         job_id = f"{channel_id}_{id(threading.current_thread())}"
         q = queue.Queue()
