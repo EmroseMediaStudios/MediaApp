@@ -871,25 +871,91 @@ Same JSON format as before. No markdown fences."""
     return script
 
 
-def _enforce_character_continuity(script):
+def _enforce_character_continuity(script, api_key=None):
     """Post-process a script to enforce character visual continuity.
     
-    The LLM is asked to produce a 'characters' block with fixed visual descriptions,
-    but it often ignores the instruction or paraphrases loosely. This function
-    programmatically injects each character's EXACT description into every scene's
-    image_prompt where the character's name appears in the narration.
-    
-    This is belt-and-suspenders: even if the LLM did it right, doubling up
-    the description won't hurt (DALL-E just sees more detail).
+    Three-tier approach:
+    1. If the LLM provided a 'characters' block, use it
+    2. If not, extract character names from narration and make a follow-up
+       LLM call to generate detailed visual descriptions
+    3. Programmatically inject character descriptions into every scene's
+       image_prompt where that character appears
     """
-    characters = script.get("characters", {})
+    characters = script.get("characters")
+    
+    # If no characters block OR it's empty, try to extract characters via LLM
+    if not characters and api_key:
+        # Collect all narration to find character names
+        all_narration = "\n".join(s.get("narration", "") for s in script.get("scenes", []))
+        
+        # Quick check: are there likely characters? Look for capitalized names
+        # that appear multiple times (proper nouns that aren't scene-starters)
+        import re
+        # Find capitalized words that appear 2+ times (likely character names)
+        words = re.findall(r'\b([A-Z][a-z]{2,})\b', all_narration)
+        # Filter out common sentence starters and non-name words
+        skip_words = {'The', 'His', 'Her', 'She', 'They', 'And', 'But', 'Each',
+                      'Every', 'Even', 'One', 'This', 'That', 'With', 'Hugo',
+                      'Around', 'Finally', 'Suddenly', 'Next', 'These', 'There',
+                      'As', 'It', 'Its', 'Into', 'Like'}
+        name_counts = {}
+        for w in words:
+            if w not in skip_words:
+                name_counts[w] = name_counts.get(w, 0) + 1
+        recurring_names = [n for n, c in name_counts.items() if c >= 2]
+        
+        if recurring_names or any(w.lower() in all_narration.lower() for w in 
+                                   ['giant', 'dragon', 'bear', 'fox', 'creature',
+                                    'monster', 'princess', 'prince', 'king', 'queen',
+                                    'fairy', 'wizard', 'knight', 'owl', 'wolf',
+                                    'bunny', 'rabbit', 'cat', 'kitten', 'mouse']):
+            log.warning("No characters block in script — generating character descriptions via LLM...")
+            
+            char_prompt = f"""Analyze this story narration and identify ALL recurring characters (anyone/anything that appears in more than one scene).
+
+For each character, write an EXTREMELY detailed, FIXED visual description that an artist could use to draw them IDENTICALLY every time. Include ALL of these details:
+- Exact species/creature type
+- Exact size (use comparisons: "as tall as a three-story house", "the size of a teacup")
+- Exact skin/fur/scale color AND texture (not just "brown" — "warm chestnut brown with a slight rosy glow")
+- Exact facial features (eye color, eye shape, nose, mouth, expression)
+- Exact body shape and proportions
+- Exact clothing with specific colors, materials, and details
+- Any accessories, markings, or distinguishing features
+
+Example of the level of detail needed:
+"A 20-foot-tall gentle giant with smooth warm chestnut-brown skin with a slight rosy glow, a large round face with full rosy cheeks, small kind hazel eyes with laugh lines, a broad flat nose, a wide gentle smile, short curly auburn hair tucked behind large rounded ears, wearing a forest-green linen tunic with three wooden toggle buttons down the front, a thick brown leather belt with a tarnished brass buckle, brown canvas pants with patches at both knees, and large bare feet with grass stains on the soles and toes"
+
+Respond with ONLY valid JSON — no markdown fences:
+{{"character_name": "full visual description", "another_character": "full visual description"}}
+
+Story narration:
+{all_narration[:4000]}"""
+
+            try:
+                char_result = _call_openai_sync(
+                    [{"role": "user", "content": char_prompt}],
+                    api_key,
+                    temperature=0.3,  # Low temp for consistency
+                )
+                char_result = char_result.strip()
+                if char_result.startswith("```"):
+                    char_result = char_result.split("\n", 1)[1]
+                if char_result.endswith("```"):
+                    char_result = char_result.rsplit("```", 1)[0]
+                characters = json.loads(char_result.strip())
+                script["characters"] = characters
+                log.info(f"Generated character descriptions for {len(characters)} character(s): {list(characters.keys())}")
+            except Exception as e:
+                log.warning(f"Character extraction LLM call failed: {e}")
+                characters = {}
+    
     if not characters:
-        log.info("No characters block in script — skipping continuity enforcement")
+        log.info("No characters to enforce continuity for")
         return script
     
     log.info(f"Enforcing character continuity for {len(characters)} character(s): {list(characters.keys())}")
     
-    for scene in script.get("scenes", []):
+    for scene_idx, scene in enumerate(script.get("scenes", [])):
         narration = scene.get("narration", "").lower()
         image_prompt = scene.get("image_prompt", "")
         
@@ -897,38 +963,32 @@ def _enforce_character_continuity(script):
         injections = []
         for char_name, char_desc in characters.items():
             # Check for character name in narration (case-insensitive)
-            # Also check common variations: "the giant", "the bear", etc.
             name_lower = char_name.lower()
             name_parts = name_lower.split()
             
-            # Match on full name, or last word of name (e.g. "Bramble the Giant" → also match "giant")
+            # Match on full name, first word, or last word
             found = name_lower in narration
             if not found and len(name_parts) > 1:
-                # Check if the last word (the character type) appears
                 found = name_parts[-1] in narration
             if not found:
-                # Check if first word (the character's proper name) appears
                 found = name_parts[0] in narration
             
             if found:
                 # Check if the description is already substantially in the prompt
-                # (avoid double-injecting if the LLM already did it)
                 desc_words = set(char_desc.lower().split())
                 prompt_words = set(image_prompt.lower().split())
                 overlap = len(desc_words & prompt_words) / max(len(desc_words), 1)
                 
                 if overlap < 0.5:
-                    # Less than 50% overlap — the LLM didn't include it properly
-                    injections.append(f"[CHARACTER: {char_name} — {char_desc}]")
-                    log.debug(f"Injecting {char_name} description into scene (overlap: {overlap:.0%})")
+                    injections.append(f"[CHARACTER — {char_name}: {char_desc}]")
+                    log.debug(f"Scene {scene_idx}: Injecting {char_name} (overlap: {overlap:.0%})")
                 else:
-                    log.debug(f"Character {char_name} already described in prompt (overlap: {overlap:.0%})")
+                    log.debug(f"Scene {scene_idx}: {char_name} already in prompt (overlap: {overlap:.0%})")
         
         if injections:
-            # Prepend character descriptions to the image prompt
             char_block = " ".join(injections)
             scene["image_prompt"] = f"{char_block} {image_prompt}"
-            log.info(f"Injected {len(injections)} character description(s) into scene prompt")
+            log.info(f"Scene {scene_idx}: Injected {len(injections)} character description(s)")
     
     return script
 

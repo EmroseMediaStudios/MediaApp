@@ -97,7 +97,7 @@ def script_editor(channel_id):
         script = generator.generate_script(ch, topic, API_KEYS["openai"])
         # Post-process: enforce character visual continuity in image prompts
         if script:
-            script = generator._enforce_character_continuity(script)
+            script = generator._enforce_character_continuity(script, api_key=API_KEYS["openai"])
 
     return render_template("script.html", channel=ch, script=script, topic=topic)
 
