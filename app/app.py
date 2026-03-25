@@ -414,8 +414,19 @@ def youtube_upload_video():
     if meta_path.exists():
         meta = json.loads(meta_path.read_text())
 
+    # Prevent double uploads — check if already uploaded (unless force_reupload)
+    if meta.get("youtube_uploaded") and not force_reupload:
+        return jsonify({"ok": False, "error": "Already uploaded. Use re-upload to upload again."})
+
+    # Mark as uploading immediately to prevent scheduler race condition
+    meta["upload_status"] = "uploading"
+    meta_path.write_text(json.dumps(meta, indent=2))
+
     # Use the shared upload helper (same logic as scheduler)
     # but override privacy since this is a manual upload request
+    if not scheduler._UPLOAD_LOCK.acquire(blocking=False):
+        return jsonify({"ok": False, "error": "Another upload is in progress. Try again in a moment."})
+    
     try:
         result = scheduler._do_scheduled_upload(channel_id, dir_name, API_KEYS)
         if not result["success"]:
@@ -433,6 +444,8 @@ def youtube_upload_video():
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+    finally:
+        scheduler._UPLOAD_LOCK.release()
 
 
 # --- Scheduled Upload Endpoints ---

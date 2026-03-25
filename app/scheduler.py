@@ -25,6 +25,7 @@ BOOST_GAP_DAYS = 3   # Min days between uploads in boost mode
 NORMAL_GAP_DAYS = 7  # Min days between uploads in normal mode (true 1x/week)
 
 _BOOST_FILE = Path(__file__).parent.parent / "boost_mode.json"
+_UPLOAD_LOCK = threading.Lock()  # Prevents simultaneous uploads (scheduler + manual)
 
 def get_boost_mode():
     """Read boost mode from persistent file."""
@@ -454,28 +455,41 @@ def _scheduler_loop(app, api_keys):
                             
                             # Is it time to upload?
                             if scheduled_dt <= now_et:
-                                log.info(f"[SCHEDULER] Time to upload {channel_id}/{dir_name}")
+                                # Acquire lock to prevent race with manual uploads
+                                if not _UPLOAD_LOCK.acquire(blocking=False):
+                                    log.info(f"[SCHEDULER] Upload lock held, skipping {channel_id}/{dir_name} this cycle")
+                                    continue
                                 
-                                # Mark as uploading
-                                meta["upload_status"] = "uploading"
-                                _save_metadata(channel_id, dir_name, meta)
-                                
-                                # Do the upload
-                                result = _do_scheduled_upload(channel_id, dir_name, api_keys)
-                                
-                                # Reload metadata — _do_scheduled_upload saves youtube_uploaded, video_id, url etc.
-                                meta = _load_metadata(channel_id, dir_name) or meta
-                                
-                                if result["success"]:
-                                    meta["upload_status"] = "uploaded"
-                                    meta["upload_error"] = None
-                                    log.info(f"[SCHEDULER] Successfully uploaded {channel_id}/{dir_name}")
-                                else:
-                                    meta["upload_status"] = "failed"
-                                    meta["upload_error"] = result.get("error", "Unknown error")
-                                    log.error(f"[SCHEDULER] Failed to upload {channel_id}/{dir_name}: {result.get('error')}")
-                                
-                                _save_metadata(channel_id, dir_name, meta)
+                                try:
+                                    # Re-check after acquiring lock (another thread may have uploaded)
+                                    meta = _load_metadata(channel_id, dir_name)
+                                    if not meta or meta.get("youtube_uploaded"):
+                                        continue
+                                    
+                                    log.info(f"[SCHEDULER] Time to upload {channel_id}/{dir_name}")
+                                    
+                                    # Mark as uploading
+                                    meta["upload_status"] = "uploading"
+                                    _save_metadata(channel_id, dir_name, meta)
+                                    
+                                    # Do the upload
+                                    result = _do_scheduled_upload(channel_id, dir_name, api_keys)
+                                    
+                                    # Reload metadata — _do_scheduled_upload saves youtube_uploaded, video_id, url etc.
+                                    meta = _load_metadata(channel_id, dir_name) or meta
+                                    
+                                    if result["success"]:
+                                        meta["upload_status"] = "uploaded"
+                                        meta["upload_error"] = None
+                                        log.info(f"[SCHEDULER] Successfully uploaded {channel_id}/{dir_name}")
+                                    else:
+                                        meta["upload_status"] = "failed"
+                                        meta["upload_error"] = result.get("error", "Unknown error")
+                                        log.error(f"[SCHEDULER] Failed to upload {channel_id}/{dir_name}: {result.get('error')}")
+                                    
+                                    _save_metadata(channel_id, dir_name, meta)
+                                finally:
+                                    _UPLOAD_LOCK.release()
                         
                         except Exception as e:
                             log.error(f"[SCHEDULER] Error processing {channel_id}/{dir_name}: {e}")
