@@ -33,9 +33,9 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1;
 a { color: var(--gold); text-decoration: none; transition: color 0.2s; }
 a:hover { color: var(--gold-light); }
 
-h1, h2, h3, h4 { font-family: 'Cinzel', 'Georgia', serif; color: var(--gold); letter-spacing: 0.5px; }
+h1, h2, h3, h4 { font-family: 'Cinzel', 'Georgia', serif; color: var(--gold); letter-spacing: 0.5px; font-weight: 700; }
 
-.container { max-width: 1400px; margin: 0 auto; padding: 24px 48px; }
+.container { max-width: 1600px; margin: 0 auto; padding: 24px 48px; }
 
 /* ---- NAV ---- */
 nav { background: rgba(0,0,0,0.92); border-bottom: 1px solid rgba(212,168,84,0.08); padding: 0 32px; display: flex; align-items: center; gap: 20px; height: 56px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); }
@@ -56,9 +56,9 @@ nav .breadcrumb span { margin: 0 6px; color: var(--text3); }
 
 /* ---- PAGE HEADER ---- */
 .page-header { margin-bottom: 28px; }
-.page-header h1 { font-size: 1.5em; margin-bottom: 6px; }
-.page-header h2 { font-size: 1.25em; margin-bottom: 6px; }
-.page-header p { color: var(--text2); font-size: 0.9em; }
+.page-header h1 { font-size: 1.7em; font-weight: 700; margin-bottom: 8px; }
+.page-header h2 { font-size: 1.4em; font-weight: 700; margin-bottom: 8px; }
+.page-header p { color: var(--text2); font-size: 0.95em; }
 
 /* ---- BUTTONS ---- */
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-size: 0.9em; font-weight: 500; transition: all 0.3s ease; font-family: inherit; letter-spacing: 0.3px; }
@@ -101,7 +101,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 .badge-rose { background: rgba(199,80,80,0.12); color: var(--rose); }
 
 /* ---- SECTION TITLE ---- */
-.section-title { font-family: 'Cinzel', serif; font-size: 1em; font-weight: 600; margin: 40px 0 20px; color: var(--text3); text-transform: uppercase; letter-spacing: 2.5px; position: relative; padding-bottom: 12px; }
+.section-title { font-family: 'Cinzel', serif; font-size: 1.3em; font-weight: 700; margin: 40px 0 22px; color: var(--text2); text-transform: uppercase; letter-spacing: 3px; position: relative; padding-bottom: 12px; }
 .section-title::after { content: ''; position: absolute; bottom: 0; left: 0; width: 50px; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); }
 
 /* ---- DIVIDER ---- */

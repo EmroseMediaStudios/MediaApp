@@ -32,7 +32,7 @@
     <button onclick="refreshMetrics(this)" class="btn btn-sm" style="font-size: 0.75em; padding: 4px 12px;">🔄 Refresh</button>
   </div>
 
-  <h3 style="text-align: center; font-size: 1.05em; letter-spacing: 3px; margin-bottom: 20px; color: var(--text3);">STUDIO METRICS</h3>
+  <h3 style="text-align: center; font-size: 1.3em; font-weight: 700; letter-spacing: 3px; margin-bottom: 22px; color: var(--text2); font-family: 'Cinzel', serif;">STUDIO METRICS</h3>
 
   {# ---- TOP ROW: 4 primary metrics ---- #}
   <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; margin: 0 auto;">
@@ -76,7 +76,7 @@
     {% if top_channel %}
     <div class="metric-box" style="text-align: left; padding: 22px 20px;">
       <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🏆 Top Channel</div>
-      <div style="font-size: 1.15em; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ top_channel.channel_title }}</div>
+      <div style="font-size: 1.15em; font-weight: 700; color: var(--gold);">{{ top_channel.channel_title }}</div>
       <div style="font-size: 0.88em; color: var(--text2); margin-top: 6px;">
         {{ top_channel.total_views | compact_number }} views · {{ top_channel.subscribers | compact_number }} subs
       </div>
@@ -85,7 +85,7 @@
     {% if top_video %}
     <div class="metric-box" style="text-align: left; padding: 22px 20px;">
       <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
-      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 1.05em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ top_video.title }}">{{ top_video.title }}</a>
+      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 1.05em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block;" title="{{ top_video.title }}">{{ top_video.title }}</a>
       <div style="font-size: 0.88em; color: var(--text2); margin-top: 6px;">
         {{ top_video.views | compact_number }} views · {{ top_video.likes | compact_number }} likes · {{ top_video.channel_title }}
       </div>
@@ -144,7 +144,7 @@ function refreshMetrics(btn) {
            onerror="this.style.display='none'">
       <div style="flex: 1; min-width: 0;">
         <h3 style="font-size: 1.25em; margin-bottom: 10px;">{{ ch.channel_name }}</h3>
-        <p style="margin-top: 0; font-size: 0.95em; line-height: 1.6; color: var(--text2);">{{ ch.description[:140] }}{% if ch.description|length > 140 %}...{% endif %}</p>
+        <p style="margin-top: 0; font-size: 0.95em; line-height: 1.6; color: var(--text2);">{{ ch.description }}</p>
         <div class="meta mt-12" style="gap: 10px;">
           <span class="badge badge-gold" style="font-size: 0.82em; padding: 5px 12px;">{{ ch.narrator.name }}</span>
           <span style="color: var(--text3); font-size: 0.82em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
@@ -186,7 +186,7 @@ function refreshMetrics(btn) {
         <td style="padding: 12px 10px;">
           <a href="/channel/{{ item.channel_id }}" style="color: var(--gold); font-weight: 600; font-size: 0.95em;">{{ item.channel_name }}</a>
         </td>
-        <td style="padding: 12px 10px; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95em;">
+        <td style="padding: 12px 10px; font-size: 0.95em;">
           {{ item.title }}
         </td>
         <td style="text-align: right; padding: 12px 10px; color: var(--text2); font-size: 0.95em;">
