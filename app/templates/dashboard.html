@@ -75,8 +75,8 @@
   <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 720px; margin: 20px auto 0;">
     {% if top_channel %}
     <div class="metric-box" style="text-align: left; padding: 22px 20px;">
-      <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🏆 Top Channel</div>
-      <div style="font-size: 1.15em; font-weight: 700; color: var(--gold);">{{ top_channel.channel_title }}</div>
+      <div style="font-size: 0.9em; font-weight: 700; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🏆 Top Channel</div>
+      <div style="font-size: 0.86em; font-weight: 400; color: var(--gold);">{{ top_channel.channel_title }}</div>
       <div style="font-size: 0.88em; color: var(--text2); margin-top: 6px;">
         {{ top_channel.total_views | compact_number }} views · {{ top_channel.subscribers | compact_number }} subs
       </div>
@@ -84,8 +84,8 @@
     {% endif %}
     {% if top_video %}
     <div class="metric-box" style="text-align: left; padding: 22px 20px;">
-      <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
-      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 1.05em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block;" title="{{ top_video.title }}">{{ top_video.title }}</a>
+      <div style="font-size: 0.9em; font-weight: 700; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
+      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 0.79em; font-weight: 400; color: #3b82f6; text-decoration: none; display: block;" title="{{ top_video.title }}">{{ top_video.title }}</a>
       <div style="font-size: 0.88em; color: var(--text2); margin-top: 6px;">
         {{ top_video.views | compact_number }} views · {{ top_video.likes | compact_number }} likes · {{ top_video.channel_title }}
       </div>
