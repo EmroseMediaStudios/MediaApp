@@ -2036,20 +2036,38 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
 
 
 def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
-    """Generate an end card with subscribe CTA, using channel-specific font."""
+    """Generate an end card with subscribe CTA, using channel-specific font and colors."""
     w, h = res
     channel_id = channel.get("channel_id", "")
-    visual = channel.get("visual_theme", {})
-    palette = visual.get("palette", ["dark"])
 
-    # Dark background with subtle gradient (no FLUX call — keep it clean and fast)
+    # Per-channel end card styling:
+    # (accent_color, dim_accent, bg_tint_rgb, copyright_color)
+    # bg_tint is a subtle color wash over the dark background
+    end_card_styles = {
+        "deadlight_codex":    ((220, 50, 50),   (140, 35, 35),   (25, 5, 5),    (100, 50, 50)),
+        "zero_trace_archive": ((200, 195, 170), (130, 125, 110), (15, 14, 10),  (90, 85, 70)),
+        "the_unwritten_wing": ((255, 215, 120), (170, 145, 80),  (20, 15, 5),   (110, 95, 55)),
+        "remnants_project":   ((140, 230, 90),  (85, 145, 55),   (8, 20, 5),    (65, 105, 45)),
+        "somnus_protocol":    ((140, 160, 230), (90, 100, 150),  (8, 10, 22),   (60, 70, 110)),
+        "autonomous_stack":   ((80, 210, 255),  (50, 135, 165),  (5, 15, 22),   (40, 95, 115)),
+        "gray_meridian":      ((220, 220, 235), (140, 140, 150), (12, 12, 16),  (90, 90, 100)),
+        "softlight_kingdom":  ((255, 200, 140), (170, 130, 90),  (20, 14, 8),   (115, 90, 60)),
+        "echelon_veil":       ((130, 220, 130), (80, 140, 80),   (6, 18, 6),    (55, 100, 55)),
+        "loreletics":         ((255, 180, 60),  (170, 120, 40),  (22, 15, 4),   (110, 80, 30)),
+    }
+    accent, dim_accent, bg_tint, copy_color = end_card_styles.get(
+        channel_id, ((212, 168, 84), (160, 130, 70), (15, 12, 6), (100, 85, 60))
+    )
+
+    # Dark background with channel-tinted subtle gradient
     img = np.zeros((h, w, 3), dtype=np.float32)
     cy, cx = h // 2, w // 2
     Y, X = np.ogrid[:h, :w]
     dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
     gradient = np.clip(0.06 - dist * 0.03, 0.01, 0.06)
     for c_idx in range(3):
-        img[:, :, c_idx] = gradient
+        # Tint the background gradient with the channel color
+        img[:, :, c_idx] = gradient * (bg_tint[c_idx] / max(max(bg_tint), 1) + 0.3)
     # Subtle noise
     img += np.random.randn(h, w, 3) * 0.008
     img = np.clip(img * 255, 0, 255).astype(np.uint8)
@@ -2061,32 +2079,30 @@ def _generate_end_card(channel, duration, out_path, res=(1920, 1080)):
 
         main_font = _get_thumbnail_font(channel_id, 52)
         sub_font = _get_thumbnail_font(channel_id, 28)
-        gold = (212, 168, 84)
-        dim_gold = (160, 130, 70)
 
         # Main CTA text
         cta_text = "If you enjoyed this, please"
         cta_bbox = draw.textbbox((0, 0), cta_text, font=sub_font)
         cta_w = cta_bbox[2] - cta_bbox[0]
-        draw.text(((w - cta_w) // 2, h // 2 - 80), cta_text, fill=dim_gold, font=sub_font)
+        draw.text(((w - cta_w) // 2, h // 2 - 80), cta_text, fill=dim_accent, font=sub_font)
 
         # Like, Comment & Subscribe
         action_text = "Like, Comment & Subscribe"
         action_bbox = draw.textbbox((0, 0), action_text, font=main_font)
         action_w = action_bbox[2] - action_bbox[0]
-        draw.text(((w - action_w) // 2, h // 2 - 30), action_text, fill=gold, font=main_font)
+        draw.text(((w - action_w) // 2, h // 2 - 30), action_text, fill=accent, font=main_font)
 
-        # Decorative lines
+        # Decorative lines in dim accent
         line_w = min(action_w + 60, w - 200)
-        draw.line([(w // 2 - line_w // 2, h // 2 - 95), (w // 2 + line_w // 2, h // 2 - 95)], fill=dim_gold, width=1)
-        draw.line([(w // 2 - line_w // 2, h // 2 + 40), (w // 2 + line_w // 2, h // 2 + 40)], fill=dim_gold, width=1)
+        draw.line([(w // 2 - line_w // 2, h // 2 - 95), (w // 2 + line_w // 2, h // 2 - 95)], fill=dim_accent, width=1)
+        draw.line([(w // 2 - line_w // 2, h // 2 + 40), (w // 2 + line_w // 2, h // 2 + 40)], fill=dim_accent, width=1)
 
         # Small copyright line
         year = datetime.now().year
         copy_text = f"© {year} Emrose Media Studios"
         copy_bbox = draw.textbbox((0, 0), copy_text, font=sub_font)
         copy_w = copy_bbox[2] - copy_bbox[0]
-        draw.text(((w - copy_w) // 2, h // 2 + 60), copy_text, fill=(100, 85, 60), font=sub_font)
+        draw.text(((w - copy_w) // 2, h // 2 + 60), copy_text, fill=copy_color, font=sub_font)
 
     except Exception as e:
         log.warning(f"End card text rendering failed: {e}")
@@ -3346,17 +3362,18 @@ def _generate_short_end_card(channel, out_path, text="Watch the full video now",
     w, h = res
     channel_id = channel.get("channel_id", "")
 
-    # Channel-specific accent colors (same as thumbnails)
+    # Channel-specific accent colors — synced with thumbnail and end card accents
     channel_colors = {
-        "deadlight_codex": (220, 50, 50),      # Blood red
-        "zero_trace_archive": (0, 200, 150),    # Teal
-        "the_unwritten_wing": (180, 140, 255),  # Lavender
-        "remnants_project": (100, 180, 255),    # Sky blue
-        "somnus_protocol": (120, 100, 220),     # Soft purple
-        "softlight_kingdom": (255, 200, 100),   # Warm gold
-        "gray_meridian": (200, 200, 200),       # Clean white
-        "echelon_veil": (0, 255, 100),          # Matrix green
-        "loreletics": (255, 180, 50),           # Athletic gold
+        "deadlight_codex": (220, 50, 50),
+        "zero_trace_archive": (200, 195, 170),
+        "the_unwritten_wing": (255, 215, 120),
+        "remnants_project": (140, 230, 90),
+        "somnus_protocol": (140, 160, 230),
+        "autonomous_stack": (80, 210, 255),
+        "gray_meridian": (220, 220, 235),
+        "softlight_kingdom": (255, 200, 140),
+        "echelon_veil": (130, 220, 130),
+        "loreletics": (255, 180, 60),
     }
     accent = channel_colors.get(channel_id, (200, 200, 200))
 
