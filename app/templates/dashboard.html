@@ -34,43 +34,43 @@
   </div>
 
   <h3 style="text-align: center; font-size: 0.85em; letter-spacing: 2px; margin-bottom: 12px;">MEDIA STUDIO METRICS</h3>
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 500px; margin: 0 auto;">
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 520px; margin: 0 auto;">
+    <div class="metric-box">
       <div style="font-size: 1.2em; font-weight: 700; color: var(--text1);">{{ "{:,}".format(ns.total_subs) }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">👥 Subscribers</div>
     </div>
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+    <div class="metric-box">
       <div style="font-size: 1.2em; font-weight: 700; color: #3b82f6;">{{ "{:,}".format(ns.full_views) }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">▶ Long-Form Views</div>
     </div>
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+    <div class="metric-box">
       <div style="font-size: 1.2em; font-weight: 700; color: #f59e0b;">{{ "{:,}".format(ns.shorts_views) }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">📱 Shorts Views</div>
     </div>
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px;">
+    <div class="metric-box">
       <div style="font-size: 1.2em; font-weight: 700; color: #ec4899;">{{ "{:,}".format(ns.total_likes) }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">❤️ Likes</div>
     </div>
   </div>
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 380px; margin: 8px auto 0;">
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 10px auto 0;">
+    <div class="metric-box">
       <div style="font-size: 1.1em; font-weight: 700; color: #8b5cf6;">{{ "{:,}".format(ns.total_comments) }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">💬 Comments</div>
     </div>
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
+    <div class="metric-box">
       <div style="font-size: 1.1em; font-weight: 700; color: #22c55e;">{{ ns.total_videos }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">🎬 Videos</div>
     </div>
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px;">
+    <div class="metric-box">
       <div style="font-size: 1.1em; font-weight: 700; color: var(--gold);">{{ visible_ids|length }}</div>
       <div style="font-size: 0.65em; color: var(--text3); margin-top: 2px;">📡 Channels</div>
     </div>
   </div>
 
   {% if top_channel or top_video %}
-  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 500px; margin: 16px auto 0;">
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 520px; margin: 16px auto 0;">
     {% if top_channel %}
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; text-align: left;">
+    <div class="metric-box" style="text-align: left; padding: 16px 14px;">
       <div style="font-size: 0.6em; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">🏆 Top Channel</div>
       <div style="font-size: 0.95em; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ top_channel.channel_title }}</div>
       <div style="font-size: 0.72em; color: var(--text2); margin-top: 4px;">
@@ -79,7 +79,7 @@
     </div>
     {% endif %}
     {% if top_video %}
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; text-align: left;">
+    <div class="metric-box" style="text-align: left; padding: 16px 14px;">
       <div style="font-size: 0.6em; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
       <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 0.85em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ top_video.title }}">{{ top_video.title }}</a>
       <div style="font-size: 0.72em; color: var(--text2); margin-top: 4px;">
