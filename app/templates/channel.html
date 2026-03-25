@@ -155,11 +155,18 @@
     </div>
     <div class="actions">
       {% if v.youtube_uploaded %}
-      <a href="{{ v.youtube_url|default('#') }}" class="btn btn-sm" style="color: #22c55e;" target="_blank" title="View on YouTube">✓ YouTube</a>
-      <button class="btn btn-sm" style="color: #f59e0b;" title="Re-upload to YouTube"
-        data-has-short="{{ 'true' if v.has_short else 'false' }}"
-        data-channel="{{ channel.channel_id }}" data-dir="{{ v.dir_name }}" data-title="{{ v.title }}"
-        data-action="reupload">⬆ Re-upload</button>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <a href="{{ v.youtube_url|default('#') }}" class="btn btn-sm" style="color: #22c55e;" target="_blank" title="View on YouTube">✓ YouTube</a>
+          <button class="btn btn-sm" style="color: #f59e0b;" title="Re-upload to YouTube"
+            data-has-short="{{ 'true' if v.has_short else 'false' }}"
+            data-channel="{{ channel.channel_id }}" data-dir="{{ v.dir_name }}" data-title="{{ v.title }}"
+            data-action="reupload">⬆ Re-upload</button>
+        </div>
+        {% if v.youtube_uploaded_at %}
+        <span style="font-size: 0.68em; color: var(--text3);">Posted {{ v.youtube_uploaded_at }}</span>
+        {% endif %}
+      </div>
       {% else %}
       <!-- Upload options for videos not yet uploaded -->
       {% if v.upload_status == "scheduled" %}

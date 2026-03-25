@@ -340,6 +340,7 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
         meta["youtube_video_id"] = result["video_id"]
         meta["youtube_url"] = result["url"]
         meta["youtube_privacy"] = "public"
+        meta["youtube_uploaded_at"] = datetime.now(ET).strftime("%Y-%m-%d %I:%M %p")
         
         # Also upload Short if it exists
         short_result = None
