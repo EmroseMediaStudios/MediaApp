@@ -292,6 +292,17 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
         if ch:
             made_for_kids = ch.get("youtube", {}).get("made_for_kids", False)
         
+        # YouTube rejects ALL tags on made_for_kids content (COPPA restriction)
+        if made_for_kids and tags:
+            log.info(f"[SCHEDULER] Dropping {len(tags)} tags for made_for_kids channel {channel_id}")
+            tags = []
+        
+        # TEMP: Disable tags on ALL uploads — YouTube API rejecting every tag set.
+        # Hashtags in description still work as fallback. Remove this once root cause found.
+        if tags:
+            log.info(f"[SCHEDULER] Tags disabled (API bug): dropping {len(tags)} tags for {channel_id}")
+            tags = []
+        
         # Upload main video
         log.info(f"[SCHEDULER] Uploading {channel_id}/{dir_name}: {title}")
         result = youtube_upload.upload_video(
