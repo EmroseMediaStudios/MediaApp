@@ -2216,22 +2216,43 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
 
     # Boost contrast and saturation for thumbnail pop
     from PIL import ImageEnhance, ImageDraw, ImageFont, ImageFilter
-    bg = ImageEnhance.Contrast(bg).enhance(1.4)
-    bg = ImageEnhance.Color(bg).enhance(1.3)
-    bg = ImageEnhance.Brightness(bg).enhance(0.8)
+
+    # Per-channel thumbnail image treatment
+    # Channels with bright/vibrant imagery need gentler darkening so the
+    # background retains its visual identity. Dark/moody channels need heavier
+    # treatment for text readability.
+    thumb_treatment = {
+        # (contrast, saturation, brightness, gradient_strength, vignette_strength)
+        "deadlight_codex":    (1.4, 1.3, 0.75, 0.85, 0.4),
+        "zero_trace_archive": (1.4, 1.2, 0.80, 0.85, 0.4),
+        "the_unwritten_wing": (1.3, 1.3, 0.85, 0.75, 0.35),
+        "remnants_project":   (1.3, 1.4, 0.90, 0.65, 0.30),  # bright, vibrant, nature
+        "somnus_protocol":    (1.2, 1.2, 0.85, 0.75, 0.35),
+        "softlight_kingdom":  (1.2, 1.4, 0.90, 0.65, 0.30),  # warm, colorful storybook
+        "gray_meridian":      (1.4, 1.2, 0.80, 0.85, 0.4),
+        "echelon_veil":       (1.4, 1.3, 0.78, 0.85, 0.4),
+        "loreletics":         (1.4, 1.4, 0.85, 0.75, 0.35),
+    }
+    contrast, saturation, brightness, grad_strength, vig_strength = thumb_treatment.get(
+        channel_id, (1.4, 1.3, 0.80, 0.85, 0.4)
+    )
+
+    bg = ImageEnhance.Contrast(bg).enhance(contrast)
+    bg = ImageEnhance.Color(bg).enhance(saturation)
+    bg = ImageEnhance.Brightness(bg).enhance(brightness)
 
     img_array = np.array(bg).astype(np.float32)
 
-    # Strong bottom gradient — heavier than before for text readability
+    # Bottom gradient for text readability — strength varies per channel
     for y in range(h):
         fade = max(0, (y - h * 0.35) / (h * 0.65))
-        img_array[y] *= (1.0 - fade * 0.85)
+        img_array[y] *= (1.0 - fade * grad_strength)
 
-    # Vignette — stronger on edges to draw eye to center
+    # Vignette — draw eye to center, strength varies per channel
     cy, cx = h * 0.4, w // 2
     Y, X = np.ogrid[:h, :w]
     dist = np.sqrt(((X - cx) / (w * 0.6)) ** 2 + ((Y - cy) / (h * 0.6)) ** 2)
-    vignette = np.clip(1.0 - dist * 0.4, 0.25, 1.0)
+    vignette = np.clip(1.0 - dist * vig_strength, 0.25, 1.0)
     img_array *= vignette[:, :, None]
 
     pil_img = Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
@@ -2311,7 +2332,7 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
             "deadlight_codex": (220, 40, 40),
             "zero_trace_archive": (220, 215, 190),
             "the_unwritten_wing": (255, 215, 120),
-            "remnants_project": (100, 200, 80),
+            "remnants_project": (140, 230, 90),
             "somnus_protocol": (140, 160, 230),
             "autonomous_stack": (80, 210, 255),
             "gray_meridian": (240, 240, 255),
