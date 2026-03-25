@@ -18,11 +18,29 @@ log = logging.getLogger("scheduler")
 
 # Posting schedule configuration (days: 0=Mon, 6=Sun)
 # ---- BOOST MODE ----
-# Set to True for 2x/week posting (3-day gap). Set to False for normal 1x/week (6-day gap).
-# This is the "easy off" switch — flip to False and restart to revert.
-BOOST_MODE = True
+# Persisted to boost_mode.json so it survives restarts.
+# Toggle via dashboard UI or set BOOST_MODE_DEFAULT for fresh installs.
+BOOST_MODE_DEFAULT = True
 BOOST_GAP_DAYS = 3   # Min days between uploads in boost mode
 NORMAL_GAP_DAYS = 7  # Min days between uploads in normal mode (true 1x/week)
+
+_BOOST_FILE = Path(__file__).parent.parent / "boost_mode.json"
+
+def get_boost_mode():
+    """Read boost mode from persistent file."""
+    if _BOOST_FILE.exists():
+        try:
+            with open(_BOOST_FILE) as f:
+                return json.load(f).get("boost", BOOST_MODE_DEFAULT)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return BOOST_MODE_DEFAULT
+
+def set_boost_mode(enabled: bool):
+    """Write boost mode to persistent file."""
+    with open(_BOOST_FILE, "w") as f:
+        json.dump({"boost": enabled}, f)
+    print(f"[scheduler] Boost mode {'ON' if enabled else 'OFF'}")
 
 POSTING_SCHEDULE = {
     "deadlight_codex": {"days": [3, 4, 5], "hour": 18},  # Thu-Sat, 6PM ET
@@ -89,7 +107,7 @@ def recommend_upload_time(channel_id):
         return None
     
     schedule = POSTING_SCHEDULE[channel_id]
-    preferred_days = BOOST_DAYS if BOOST_MODE else schedule["days"]
+    preferred_days = BOOST_DAYS if get_boost_mode() else schedule["days"]
     preferred_hour = schedule["hour"]
     
     # Scan all videos for this channel to find the last scheduled/uploaded date
@@ -127,7 +145,7 @@ def recommend_upload_time(channel_id):
         candidate += timedelta(days=1)
     
     # Find the next day that matches the preferred days with appropriate gap
-    min_gap_days = BOOST_GAP_DAYS if BOOST_MODE else NORMAL_GAP_DAYS
+    min_gap_days = BOOST_GAP_DAYS if get_boost_mode() else NORMAL_GAP_DAYS
     attempts = 0
     max_attempts = 365
     
@@ -151,7 +169,7 @@ def recommend_upload_time(channel_id):
     display = _format_display_time(iso_string)
     
     # Build reasoning
-    mode_label = "BOOST 2x/week" if BOOST_MODE else "Normal 1x/week"
+    mode_label = "BOOST 2x/week" if get_boost_mode() else "Normal 1x/week"
     if last_scheduled:
         days_after = (candidate - last_scheduled).days
         reasoning = f"[{mode_label}] Next available {candidate.strftime('%A')} slot, {days_after} days after last upload"

@@ -70,14 +70,21 @@ API_KEYS = {
 @app.route("/")
 def dashboard():
     channels = generator.list_channels()
-    # Always load from cache — never block the dashboard on a refresh
     cache = youtube_metrics._load_cache()
     metrics = youtube_metrics.get_dashboard_summary(cache)
     top_channel, top_video = youtube_metrics.get_top_performers(cache)
     last_refresh = cache.get("last_refresh")
-    # Get scheduled uploads
     scheduled = scheduler.get_all_scheduled()
-    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled, top_channel=top_channel, top_video=top_video)
+    boost_mode = scheduler.get_boost_mode()
+    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled, top_channel=top_channel, top_video=top_video, boost_mode=boost_mode)
+
+
+@app.route("/api/boost", methods=["POST"])
+def toggle_boost():
+    data = request.get_json()
+    enabled = data.get("enabled", False)
+    scheduler.set_boost_mode(bool(enabled))
+    return jsonify({"ok": True, "boost": scheduler.get_boost_mode()})
 
 
 @app.route("/channel/<channel_id>")

@@ -134,7 +134,51 @@ function refreshMetrics(btn) {
 </script>
 
 {# ---- CHANNEL GRID ---- #}
-<div class="section-title">Channels</div>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+  <div class="section-title" style="margin-bottom: 0;">Channels</div>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span id="boostLabel" style="font-size: 0.78em; color: var(--text3); letter-spacing: 0.3px;">
+      {% if boost_mode %}⚡ BOOST MODE{% else %}📅 NORMAL MODE{% endif %}
+    </span>
+    <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
+      <input type="checkbox" id="boostToggle" {% if boost_mode %}checked{% endif %}
+             onchange="toggleBoost(this.checked)"
+             style="opacity: 0; width: 0; height: 0;">
+      <span style="position: absolute; inset: 0; border-radius: 24px; transition: all 0.3s;
+                    background: {% if boost_mode %}var(--accent){% else %}rgba(255,255,255,0.08){% endif %};
+                    border: 1px solid {% if boost_mode %}var(--accent){% else %}var(--border){% endif %};">
+        <span style="position: absolute; top: 3px; left: {% if boost_mode %}22px{% else %}3px{% endif %};
+                      width: 16px; height: 16px; border-radius: 50%; background: white;
+                      transition: all 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></span>
+      </span>
+    </label>
+  </div>
+</div>
+<script>
+function toggleBoost(enabled) {
+  fetch('/api/boost', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({enabled: enabled})
+  }).then(r => r.json()).then(d => {
+    const label = document.getElementById('boostLabel');
+    const toggle = document.getElementById('boostToggle');
+    const slider = toggle.parentElement.querySelector('span');
+    const knob = slider.querySelector('span');
+    if (d.boost) {
+      label.innerHTML = '⚡ BOOST MODE';
+      slider.style.background = 'var(--accent)';
+      slider.style.borderColor = 'var(--accent)';
+      knob.style.left = '22px';
+    } else {
+      label.innerHTML = '📅 NORMAL MODE';
+      slider.style.background = 'rgba(255,255,255,0.08)';
+      slider.style.borderColor = 'var(--border)';
+      knob.style.left = '3px';
+    }
+  });
+}
+</script>
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
