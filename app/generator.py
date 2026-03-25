@@ -544,7 +544,7 @@ def list_videos(channel_id):
     if not vdir.exists():
         return []
     videos = []
-    for d in sorted(vdir.iterdir(), reverse=True):
+    for d in vdir.iterdir():
         if not d.is_dir():
             continue
         meta_path = d / "metadata.json"
@@ -561,7 +561,50 @@ def list_videos(channel_id):
                 videos.append(meta)
             except Exception:
                 pass
+
+    # Sort into three tiers (top to bottom):
+    # 1. Unscheduled — not yet scheduled or uploaded (newest created first)
+    # 2. Scheduled — has a scheduled upload time but not yet uploaded (soonest first)
+    # 3. Posted — already uploaded to YouTube (most recently posted first)
+    def sort_key(v):
+        is_uploaded = v.get("youtube_uploaded", False)
+        is_scheduled = v.get("upload_status") == "scheduled" and v.get("scheduled_upload")
+        is_uploading = v.get("upload_status") == "uploading"
+        is_failed = v.get("upload_status") == "failed"
+
+        # Tier: 0 = unscheduled (top), 1 = scheduled/uploading/failed (middle), 2 = posted (bottom)
+        if is_uploaded:
+            tier = 2
+        elif is_scheduled or is_uploading or is_failed:
+            tier = 1
+        else:
+            tier = 0
+
+        # Within each tier, sort by relevant date:
+        # - Unscheduled: newest created first (reverse chronological by dir name / created_at)
+        # - Scheduled: soonest upload first (chronological by scheduled_upload)
+        # - Posted: most recently posted first (reverse chronological by dir name)
+        created = v.get("created_at", v.get("timestamp", v.get("dir_name", "")))
+        if tier == 1 and is_scheduled:
+            # Soonest scheduled first — sort ascending by scheduled_upload
+            sched_time = v.get("scheduled_upload", "")
+            return (tier, 0, sched_time)
+        else:
+            # Newest first for unscheduled and posted — sort descending (negate with reverse trick)
+            # Use a large prefix minus the timestamp string for reverse sort
+            return (tier, 1, _invert_sort_string(created))
+
+    videos.sort(key=sort_key)
     return videos
+
+
+def _invert_sort_string(s):
+    """Invert a string for reverse sorting within a tuple sort.
+    Works by replacing each char with its complement so 'z' < 'a' etc."""
+    if not s:
+        return ""
+    # For ISO timestamps and dir names (alphanumeric), XOR with a high char works
+    return "".join(chr(0xFFFF - ord(c)) if ord(c) < 0xFFFF else c for c in str(s))
 
 
 def update_video_meta(channel_id, dir_name, updates):
