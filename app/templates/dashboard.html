@@ -32,61 +32,61 @@
     <button onclick="refreshMetrics(this)" class="btn btn-sm" style="font-size: 0.75em; padding: 4px 12px;">🔄 Refresh</button>
   </div>
 
-  <h3 style="text-align: center; font-size: 0.9em; letter-spacing: 3px; margin-bottom: 20px; color: var(--text3);">STUDIO METRICS</h3>
+  <h3 style="text-align: center; font-size: 1.05em; letter-spacing: 3px; margin-bottom: 20px; color: var(--text3);">STUDIO METRICS</h3>
 
   {# ---- TOP ROW: 4 primary metrics ---- #}
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 700px; margin: 0 auto;">
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 620px; margin: 0 auto;">
     <div class="metric-box">
-      <div style="font-size: 1.8em; font-weight: 700; color: var(--text); letter-spacing: -0.5px;">{{ ns.total_subs | compact_number }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">👥 Subscribers</div>
+      <div style="font-size: 1.4em; font-weight: 700; color: var(--text); letter-spacing: -0.5px;">{{ ns.total_subs | compact_number }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">👥 Subscribers</div>
     </div>
     <div class="metric-box">
-      <div style="font-size: 1.8em; font-weight: 700; color: #3b82f6; letter-spacing: -0.5px;">{{ ns.full_views | compact_number }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">▶ Long-Form Views</div>
+      <div style="font-size: 1.4em; font-weight: 700; color: #3b82f6; letter-spacing: -0.5px;">{{ ns.full_views | compact_number }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">▶ Long-Form Views</div>
     </div>
     <div class="metric-box">
-      <div style="font-size: 1.8em; font-weight: 700; color: #f59e0b; letter-spacing: -0.5px;">{{ ns.shorts_views | compact_number }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">📱 Shorts Views</div>
+      <div style="font-size: 1.4em; font-weight: 700; color: #f59e0b; letter-spacing: -0.5px;">{{ ns.shorts_views | compact_number }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">📱 Shorts Views</div>
     </div>
     <div class="metric-box">
-      <div style="font-size: 1.8em; font-weight: 700; color: #ec4899; letter-spacing: -0.5px;">{{ ns.total_likes | compact_number }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">❤️ Likes</div>
+      <div style="font-size: 1.4em; font-weight: 700; color: #ec4899; letter-spacing: -0.5px;">{{ ns.total_likes | compact_number }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">❤️ Likes</div>
     </div>
   </div>
 
   {# ---- SECOND ROW: 3 secondary metrics ---- #}
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 520px; margin: 14px auto 0;">
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 460px; margin: 14px auto 0;">
     <div class="metric-box">
-      <div style="font-size: 1.5em; font-weight: 700; color: #8b5cf6;">{{ ns.total_comments | compact_number }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">💬 Comments</div>
+      <div style="font-size: 1.2em; font-weight: 700; color: #8b5cf6;">{{ ns.total_comments | compact_number }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">💬 Comments</div>
     </div>
     <div class="metric-box">
-      <div style="font-size: 1.5em; font-weight: 700; color: #22c55e;">{{ ns.total_videos }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">🎬 Videos</div>
+      <div style="font-size: 1.2em; font-weight: 700; color: #22c55e;">{{ ns.total_videos }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">🎬 Videos</div>
     </div>
     <div class="metric-box">
-      <div style="font-size: 1.5em; font-weight: 700; color: var(--gold);">{{ visible_ids|length }}</div>
-      <div style="font-size: 0.75em; color: var(--text3); margin-top: 6px; letter-spacing: 0.5px;">📡 Channels</div>
+      <div style="font-size: 1.2em; font-weight: 700; color: var(--gold);">{{ visible_ids|length }}</div>
+      <div style="font-size: 0.72em; color: var(--text3); margin-top: 5px; letter-spacing: 0.5px;">📡 Channels</div>
     </div>
   </div>
 
   {# ---- TOP CHANNEL / TOP VIDEO ---- #}
   {% if top_channel or top_video %}
-  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 700px; margin: 20px auto 0;">
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 620px; margin: 20px auto 0;">
     {% if top_channel %}
-    <div class="metric-box" style="text-align: left; padding: 20px 18px;">
-      <div style="font-size: 0.65em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🏆 Top Channel</div>
-      <div style="font-size: 1.1em; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ top_channel.channel_title }}</div>
-      <div style="font-size: 0.82em; color: var(--text2); margin-top: 6px;">
+    <div class="metric-box" style="text-align: left; padding: 22px 20px;">
+      <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🏆 Top Channel</div>
+      <div style="font-size: 1.15em; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ top_channel.channel_title }}</div>
+      <div style="font-size: 0.88em; color: var(--text2); margin-top: 6px;">
         {{ top_channel.total_views | compact_number }} views · {{ top_channel.subscribers | compact_number }} subs
       </div>
     </div>
     {% endif %}
     {% if top_video %}
-    <div class="metric-box" style="text-align: left; padding: 20px 18px;">
-      <div style="font-size: 0.65em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
-      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 1em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ top_video.title }}">{{ top_video.title }}</a>
-      <div style="font-size: 0.82em; color: var(--text2); margin-top: 6px;">
+    <div class="metric-box" style="text-align: left; padding: 22px 20px;">
+      <div style="font-size: 0.72em; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-family: 'Cinzel', serif;">🎬 Top Video{% if top_video.is_short %} (Short){% endif %}</div>
+      <a href="https://www.youtube.com/watch?v={{ top_video.video_id }}" target="_blank" style="font-size: 1.05em; font-weight: 700; color: #3b82f6; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ top_video.title }}">{{ top_video.title }}</a>
+      <div style="font-size: 0.88em; color: var(--text2); margin-top: 6px;">
         {{ top_video.views | compact_number }} views · {{ top_video.likes | compact_number }} likes · {{ top_video.channel_title }}
       </div>
     </div>
@@ -135,23 +135,23 @@ function refreshMetrics(btn) {
 
 {# ---- CHANNEL GRID ---- #}
 <div class="section-title">Channels</div>
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
-    <div class="card" style="display: flex; gap: 16px; align-items: flex-start; min-height: 140px; margin-bottom: 0;">
+    <div class="card" style="display: flex; gap: 18px; align-items: flex-start; min-height: 190px; margin-bottom: 0; padding: 28px 24px;">
       <img src="/static/img/{{ ch.channel_id }}.png" alt="{{ ch.channel_name }}"
-           class="channel-avatar" style="width: 64px; height: 64px;"
+           class="channel-avatar" style="width: 76px; height: 76px;"
            onerror="this.style.display='none'">
       <div style="flex: 1; min-width: 0;">
-        <h3 style="font-size: 1.05em; margin-bottom: 6px;">{{ ch.channel_name }}</h3>
-        <p style="margin-top: 0; font-size: 0.82em; line-height: 1.5; color: var(--text3);">{{ ch.description[:100] }}{% if ch.description|length > 100 %}...{% endif %}</p>
-        <div class="meta mt-8" style="gap: 8px;">
-          <span class="badge badge-gold" style="font-size: 0.7em;">{{ ch.narrator.name }}</span>
-          <span style="color: var(--text3); font-size: 0.72em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
+        <h3 style="font-size: 1.15em; margin-bottom: 8px;">{{ ch.channel_name }}</h3>
+        <p style="margin-top: 0; font-size: 0.9em; line-height: 1.55; color: var(--text2);">{{ ch.description[:120] }}{% if ch.description|length > 120 %}...{% endif %}</p>
+        <div class="meta mt-10" style="gap: 10px;">
+          <span class="badge badge-gold" style="font-size: 0.78em;">{{ ch.narrator.name }}</span>
+          <span style="color: var(--text3); font-size: 0.78em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
         </div>
         {% if metrics.get(ch.channel_id) %}
         {% set m = metrics[ch.channel_id] %}
-        <div class="mt-8" style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.8em;">
+        <div class="mt-10" style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.88em;">
           <span style="color: var(--text2); font-weight: 600;">👥 {{ m.subscribers | compact_number }}</span>
           <span style="color: var(--text2);">▶ {{ m.full_length_views | compact_number }}</span>
           {% if m.shorts_views > 0 %}
@@ -172,24 +172,24 @@ function refreshMetrics(btn) {
 {% if scheduled %}
 <div class="section-title mt-32">📅 Upcoming Uploads</div>
 <div class="card">
-  <table style="width: 100%; font-size: 0.88em; border-collapse: collapse;">
+  <table style="width: 100%; font-size: 0.92em; border-collapse: collapse;">
     <thead>
-      <tr style="color: var(--text3); border-bottom: 1px solid var(--border2);">
-        <th style="text-align: left; padding: 10px 8px; font-family: 'Cinzel', serif; font-size: 0.85em; letter-spacing: 1px;">Channel</th>
-        <th style="text-align: left; padding: 10px 8px; font-family: 'Cinzel', serif; font-size: 0.85em; letter-spacing: 1px;">Video Title</th>
-        <th style="text-align: right; padding: 10px 8px; font-family: 'Cinzel', serif; font-size: 0.85em; letter-spacing: 1px;">Scheduled Time</th>
+      <tr style="color: var(--text3); border-bottom: 2px solid rgba(212,168,84,0.12);">
+        <th style="text-align: left; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Channel</th>
+        <th style="text-align: left; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Video Title</th>
+        <th style="text-align: right; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Scheduled Time</th>
       </tr>
     </thead>
     <tbody>
       {% for item in scheduled %}
       <tr style="border-bottom: 1px solid var(--border);">
-        <td style="padding: 10px 8px;">
-          <a href="/channel/{{ item.channel_id }}" style="color: var(--gold); font-weight: 600;">{{ item.channel_name }}</a>
+        <td style="padding: 12px 10px;">
+          <a href="/channel/{{ item.channel_id }}" style="color: var(--gold); font-weight: 600; font-size: 0.95em;">{{ item.channel_name }}</a>
         </td>
-        <td style="padding: 10px 8px; max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <td style="padding: 12px 10px; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95em;">
           {{ item.title }}
         </td>
-        <td style="text-align: right; padding: 10px 8px; color: var(--text2);">
+        <td style="text-align: right; padding: 12px 10px; color: var(--text2); font-size: 0.95em;">
           {{ item.display_time }}
         </td>
       </tr>
