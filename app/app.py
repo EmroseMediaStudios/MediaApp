@@ -34,6 +34,28 @@ def format_iso_time(iso_string):
     except Exception:
         return iso_string
 
+
+@app.template_filter('compact_number')
+def compact_number(value):
+    """Format large numbers compactly: 1,234 → 1,234 | 12,345 → 12.3K | 1,234,567 → 1.2M | 1,234,567,890 → 1.2B"""
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if abs(n) < 10_000:
+        return "{:,}".format(n)
+    for threshold, suffix in [(1_000_000_000, 'B'), (1_000_000, 'M'), (1_000, 'K')]:
+        if abs(n) >= threshold * 0.9995:  # round up near boundaries (999,500 → 1M not 1000K)
+            v = n / threshold
+            if v >= 99.95:
+                return f"{v:.0f}{suffix}"
+            else:
+                formatted = f"{v:.1f}"
+                if formatted.endswith('.0'):
+                    formatted = formatted[:-2]
+                return f"{formatted}{suffix}"
+    return "{:,}".format(n)
+
 # Global progress queues for SSE
 _progress_queues = {}
 _generation_results = {}
