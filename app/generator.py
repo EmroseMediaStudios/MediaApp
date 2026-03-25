@@ -2239,38 +2239,55 @@ def _generate_thumbnail(channel, title, scene_image_path, out_path, res=(1280, 7
     try:
         draw = ImageDraw.Draw(pil_img)
 
-        # Use a bold/heavy font at larger size for thumbnail impact
-        title_font = _get_thumbnail_font(channel_id, 90)
-
-        # UPPERCASE title — wrap to max 2 lines for readability at small sizes
-        title_upper = title.upper()
-        words = title_upper.split()
-        lines = []
-        current = ""
         max_text_width = w - 120  # generous padding
-        for word in words:
-            test = f"{current} {word}".strip()
-            bbox = draw.textbbox((0, 0), test, font=title_font)
-            if bbox[2] - bbox[0] > max_text_width:
-                if current:
-                    lines.append(current)
-                current = word
-            else:
-                current = test
-        if current:
-            lines.append(current)
+        max_lines = 3  # allow up to 3 lines for longer titles
 
-        # Hard cap at 2 lines — truncate with ellipsis if needed
-        if len(lines) > 2:
-            # Try to fit on 2 lines by trimming
-            lines = lines[:2]
-            # Don't add ellipsis — just cut cleanly
+        # --- Adaptive font sizing ---
+        # Start at 90px and shrink until the title fits within max_lines
+        title_upper = title.upper()
+        font_size = 90
+        min_font_size = 48
+        title_font = None
+        lines = []
 
-        # Measure text block
-        line_height = 95
+        while font_size >= min_font_size:
+            title_font = _get_thumbnail_font(channel_id, font_size)
+            # Word-wrap the title
+            words = title_upper.split()
+            lines = []
+            current = ""
+            for word in words:
+                test = f"{current} {word}".strip()
+                bbox = draw.textbbox((0, 0), test, font=title_font)
+                if bbox[2] - bbox[0] > max_text_width:
+                    if current:
+                        lines.append(current)
+                    current = word
+                else:
+                    current = test
+            if current:
+                lines.append(current)
+
+            if len(lines) <= max_lines:
+                break  # fits!
+            font_size -= 6  # step down and retry
+
+        # If still too many lines after shrinking, truncate
+        if len(lines) > max_lines:
+            lines = lines[:max_lines]
+
+        # Calculate line height based on actual font size
+        line_height = int(font_size * 1.15)  # ~115% of font size for spacing
+
+        # --- Position text block ---
+        # Place text in the lower third but ensure it stays within frame
+        # with padding from both bottom and top
         total_text_h = len(lines) * line_height
-        text_block_top = h - total_text_h - 55
-        text_block_bottom = h - 25
+        min_top = int(h * 0.25)  # never start higher than 25% from top
+        bottom_padding = 40  # minimum space from bottom edge
+        text_block_top = h - total_text_h - bottom_padding
+        text_block_top = max(text_block_top, min_top)  # clamp to safe zone
+        text_block_bottom = text_block_top + total_text_h
 
         # Semi-transparent dark bar behind text
         bar_img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
