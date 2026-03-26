@@ -2967,7 +2967,6 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         "-map", "1:a",
         "-c:v", "copy",
         "-c:a", "aac", "-b:a", "320k",
-        "-shortest",
         str(video_path_with_narration),
     ], capture_output=True)
 
@@ -2998,13 +2997,12 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
                 "-i", str(drone_path),
                 "-filter_complex",
                 f"[1:a]atrim=0:{video_duration:.2f},apad=whole_dur={video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={vol}[drone];"
-                f"[0:a]apad=whole_dur={video_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,{narr_vol_filter}asetpts=PTS-STARTPTS[narr];"
-                f"[narr][drone]amix=inputs=2:duration=longest:normalize=0[out]",
+                f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo,apad=whole_dur={video_duration:.2f},{narr_vol_filter}asetpts=PTS-STARTPTS[narr];"
+                f"[narr][drone]amix=inputs=2:duration=first:normalize=0[out]",
                 "-map", "0:v",
                 "-map", "[out]",
                 "-c:v", "copy",
                 "-c:a", "aac", "-b:a", "320k",
-                "-shortest",
                 str(video_path),
             ]
             result = subprocess.run(mix_cmd, capture_output=True, text=True)
@@ -3482,11 +3480,11 @@ Full script:
             "-i", str(short_drone),
             "-filter_complex",
             f"[1:a]atrim=0:{target_duration:.2f},apad=whole_dur={target_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,volume={ambient_vol}[drone];"
-            f"[0:a]apad=whole_dur={target_duration:.2f},aformat=sample_rates=44100:channel_layouts=stereo,asetpts=PTS-STARTPTS[narr];"
-            f"[narr][drone]amix=inputs=2:duration=longest:normalize=0[out]",
+            f"[0:a]aformat=sample_rates=44100:channel_layouts=stereo,apad=whole_dur={target_duration:.2f},asetpts=PTS-STARTPTS[narr];"
+            f"[narr][drone]amix=inputs=2:duration=first:normalize=0[out]",
             "-map", "0:v", "-map", "[out]",
             "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
-            "-shortest",
+            "-t", f"{target_duration:.2f}",
             str(short_output),
         ]
         mix_result = subprocess.run(mix_cmd, capture_output=True, text=True)
@@ -3506,13 +3504,16 @@ Full script:
     short_with_end_card = work_dir / "short_final.mp4"
     try:
         _generate_short_end_card(channel, str(end_card_img), bg_image=str(short_img))
-        # Create 2-second video from end card image
+        # Create 2-second video from end card image WITH silent audio track
+        # (silent audio is required so concat doesn't break the audio stream)
         import subprocess
         ec_result = subprocess.run([
             "ffmpeg", "-y", "-loop", "1", "-i", str(end_card_img),
+            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
             "-t", "2", "-vf", f"scale=1080:1920,fps=30",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "slow",
-            "-an", str(end_card_video)
+            "-c:a", "aac", "-b:a", "320k",
+            str(end_card_video)
         ], capture_output=True, text=True)
         if ec_result.returncode != 0:
             raise RuntimeError(f"End card video creation failed (exit {ec_result.returncode}): {ec_result.stderr[:200]}")
