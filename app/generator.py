@@ -297,92 +297,128 @@ CHANNEL_FOCUS = {
     },
     "deadlight_codex": {
         "focus": [
-            "Grounded creepypasta-style horror storytelling",
-            "Real-feeling locations, people, and events that turn sinister",
+            # --- Grounded real-life horror (told as true accounts) ---
+            "True-crime-style horror — home invasions, break-ins, stalkers, intruders discovered living in attics or crawl spaces, told as first-person survivor accounts",
+            "Close calls with dangerous people — hitchhiking gone wrong, a stranger who followed you home, the coworker everyone ignored the red flags about",
+            "Roommate and neighbor horror — the person you lived with who turned out to be someone else entirely, the neighbor whose house smelled wrong",
+            "Kidnapping and captivity stories — escapes, near-misses, the moment someone realized they were being lured",
+            "Encounters with serial killers — people who unknowingly interacted with killers and only realized it later",
+            "Night shift and late-night job horror — gas station attendants, hotel night auditors, hospital workers, security guards alone in buildings",
+            "Road and travel horror — wrong turns, breakdowns in dangerous areas, rides that went wrong, motels you should never have stopped at",
+            "Childhood horror in hindsight — things you witnessed or experienced as a kid that you didn't understand were dangerous until years later",
+            # --- Creepypasta and supernatural horror ---
+            "Grounded creepypasta-style horror storytelling — the supernatural anchored in mundane, believable settings",
             "Slow-burn dread — things that feel wrong before you know why",
             "Urban legends, cursed places, found footage style narratives",
             "Horror rooted in the familiar — houses, roads, small towns, jobs",
             "Objects with wrong histories — things that shouldn't exist, or exist differently than recorded",
             "Personal horror — journals, voicemails, security footage that reveals something about the narrator",
-            "Temporal wrongness — events that repeat, time that doesn't pass correctly, days that don't end",
-            "Horror of documentation — official records, forms, databases that contain impossible entries",
             "The uncanny mundane — routines, neighbors, coworkers that are subtly and inexplicably off",
             "Places that are wrong on the inside — dimensions don't match, rooms that shouldn't fit, spaces that change",
-            "Horror from the perspective of someone who doesn't realize they're in danger yet",
-            "Real-life horror accounts — fictional stories told as first-person experiences that feel genuinely lived-in",
-            "Encounters in remote or isolated places — forests, highways, abandoned buildings, night shifts",
-            "Stories from everyday jobs that turned sinister — night security, long-haul trucking, rural EMT, park ranger",
-            "Home intrusion and stalker horror — the terror of realizing someone has been watching, entering, or living nearby",
+            # --- Situational horror ---
             "Camping, hiking, and wilderness horror — things seen, heard, or found in the deep woods",
             "Small town secrets — communities where everyone knows something they won't talk about",
-            "Childhood memories that make sense only in hindsight — things you witnessed as a kid that were actually horrifying",
-            "Online encounters that crossed into real life — messages, videos, or strangers from the internet that became real threats",
+            "Online encounters that crossed into real life — messages, catfishing, strangers from the internet who became real threats",
+            "Horror from the perspective of someone who doesn't realize they're in danger yet",
         ],
         "avoid": [
             "Abstract cosmic entities without grounding",
             "Standard horror tropes or jumpscares",
-            "Gore or shock value",
-            "Overly supernatural without a real-world anchor",
-            "Repeating the same '[location] that [spooky adjective]' formula",
+            "Gore or shock value for its own sake",
+            "Overly supernatural without a real-world anchor — every story needs a 'this could actually happen' foundation",
+            "Repeating the same formula — rotate between grounded real-life horror, creepypasta, and situational horror",
             "Generic haunted house or ghost stories without a unique angle",
+            "Over-relying on 'impossible' premises (the road that doesn't exist, the room that changes, the photo with an extra person) — balance with stories where the horror is HUMAN, not paranormal",
         ],
         "examples": [
+            # Grounded / real-life horror
+            "I Realized My Roommate Had Been Watching Me Sleep for Months",
+            "The Man at the Gas Station Asked for Directions. He Was in My Backseat an Hour Later.",
+            "My Daughter's Babysitter Wasn't Who She Said She Was",
+            "I Picked Up a Hitchhiker Once. I'll Never Do It Again.",
+            "The Woman Next Door Hadn't Left Her House in Three Years. Then I Smelled It.",
+            "I Found a Camera Hidden in My Apartment. It Wasn't Mine.",
+            "We Laughed About the Creepy Guy at Work. Then Three Women Went Missing.",
+            "Someone Was Living in My Attic. I Found the Blankets.",
+            "The Night I Almost Got Into the Wrong Car",
+            "I Worked as a Hotel Night Auditor. Room 4 Was Always Booked, but No One Ever Checked In.",
+            # Creepypasta / supernatural
             "The House That Grew a Room Nobody Built",
             "I Found My Neighbor's Journal. He Was Writing About Me.",
-            "The Road That Doesn't Show Up on Any Map",
-            "There's a Reason Nobody Fishes at Mirror Lake Anymore",
             "The Voicemail Was from My Own Number. I Never Made the Call.",
-            "Every Photo from That Night Has an Extra Person in It",
-            "The Employee Database Lists Someone Who Doesn't Work Here",
             "I Checked My Security Camera. I Never Came Home Last Night.",
-            "The Town's Records Show a Street That No One Can Find",
-            "My Dentist Said My X-Rays Show Teeth That Aren't Mine",
-            "I Worked the Night Shift at a Gas Station in the Middle of Nowhere. I Quit After the Third Night.",
-            "The Campsite Was Perfect. Then We Found the Other Tent.",
-            "My Uber Driver Took a Route That Doesn't Exist",
-            "I Found Scratches on the Inside of My Closet Door. I Live Alone.",
-            "The Babysitter Called to Check on the Kids. We Don't Have a Babysitter.",
             "A Park Ranger's Account of the Trail That Hikers Don't Come Back From",
+            # Situational / wilderness
+            "The Campsite Was Perfect. Then We Found the Other Tent.",
+            "I Took a Wrong Turn on a Back Road in West Virginia. I Don't Think That Town Exists.",
             "The Town I Grew Up In Has a Rule: Never Go Outside After the Sirens",
-            "Someone Has Been Leaving Notes Under My Windshield Wiper. They Know My Schedule.",
         ],
     },
     "softlight_kingdom": {
         "focus": [
-            "Classic children's fantasy: princesses, kings, queens, castles",
-            "Talking animal friends on gentle adventures",
-            "Magical creatures: friendly dragons, unicorns, fairies, wise owls",
-            "Enchanted forests, hidden kingdoms, cozy villages",
-            "Simple lessons: kindness, sharing, bravery, being yourself",
-            "Bedtime-appropriate stories that wind down toward sleep",
+            # --- Human characters & fairy-tale people ---
+            "Princesses, princes, kings, and queens on gentle quests — classic fairy-tale royalty stories",
+            "Young children as heroes — a little girl who finds a magic door, a boy who befriends a star, a toddler's first snow day",
+            "Fairy-tale people: fairies, elves, gnomes, witches (kind ones!), wizards, mermaids, shepherds, bakers, gardeners",
+            "Families and siblings — a brother and sister's magical bedtime adventure, a grandparent telling a story within the story",
+            # --- Animal adventures ---
+            "Talking animal friends on gentle adventures — bunnies, bears, foxes, kittens, puppies, owls, hedgehogs",
+            "Baby animals learning and growing — a duckling's first swim, a fawn's first steps, a kitten discovering snow",
+            "Farm and barnyard stories — friendly cows, chickens, pigs, horses, and the farmer who loves them",
+            # --- Magical creatures ---
+            "Magical creatures: friendly dragons, unicorns, phoenixes, pegasus, mermaids, fairies, wise owls, gentle giants",
+            "Enchanted forests, hidden kingdoms, cozy villages, castles in the clouds",
+            # --- Real-world backdrops with gentle magic ---
+            "Real-world settings with a sprinkle of wonder — a duck family's day in the city park, a cat exploring a bakery, a dog at the beach",
+            "Gentle city adventures — a pigeon who finds a lost mitten, a squirrel in the town square, a family of mice in a bookshop",
+            "Countryside and nature — a day on a farm, picking apples in an orchard, a picnic by a stream, a walk through autumn leaves",
+            # --- Seasonal, weather, and nature ---
             "Seasonal and weather stories — a snowflake's journey, the first day of spring, a rainy day adventure, the warmest summer night",
-            "Tiny world perspectives — stories from the view of a ladybug, a raindrop, a leaf, a pebble in a stream",
-            "Sky and stars — the moon, constellations, clouds, and stars as gentle characters with their own little stories",
+            "Garden and backyard stories — caterpillars, butterflies, ladybugs, bees, and the flowers they visit",
+            # --- Cozy indoor and bedtime ---
+            "Bedtime and cozy indoor stories — building a blanket fort, reading by the fire, a teddy bear's nighttime watch",
+            "Everyday magic — toys that come alive at night, a music box that plays a lullaby, a nightlight that guards the room",
+            # --- Imagination and wonder ---
+            "Simple lessons: kindness, sharing, bravery, being yourself, saying sorry, trying something new",
+            "Sky and stars — the moon, constellations, clouds, and stars as gentle characters",
             "Ocean and water friends — friendly sea creatures, messages in bottles, little boats sailing to dreamland",
-            "Everyday magic — toys that come alive, music boxes, nightlights, blankets that carry you to adventure",
-            "Unlikely friendships — a mouse and a whale, a cloud and a mountain, a firefly and the sun",
+            "Unlikely friendships — a mouse and a whale, a cloud and a mountain, a princess and a frog, a child and a dragon",
         ],
         "avoid": [
             "Anything scary, dark, or threatening",
             "Complex plots or twists",
             "Villains or real danger",
             "Adult themes or abstract concepts",
-            "Modern technology or real-world settings",
+            "Modern technology (no phones, tablets, screens, video games)",
+            "Repeating the same type of story — rotate between human characters, animals, magical creatures, and real-world settings",
         ],
         "examples": [
-            "The Little Bear Who Learned to Share the Stars",
+            # Human / fairy-tale characters
             "Princess Rosepetal and the Sleepy Dragon",
+            "The Little Girl Who Found a Door in the Garden Wall",
+            "The Baker's Daughter and the Moonlight Cake",
+            "The Prince Who Learned to Whisper to Butterflies",
+            "The Grandmother Who Knitted the Stars",
+            "The Brave Little Knight and the Friendly Giant",
+            # Animal adventures
+            "The Little Bear Who Learned to Share the Stars",
             "The Bunny Who Found a Secret Garden",
-            "The Owl King's Moonlight Festival",
             "The Kitten and the Friendly Cloud",
+            "The Duck Family's Big Day in the City",
+            "The Little Fox Who Was Afraid of the Dark",
+            "The Puppy Who Followed the Rainbow",
+            # Real-world / gentle settings
+            "A Day at the Farm: The Littlest Lamb",
+            "The Squirrel Who Hid Acorns in the Library",
+            "The Cat Who Lived Above the Bakery",
+            "The Family of Mice in the Old Bookshop",
+            # Magical creatures & nature
+            "The Owl King's Moonlight Festival",
             "The Snowflake Who Wanted to See the Ocean",
-            "The Ladybug's Big Adventure Across the Garden",
-            "The Moon and the Little Cloud Who Couldn't Sleep",
-            "The Tiny Boat That Sailed to the Land of Dreams",
-            "The Teddy Bear Who Guarded the Night",
-            "The Raindrop Who Made a Friend in Every Puddle",
+            "The Tiny Mermaid and the Singing Shell",
             "The Firefly Who Helped the Stars Come Out",
-            "A Mouse, a Whale, and the Biggest Smallest Favor",
+            "The Teddy Bear Who Guarded the Night",
+            "The Moon and the Little Cloud Who Couldn't Sleep",
         ],
     },
     "echelon_veil": {
@@ -816,6 +852,22 @@ CRITICAL QUALITY RULE — NO REPETITION:
 - Reach the word count through DEPTH (more detail, more atmosphere, more world-building) not through REDUNDANCY
 - Every sentence should earn its place — if removing it loses nothing, it shouldn't be there"""
 
+    # Children's channel image fidelity rule — prevents anthropomorphization of objects/nature
+    childrens_image_rule = ""
+    if c.get("channel_id") == "softlight_kingdom":
+        childrens_image_rule = """
+CRITICAL IMAGE FIDELITY RULE — NO ANTHROPOMORPHIZATION OF OBJECTS OR NATURE:
+This is a children's storybook channel. Image prompts must depict characters AS THEY ACTUALLY ARE — not as cartoon humanoids.
+- A pebble is a PEBBLE — a small round stone. It does NOT have eyes, arms, legs, hair, clothing, or a face. Draw it as a real pebble in a real stream.
+- A raindrop is a RAINDROP — a drop of water. It does NOT have a face or limbs. Draw it as actual water.
+- A snowflake is a SNOWFLAKE — a crystal of ice. Draw it as a beautiful ice crystal, not a character with eyes.
+- A leaf is a LEAF. A cloud is a CLOUD. The moon is THE MOON. Draw them as real things, not cartoon people.
+- Animals should look like REAL ANIMALS in storybook watercolor style — a bunny looks like a bunny, not a human in a bunny costume.
+- EXCEPTION: If the narration explicitly describes a character wearing clothing or having human features (like a fairy-tale princess, a gnome, or a talking bear in a vest), then include those features. But ONLY if the narration says so.
+- When in doubt: draw the real thing in a warm, magical, storybook setting. The magic comes from the ART STYLE and LIGHTING, not from giving eyes to inanimate objects.
+- For characters in the "characters" block: describe what they ACTUALLY LOOK LIKE, not an anthropomorphized version. A fox character = "a small red fox with bright amber eyes, a fluffy white-tipped tail, and soft russet fur" — NOT "a fox wearing a blue jacket with human hands."
+"""
+
     return f"""You are the creative director for {c['channel_name']}.
 {c.get('description', '')}
 {pacing_note}
@@ -830,7 +882,7 @@ This video MUST be 8+ minutes for YouTube mid-roll ad eligibility. This is a har
 - duration_hint = 15 for every scene
 - WRITE LONG. Err heavily toward {max_words} words, not {min_words}
 {repetition_rule}
-
+{childrens_image_rule}
 EXAMPLE of a properly-sized scene narration (85 words):
 "The structure was first documented in the spring of 1987, though local accounts suggest it had been present for far longer. Its surface was smooth, almost polished, and yet no tool marks could be identified under magnification. Researchers noted that photographs of the object consistently failed to capture its true dimensions. Measurements taken on different days produced different results, sometimes by as much as several centimeters. The surrounding soil showed no signs of excavation or placement. It was simply there, as though it had always been."
 
@@ -1265,7 +1317,7 @@ def generate_ambient_audio(duration, out_path, channel_id=None, title=None, topi
     
     # Build rich, specific ambient descriptions — the more detail, the better the output
     channel_ambient_base = {
-        "deadlight_codex": "deep rumbling cosmic drone, vast underground cavern reverb, distant metallic resonance, low ominous sub-bass, wind through impossible architecture, dark ambient soundscape",
+        "deadlight_codex": "low ominous drone, quiet house at night ambiance, distant creaking floorboards, muffled wind outside, subtle tension building, dark atmospheric soundscape, unsettling stillness",
         "zero_trace_archive": "quiet empty room tone with distant ventilation hum, fluorescent light buzz, occasional muffled footstep echo, tense investigative atmosphere, low frequency tension",
         "the_unwritten_wing": "warm vinyl crackle, soft rain on windows, gentle piano room reverb, nostalgic and intimate, library ambiance with distant clock ticking",
         "remnants_project": "birdsong echoing through empty corridors, wind rustling through overgrown streets, distant water flowing through crumbling structures, nature sounds filling silent cities, leaves rustling, insects buzzing in warm sunlight",
@@ -2059,13 +2111,16 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
 
     # Channel-specific title card prompts
     channel_title_prompts = {
-        "deadlight_codex": f"A vast ancient cosmic void with faint tentacle-like structures emerging from darkness, deep red nebula glow, eldritch archive atmosphere, centered dark space for title text. {suffix}",
+        "deadlight_codex": f"A dimly lit room with peeling wallpaper and a single bare lightbulb casting harsh shadows, old photographs pinned to a corkboard, a dusty desk with scattered papers, found-footage horror atmosphere, grounded and real, something is wrong but you can't see it yet. {suffix}",
         "zero_trace_archive": f"An abandoned investigation room with scattered classified documents under a single harsh overhead light, concrete walls, forensic evidence board in shadow, muted earth tones. {suffix}",
         "the_unwritten_wing": f"An infinite ethereal library with floating luminous pages and soft golden light streaming through impossible architecture, dreamy bokeh, warm surreal atmosphere. {suffix}",
-        "remnants_project": f"A decaying overgrown control room of an abandoned facility, nature reclaiming technology, cracked monitors with faint green glow, ivy and moss, post-human silence. {suffix}",
+        "remnants_project": f"A sunlit overgrown highway with wildflowers and tall grass growing through cracked asphalt, deer grazing in golden morning light, trees reclaiming the road, vibrant green and warm amber tones, nature thriving beautifully without humanity. {suffix}",
         "somnus_protocol": f"Soft moonlit clouds drifting over a calm dark lake, gentle fog, deep blue and silver tones, extremely peaceful and meditative, starlight reflections on water. {suffix}",
         "autonomous_stack": f"A sleek futuristic command center with holographic data streams and circuit board patterns, cool blue and electric cyan lighting, clean minimal tech aesthetic. {suffix}",
         "gray_meridian": f"An abstract visualization of a human brain split in half, one side geometric and analytical, the other organic and emotional, dark background with subtle warm and cool contrast. {suffix}",
+        "softlight_kingdom": f"A magical storybook opening to reveal a glowing enchanted kingdom, soft watercolor style, warm golden lantern light, gentle rolling hills with a cozy cottage, starry twilight sky, dreamy and safe, children's fairy-tale illustration. {suffix}",
+        "echelon_veil": f"A dark surveillance operations room with multiple glowing monitors showing static and satellite imagery, a single desk lamp illuminating classified folders, green and teal data readouts, cold blue ambient light, paranoid investigative atmosphere. {suffix}",
+        "loreletics": f"A dramatic empty stadium at golden hour with a single spotlight cutting through atmospheric haze, the field glowing in warm amber light, epic cinematic sports atmosphere, legacy and pressure. {suffix}",
     }
 
     title_bg_prompt = channel_title_prompts.get(
