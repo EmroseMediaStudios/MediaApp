@@ -38,4 +38,4 @@ echo "⬡ Emrose Media Studios"
 echo "  Open http://localhost:7749 in your browser"
 echo ""
 
-python -m app.app
+python3 -m app.app
