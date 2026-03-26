@@ -3415,7 +3415,12 @@ Full script:
             "-shortest",
             str(short_output),
         ]
-        subprocess.run(mix_cmd, check=True, capture_output=True)
+        mix_result = subprocess.run(mix_cmd, capture_output=True, text=True)
+        if mix_result.returncode != 0:
+            log.warning(f"Short ambient mix failed (exit {mix_result.returncode}): {mix_result.stderr[:300]}")
+            emit("short", f"⚠ Short ambient mix failed — using narration only")
+            import shutil as sh
+            sh.copy2(str(short_with_narration), str(short_output))
     else:
         import shutil as sh
         sh.move(str(short_with_narration), str(short_output))
@@ -3429,20 +3434,24 @@ Full script:
         _generate_short_end_card(channel, str(end_card_img))
         # Create 2-second video from end card image
         import subprocess
-        subprocess.run([
+        ec_result = subprocess.run([
             "ffmpeg", "-y", "-loop", "1", "-i", str(end_card_img),
             "-t", "2", "-vf", f"scale=1080:1920,fps=30",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "slow",
             "-an", str(end_card_video)
-        ], check=True, capture_output=True)
+        ], capture_output=True, text=True)
+        if ec_result.returncode != 0:
+            raise RuntimeError(f"End card video creation failed (exit {ec_result.returncode}): {ec_result.stderr[:200]}")
         # Concatenate short + end card
         concat_list = work_dir / "short_concat.txt"
         concat_list.write_text(f"file '{short_output}'\nfile '{end_card_video}'\n")
-        subprocess.run([
+        cat_result = subprocess.run([
             "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
             "-c:v", "libx264", "-c:a", "aac", "-b:a", "320k", "-preset", "slow",
             str(short_with_end_card)
-        ], check=True, capture_output=True)
+        ], capture_output=True, text=True)
+        if cat_result.returncode != 0:
+            raise RuntimeError(f"End card concat failed (exit {cat_result.returncode}): {cat_result.stderr[:200]}")
         # Replace original with version that has end card
         import shutil as sh2
         sh2.move(str(short_with_end_card), str(short_output))
