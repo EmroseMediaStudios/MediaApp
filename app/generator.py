@@ -52,8 +52,27 @@ def _get_desktop_shorts_dir(channel_name):
     d.mkdir(parents=True, exist_ok=True)
     return d
 
-# Channel-specific focus areas for topic generation
-CHANNEL_FOCUS = {
+# Channel-specific focus areas for topic generation.
+# Loaded from channels/<channel_id>_focus.json files (editable via the Settings UI).
+# The CHANNEL_FOCUS dict below serves as a fallback if the JSON file doesn't exist.
+def _load_channel_focus(channel_id):
+    """Load focus/avoid/examples from the per-channel JSON file."""
+    focus_path = CHANNELS_DIR / f"{channel_id}_focus.json"
+    if focus_path.exists():
+        try:
+            return json.loads(focus_path.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            log.warning(f"Failed to load {focus_path}: {e}, falling back to built-in")
+    return _CHANNEL_FOCUS_BUILTIN.get(channel_id, {})
+
+
+def _save_channel_focus(channel_id, data):
+    """Save focus/avoid/examples to the per-channel JSON file."""
+    focus_path = CHANNELS_DIR / f"{channel_id}_focus.json"
+    focus_path.write_text(json.dumps(data, indent=2))
+
+
+_CHANNEL_FOCUS_BUILTIN = {
     "zero_trace_archive": {
         "focus": [
             "Real-world locations, objects, or events that defy explanation",
@@ -595,7 +614,7 @@ FLUX_GUIDANCE = float(os.environ.get("FLUX_GUIDANCE", "3.5"))
 def list_channels():
     channels = []
     for f in sorted(CHANNELS_DIR.glob("*.json")):
-        if f.name.startswith("_"):
+        if f.name.startswith("_") or f.name.endswith("_focus.json"):
             continue
         try:
             data = json.loads(f.read_text())
@@ -607,7 +626,7 @@ def list_channels():
 
 def load_channel(channel_id):
     for f in CHANNELS_DIR.glob("*.json"):
-        if f.name.startswith("_"):
+        if f.name.startswith("_") or f.name.endswith("_focus.json"):
             continue
         try:
             data = json.loads(f.read_text())
@@ -712,7 +731,7 @@ def _call_openai_sync(messages, api_key, temperature=0.7):
 
 def generate_topic_idea(channel, api_key):
     channel_id = channel["channel_id"]
-    focus = CHANNEL_FOCUS.get(channel_id, {})
+    focus = _load_channel_focus(channel_id)
 
     # Load topic bank
     bank = _load_topic_bank()

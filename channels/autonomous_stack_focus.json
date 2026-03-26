@@ -1,0 +1,32 @@
+{
+  "focus": [
+    "Automation workflows that save real hours \u2014 not theory, actual implementations",
+    "AI tools and how to chain them together for practical outcomes",
+    "The hidden inefficiencies in common workflows that most people don't notice",
+    "Building systems that monitor, repair, or improve themselves",
+    "Integrating AI into existing business processes without rebuilding everything",
+    "The art of elimination \u2014 finding what to stop doing, not just what to automate",
+    "Real cost-benefit analysis of automation \u2014 when it's worth it and when it's not",
+    "Infrastructure as code \u2014 managing servers, deployments, environments automatically",
+    "Scraping, parsing, and transforming data from messy real-world sources",
+    "Building personal dashboards and monitoring systems that actually get used",
+    "The 80/20 of developer tooling \u2014 the few tools that handle most of the work",
+    "Automation failures and what they teach \u2014 when systems break in interesting ways"
+  ],
+  "avoid": [
+    "Basic beginner coding tutorials",
+    "Generic 'top 10 AI tools' listicle content",
+    "Hype-driven AI coverage without practical application",
+    "Content that's outdated within a month \u2014 focus on principles over specific tool versions"
+  ],
+  "examples": [
+    "The One Automation Layer Everyone Forgets",
+    "I Replaced 4 Hours of Daily Work with a 50-Line Script",
+    "Why Your CI/CD Pipeline Is Slower Than It Needs to Be",
+    "Building a Self-Healing Server Stack for Under $20/Month",
+    "The Automation That Broke Everything \u2014 and What I Learned",
+    "How to Make AI Actually Useful in Your Workflow (Not Just Cool)",
+    "The Monitoring Dashboard That Paid for Itself in a Week",
+    "Stop Automating the Wrong Things"
+  ]
+}

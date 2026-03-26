@@ -1,0 +1,44 @@
+{
+  "focus": [
+    "Real-world locations, objects, or events that defy explanation",
+    "Archaeological anomalies \u2014 things found where they shouldn't be, in layers too old",
+    "Engineering impossibilities \u2014 ancient structures that modern tools can't replicate",
+    "Scientific measurements that don't add up \u2014 readings, signals, data that breaks models",
+    "Forgotten or suppressed discoveries that were documented then buried",
+    "Natural phenomena that science acknowledges but cannot fully explain",
+    "Historical records that contradict the official timeline",
+    "Objects or materials with properties that shouldn't exist",
+    "Places where instruments behave erratically \u2014 compasses, clocks, radios",
+    "Expeditions or research projects that were abruptly abandoned without explanation",
+    "Medical and biological anomalies \u2014 documented cases of impossible survival, people who don't feel pain, identical strangers, foreign accent syndrome",
+    "Audio and sensory anomalies \u2014 sounds with no source (The Hum, Bloop), frequencies that affect the body, places where everyone reports the same phantom smell",
+    "Mathematical and pattern anomalies \u2014 sequences that repeat where they shouldn't, data that forms impossible patterns, numerical coincidences too precise to be chance",
+    "Behavioral anomalies at scale \u2014 events where large groups of people or animals did the same unexplained thing simultaneously",
+    "Cartographic weirdness \u2014 borders drawn around nothing, features on old maps that shouldn't exist, geographic formations with no geological explanation",
+    "Documented temporal anomalies \u2014 anachronistic objects found in sealed sites, events recorded out of sequence, cases investigated by credible sources"
+  ],
+  "avoid": [
+    "Supernatural claims without grounded realism",
+    "Conspiracy theories (that's EchelonVeil's territory)",
+    "Clickbait speculation \u2014 present facts and let the mystery speak",
+    "Generic 'scientists can't explain this' framing without specific detail"
+  ],
+  "examples": [
+    "The Tunnel That Appeared Overnight Beneath a School",
+    "The Case of the Missing Floor in a Government Building",
+    "The Stone Block That Weighs More Every Time It's Measured",
+    "The Map Drawn 300 Years Before the Continent Was Discovered",
+    "The Frequency That Only Plays on the Third Thursday of Each Month",
+    "The Lake That Drains Completely Every 7 Years \u2014 and Nobody Knows Where the Water Goes",
+    "The Drill Core Sample That Contained Something That Shouldn't Be There",
+    "The Building That Appears in Photographs From Before It Was Built",
+    "The Woman Who Woke Up Speaking a Language She'd Never Learned",
+    "The Hum: Thousands of People Hear It. No One Can Find the Source.",
+    "The Identical Strangers Who Met by Accident \u2014 and Shared the Same Life",
+    "The Flock That Fell from the Sky: 5,000 Birds, One Moment, No Explanation",
+    "The Number Station That's Been Broadcasting Since 1982. Nobody Claims It.",
+    "The Border Drawn Around Nothing: Why This Line Exists on Every Map",
+    "The Patient Who Survived What Doctors Say Is Impossible \u2014 Twice",
+    "The Data Set That Contains a Pattern No One Programmed"
+  ]
+}

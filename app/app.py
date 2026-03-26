@@ -571,6 +571,61 @@ def api_channel_metrics(channel_id):
 
 # --- Auto-refresh metrics on startup and hourly ---
 
+# --- Channel Settings (Focus / Avoid / Examples Editor) ---
+
+@app.route("/channel/<channel_id>/settings")
+def channel_settings(channel_id):
+    ch = generator.load_channel(channel_id)
+    if not ch:
+        return "Channel not found", 404
+    focus = generator._load_channel_focus(channel_id)
+    return render_template("settings.html", channel=ch, focus=focus)
+
+
+@app.route("/api/channel/<channel_id>/focus")
+def api_get_focus(channel_id):
+    """Get the current focus/avoid/examples for a channel."""
+    focus = generator._load_channel_focus(channel_id)
+    return jsonify({"ok": True, "channel_id": channel_id, "focus": focus})
+
+
+@app.route("/api/channel/<channel_id>/focus", methods=["POST"])
+def api_save_focus(channel_id):
+    """Save updated focus/avoid/examples for a channel."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"ok": False, "error": "No data provided"})
+
+    # Validate structure
+    focus_data = {}
+    if "focus" in data:
+        focus_data["focus"] = [s.strip() for s in data["focus"] if s.strip()]
+    if "avoid" in data:
+        focus_data["avoid"] = [s.strip() for s in data["avoid"] if s.strip()]
+    if "examples" in data:
+        focus_data["examples"] = [s.strip() for s in data["examples"] if s.strip()]
+
+    if not focus_data:
+        return jsonify({"ok": False, "error": "No valid fields provided"})
+
+    # Merge with existing (so partial updates work)
+    existing = generator._load_channel_focus(channel_id)
+    existing.update(focus_data)
+    generator._save_channel_focus(channel_id, existing)
+
+    log.info(f"Updated focus for {channel_id}: {len(existing.get('focus',[]))} focus, {len(existing.get('avoid',[]))} avoid, {len(existing.get('examples',[]))} examples")
+    return jsonify({"ok": True, "saved": existing})
+
+
+@app.route("/api/channel/<channel_id>/config")
+def api_get_channel_config(channel_id):
+    """Get the full channel JSON config."""
+    ch = generator.load_channel(channel_id)
+    if not ch:
+        return jsonify({"ok": False, "error": "Channel not found"})
+    return jsonify({"ok": True, "config": ch})
+
+
 # --- Metrics refresh is manual-only (via UI button) to preserve YouTube quota ---
 # Automatic scheduler removed — use /api/metrics/refresh POST endpoint instead.
 

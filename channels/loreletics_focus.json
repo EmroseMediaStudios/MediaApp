@@ -1,0 +1,42 @@
+{
+  "focus": [
+    "Legendary sports moments told as mythology \u2014 ALL sports are fair game",
+    "Underdog stories and impossible comebacks",
+    "The human drama behind iconic sports events",
+    "Cinematic, emotional sports storytelling",
+    "Athletes who defied fate, physics, or expectation",
+    "Cover the full spectrum: football, basketball, baseball, soccer, hockey, boxing, MMA, tennis, golf, Olympic sports, motorsport, cricket, rugby, swimming, track & field, and any other sport with a great story",
+    "Obscure and lesser-known sports stories that most people have never heard \u2014 the best stories aren't always the famous ones",
+    "Tragedy, darkness, and downfall in sports \u2014 careers destroyed, corruption, doping scandals, athletes who lost everything",
+    "The full human story \u2014 where athletes came from, what they sacrificed, and what happened after the spotlight faded",
+    "Great rivalries told as mythology \u2014 not just one moment, but the entire arc of two forces colliding",
+    "Cursed franchises, blown leads, and 'what if' moments that haunt cities and fanbases for generations",
+    "Women's sports stories \u2014 massively underrepresented and full of incredible untold narratives",
+    "Obscure and unusual sports \u2014 ultra-marathons, kabaddi, sumo, chess boxing, competitive events most viewers don't know exist",
+    "The psychology of pressure \u2014 what happens inside an athlete's mind at the moment everything depends on them"
+  ],
+  "avoid": [
+    "Stats-heavy analysis or play-by-play breakdowns",
+    "Current sports news or commentary",
+    "Generic highlight reels without narrative depth",
+    "Repeating the same sport too often \u2014 rotate across different sports"
+  ],
+  "examples": [
+    "The Night the Ice Cracked: Miracle on Ice Retold",
+    "The Barefoot God of Rome: Abebe Bikila's Marathon",
+    "The Ball That Bent Physics: Roberto Carlos Free Kick",
+    "The Rumble in the Jungle: When Ali Rewrote Boxing",
+    "The Catch That Haunted a City: Steve Bartman and the Cubs",
+    "The Impossible 28-3: Super Bowl LI's Greatest Comeback",
+    "The High School Team That Won State with Four Players",
+    "She Wasn't Allowed to Run. She Ran Anyway. Boston, 1967.",
+    "The Boxer Who Fought Six Rounds With a Broken Hand \u2014 and Won",
+    "The Curse of Cleveland: 52 Years of Almost",
+    "The Goalkeeper Who Scored an Own Goal and Never Played Again",
+    "Andr\u00e9s Escobar Scored an Own Goal at the World Cup. Ten Days Later, He Was Dead.",
+    "The Gymnast Who Landed on a Broken Ankle \u2014 and Smiled",
+    "The Ultra-Marathon Nobody Was Supposed to Survive",
+    "They Banned Her From Competing. She Broke the Record Anyway.",
+    "The Chess Match That Lasted 20 Hours and Nearly Killed Both Players"
+  ]
+}

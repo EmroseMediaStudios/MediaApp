@@ -1,0 +1,51 @@
+{
+  "focus": [
+    "Systems and machines that continue operating without human oversight",
+    "The last signals, broadcasts, or transmissions from abandoned places",
+    "Animals adapting to and THRIVING in human-built environments \u2014 not just surviving but flourishing",
+    "Automated processes that outlive their creators \u2014 satellites, servers, dams",
+    "What specific objects experience after humans leave \u2014 a clock, a traffic light, a vending machine",
+    "Nature's triumphant return \u2014 forests reclaiming cities, rivers carving new paths through streets, wildlife populations exploding in former urban centers",
+    "Time capsules, buried archives, and messages left for no one",
+    "How different materials and technologies age while nature grows over and through them",
+    "The beauty of rewilding \u2014 meadows where highways were, deer grazing in shopping malls, herons fishing in flooded subway stations",
+    "What the last day looks like in a specific place before it's abandoned forever",
+    "Digital remnants \u2014 websites that outlive their creators, social media profiles of the dead, abandoned servers still running, automated emails sent to no one",
+    "Cultural extinction \u2014 languages with one speaker left, traditions nobody practices, recipes that die with a single person",
+    "Personal objects left behind \u2014 suitcases never claimed, letters never opened, wedding dresses in attics, shoes on power lines",
+    "Space remnants \u2014 Voyager's golden record, flags on the Moon, rovers on Mars, orbital debris circling a planet that may forget them",
+    "Submerged and underwater remains \u2014 flooded cities where fish swim through living rooms, shipwrecks as coral reefs, forests swallowed by reservoirs becoming underwater ecosystems",
+    "Sound and silence after humanity \u2014 birdsong filling once-noisy cities, wind through broken windows, the return of natural soundscapes",
+    "Seasons transforming human spaces \u2014 cherry blossoms in abandoned Tokyo streets, wildflowers carpeting factory floors, autumn leaves filling empty concert halls"
+  ],
+  "avoid": [
+    "Action or survival narratives",
+    "Purely bleak, dark, or depressing imagery \u2014 nature should be WINNING, not just existing",
+    "Generic 'everything is gray and dead' post-apocalyptic tone",
+    "Just describing buildings crumbling \u2014 the LIFE growing through them is the story",
+    "Repeating the same infrastructure-decay premise with different locations",
+    "Imagery that's only algae and moss \u2014 show the FULL spectrum: flowers, trees, animals, sunlight, color"
+  ],
+  "examples": [
+    "The Satellite That Will Outlast Everything We've Ever Built",
+    "What a Traffic Light Does After the Last Car Drives Away",
+    "The Vending Machine at the Edge of the Exclusion Zone",
+    "Why Elevators Are the First Thing to Die in an Abandoned Building",
+    "The Last Radio Station Still Broadcasting to No One",
+    "What Happens Inside a Server Room When the Power Finally Goes Out",
+    "The Wolves That Moved Into Chernobyl's Swimming Pool",
+    "A Hotel Room That Hasn't Been Opened in 40 Years \u2014 and What Grew Inside",
+    "The Geocities Page That's Been Online Since 1998 \u2014 and Nobody Knows Who Made It",
+    "The Language That Dies When She Does",
+    "The Wedding Dress in the Attic of a House Nobody Lives In",
+    "Voyager Is Still Transmitting. Nobody Is Listening.",
+    "The Town They Flooded to Build the Dam \u2014 Fish Swim Through the Living Rooms Now",
+    "An Automated Birthday Email Sent Every Year to Someone Who Died in 2014",
+    "The Piano in the Flood-Damaged House \u2014 Wildflowers Grow Through Its Keys",
+    "The Last Blockbuster Closed. The Rewound Tapes Are Still Inside.",
+    "The Highway Where Deer Walk at Sunrise \u2014 10,000 of Them, Every Morning",
+    "The Shopping Mall Where Foxes Raise Their Young in the Food Court",
+    "Cherry Blossoms Fill the Abandoned Streets of Tokyo Every Spring",
+    "The Coral Reef That Grew on a Sunken Aircraft Carrier"
+  ]
+}

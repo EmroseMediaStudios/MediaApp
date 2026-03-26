@@ -1,0 +1,53 @@
+{
+  "focus": [
+    "True-crime-style horror \u2014 home invasions, break-ins, stalkers, intruders discovered living in attics or crawl spaces, told as first-person survivor accounts",
+    "Close calls with dangerous people \u2014 hitchhiking gone wrong, a stranger who followed you home, the coworker everyone ignored the red flags about",
+    "Roommate and neighbor horror \u2014 the person you lived with who turned out to be someone else entirely, the neighbor whose house smelled wrong",
+    "Kidnapping and captivity stories \u2014 escapes, near-misses, the moment someone realized they were being lured",
+    "Encounters with serial killers \u2014 people who unknowingly interacted with killers and only realized it later",
+    "Night shift and late-night job horror \u2014 gas station attendants, hotel night auditors, hospital workers, security guards alone in buildings",
+    "Road and travel horror \u2014 wrong turns, breakdowns in dangerous areas, rides that went wrong, motels you should never have stopped at",
+    "Childhood horror in hindsight \u2014 things you witnessed or experienced as a kid that you didn't understand were dangerous until years later",
+    "Grounded creepypasta-style horror storytelling \u2014 the supernatural anchored in mundane, believable settings",
+    "Slow-burn dread \u2014 things that feel wrong before you know why",
+    "Urban legends, cursed places, found footage style narratives",
+    "Horror rooted in the familiar \u2014 houses, roads, small towns, jobs",
+    "Objects with wrong histories \u2014 things that shouldn't exist, or exist differently than recorded",
+    "Personal horror \u2014 journals, voicemails, security footage that reveals something about the narrator",
+    "The uncanny mundane \u2014 routines, neighbors, coworkers that are subtly and inexplicably off",
+    "Places that are wrong on the inside \u2014 dimensions don't match, rooms that shouldn't fit, spaces that change",
+    "Camping, hiking, and wilderness horror \u2014 things seen, heard, or found in the deep woods",
+    "Small town secrets \u2014 communities where everyone knows something they won't talk about",
+    "Online encounters that crossed into real life \u2014 messages, catfishing, strangers from the internet who became real threats",
+    "Horror from the perspective of someone who doesn't realize they're in danger yet"
+  ],
+  "avoid": [
+    "Abstract cosmic entities without grounding",
+    "Standard horror tropes or jumpscares",
+    "Gore or shock value for its own sake",
+    "Overly supernatural without a real-world anchor \u2014 every story needs a 'this could actually happen' foundation",
+    "Repeating the same formula \u2014 rotate between grounded real-life horror, creepypasta, and situational horror",
+    "Generic haunted house or ghost stories without a unique angle",
+    "Over-relying on 'impossible' premises (the road that doesn't exist, the room that changes, the photo with an extra person) \u2014 balance with stories where the horror is HUMAN, not paranormal"
+  ],
+  "examples": [
+    "I Realized My Roommate Had Been Watching Me Sleep for Months",
+    "The Man at the Gas Station Asked for Directions. He Was in My Backseat an Hour Later.",
+    "My Daughter's Babysitter Wasn't Who She Said She Was",
+    "I Picked Up a Hitchhiker Once. I'll Never Do It Again.",
+    "The Woman Next Door Hadn't Left Her House in Three Years. Then I Smelled It.",
+    "I Found a Camera Hidden in My Apartment. It Wasn't Mine.",
+    "We Laughed About the Creepy Guy at Work. Then Three Women Went Missing.",
+    "Someone Was Living in My Attic. I Found the Blankets.",
+    "The Night I Almost Got Into the Wrong Car",
+    "I Worked as a Hotel Night Auditor. Room 4 Was Always Booked, but No One Ever Checked In.",
+    "The House That Grew a Room Nobody Built",
+    "I Found My Neighbor's Journal. He Was Writing About Me.",
+    "The Voicemail Was from My Own Number. I Never Made the Call.",
+    "I Checked My Security Camera. I Never Came Home Last Night.",
+    "A Park Ranger's Account of the Trail That Hikers Don't Come Back From",
+    "The Campsite Was Perfect. Then We Found the Other Tent.",
+    "I Took a Wrong Turn on a Back Road in West Virginia. I Don't Think That Town Exists.",
+    "The Town I Grew Up In Has a Rule: Never Go Outside After the Sirens"
+  ]
+}
