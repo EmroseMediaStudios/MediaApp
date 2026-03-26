@@ -3505,7 +3505,7 @@ Full script:
     end_card_video = work_dir / "short_end_card.mp4"
     short_with_end_card = work_dir / "short_final.mp4"
     try:
-        _generate_short_end_card(channel, str(end_card_img))
+        _generate_short_end_card(channel, str(end_card_img), bg_image=str(short_img))
         # Create 2-second video from end card image
         import subprocess
         ec_result = subprocess.run([
@@ -3552,16 +3552,17 @@ Full script:
     return short_data
 
 
-def _generate_short_end_card(channel, out_path, text="Watch the full video now", duration=2.0, res=(1080, 1920)):
-    """Generate a 2-second end card for YouTube Shorts using the channel's thumbnail font.
-    Dark background with centered text, matching the channel's visual identity."""
+def _generate_short_end_card(channel, out_path, text="Watch the full video now", duration=2.0, res=(1080, 1920), bg_image=None):
+    """Generate a polished 2-second end card for YouTube Shorts.
+    Uses the short's image as a blurred/darkened background with the channel's
+    thumbnail font for text. Falls back to a clean dark card if no image."""
     from PIL import Image, ImageDraw, ImageFont, ImageFilter
     import numpy as np
 
     w, h = res
     channel_id = channel.get("channel_id", "")
 
-    # Channel-specific accent colors — synced with thumbnail and end card accents
+    # Channel-specific accent colors
     channel_colors = {
         "deadlight_codex": (220, 50, 50),
         "zero_trace_archive": (200, 195, 170),
@@ -3576,64 +3577,61 @@ def _generate_short_end_card(channel, out_path, text="Watch the full video now",
     }
     accent = channel_colors.get(channel_id, (200, 200, 200))
 
-    # Dark background with subtle radial gradient
-    img = Image.new('RGB', (w, h), (8, 8, 20))
+    # Background: blurred + darkened version of the short's image, or clean dark
+    if bg_image and Path(bg_image).exists():
+        try:
+            img = Image.open(bg_image).convert('RGB').resize((w, h), Image.LANCZOS)
+            img = img.filter(ImageFilter.GaussianBlur(radius=28))
+            # Darken significantly so text pops
+            arr = np.array(img, dtype=np.float32)
+            arr *= 0.22
+            img = Image.fromarray(arr.astype(np.uint8))
+        except Exception:
+            img = Image.new('RGB', (w, h), (6, 6, 12))
+    else:
+        img = Image.new('RGB', (w, h), (6, 6, 12))
+
     draw = ImageDraw.Draw(img)
 
-    # Add subtle radial glow in center
-    for r in range(300, 0, -2):
-        alpha = int(25 * (r / 300))
-        x, y = w // 2, h // 2
-        draw.ellipse([x - r, y - r, x + r, y + r], fill=(accent[0] // 8, accent[1] // 8, accent[2] // 8))
-
-    # Get thumbnail font (same one used for thumbnails)
+    # Get the channel's thumbnail font
     try:
-        font = _get_thumbnail_font(channel_id, 72)
+        font = _get_thumbnail_font(channel_id, 68)
+        sub_font = _get_thumbnail_font(channel_id, 36)
     except Exception:
         font = ImageFont.load_default()
+        sub_font = font
 
-    # Split text into lines if needed
-    lines = text.split('\n') if '\n' in text else [text]
-
-    # Calculate total text height
-    line_heights = []
-    line_widths = []
-    for line in lines:
-        bbox = font.getbbox(line)
-        lw = bbox[2] - bbox[0]
-        lh = bbox[3] - bbox[1]
-        line_widths.append(lw)
-        line_heights.append(lh)
-
-    line_spacing = 20
-    total_h = sum(line_heights) + line_spacing * (len(lines) - 1)
-    start_y = (h - total_h) // 2
-
-    # Draw text with glow effect
-    for i, line in enumerate(lines):
-        lw = line_widths[i]
-        x = (w - lw) // 2
-        y = start_y + sum(line_heights[:i]) + line_spacing * i
-
-        # Outer glow
-        glow_img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-        glow_draw = ImageDraw.Draw(glow_img)
-        for offset in range(6, 0, -1):
-            glow_alpha = int(40 * (1 - offset / 6))
-            glow_color = (accent[0], accent[1], accent[2], glow_alpha)
-            glow_draw.text((x, y), line, font=font, fill=glow_color)
-        glow_img = glow_img.filter(ImageFilter.GaussianBlur(radius=8))
-        img.paste(Image.alpha_composite(Image.new('RGBA', (w, h), (0, 0, 0, 0)), glow_img).convert('RGB'),
-                  mask=glow_img.split()[3])
-
-        # Main text in white
-        draw.text((x, y), line, font=font, fill=(255, 255, 255))
-
-    # Add subtle bottom line accent
-    line_y = start_y + total_h + 40
-    line_w = max(line_widths) + 40
+    # --- Thin accent line above text ---
+    line_w = 200
     line_x = (w - line_w) // 2
-    draw.line([(line_x, line_y), (line_x + line_w, line_y)], fill=accent, width=3)
+    line_y = h // 2 - 80
+    draw.line([(line_x, line_y), (line_x + line_w, line_y)], fill=accent, width=2)
+
+    # --- Main CTA text ---
+    main_text = "Watch the full video"
+    bbox = font.getbbox(main_text)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    tx = (w - tw) // 2
+    ty = line_y + 24
+
+    # Text shadow for depth
+    shadow_offset = 3
+    draw.text((tx + shadow_offset, ty + shadow_offset), main_text, font=font, fill=(0, 0, 0))
+    # Main text in white
+    draw.text((tx, ty), main_text, font=font, fill=(255, 255, 255))
+
+    # --- Subtle sub-text ---
+    sub_text = "Link in description"
+    sbbox = sub_font.getbbox(sub_text)
+    sw = sbbox[2] - sbbox[0]
+    sx = (w - sw) // 2
+    sy = ty + th + 28
+    draw.text((sx, sy), sub_text, font=sub_font, fill=(accent[0], accent[1], accent[2]))
+
+    # --- Thin accent line below text ---
+    line_y2 = sy + (sbbox[3] - sbbox[1]) + 24
+    draw.line([(line_x, line_y2), (line_x + line_w, line_y2)], fill=accent, width=2)
 
     img.save(out_path, quality=95)
     log.info(f"Short end card generated: {out_path}")
