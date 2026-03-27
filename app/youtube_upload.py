@@ -28,7 +28,9 @@ def _token_path_for_channel(channel_id=None):
 
 
 def _get_credentials(youtube_channel_id=None):
-    """Get or refresh OAuth2 credentials. Returns None if not authenticated."""
+    """Get or refresh OAuth2 credentials. Returns None if not authenticated.
+    When youtube_channel_id is specified, ONLY returns credentials for that
+    specific channel — never falls back to the default token."""
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
 
@@ -37,15 +39,13 @@ def _get_credentials(youtube_channel_id=None):
     creds = None
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
-    elif youtube_channel_id and TOKEN_PATH.exists():
-        creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
 
     if creds and creds.expired and creds.refresh_token:
         try:
             creds.refresh(Request())
             token_path.write_text(creds.to_json())
         except Exception as e:
-            log.warning(f"Token refresh failed: {e}")
+            log.warning(f"Token refresh failed for {youtube_channel_id or 'default'}: {e}")
             creds = None
 
     return creds
@@ -283,6 +283,11 @@ def upload_video(video_path, title, description="", tags=None, category_id="22",
     # Resolve YouTube channel ID and get appropriate credentials
     yt_channel_id = YOUTUBE_CHANNEL_MAP.get(app_channel_id) if app_channel_id else None
     creds = _get_credentials(yt_channel_id)
+    if not creds and yt_channel_id:
+        raise RuntimeError(
+            f"No valid YouTube credentials for channel '{app_channel_id}' "
+            f"(YouTube ID: {yt_channel_id}). Re-authenticate at /youtube/auth/{app_channel_id}"
+        )
     if not creds:
         creds = _get_credentials()
     if not creds:
