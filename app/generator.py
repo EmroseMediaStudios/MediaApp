@@ -793,7 +793,7 @@ Do not generate generic ideas. Prioritize originality and curiosity."""
         result = result.split("\n", 1)[1]
     if result.endswith("```"):
         result = result.rsplit("```", 1)[0]
-    idea = json.loads(result.strip())
+    idea = json.loads(result.strip(), strict=False)
 
     # Semantic dedup: check if the generated topic is too similar to any used topic
     # Retry up to 3 times with increasingly explicit rejection prompts
@@ -816,7 +816,7 @@ Do not generate generic ideas. Prioritize originality and curiosity."""
             result = result.split("\n", 1)[1]
         if result.endswith("```"):
             result = result.rsplit("```", 1)[0]
-        idea = json.loads(result.strip())
+        idea = json.loads(result.strip(), strict=False)
 
     # Save to topic bank
     _save_topic_to_bank(channel_id, idea["title"])
@@ -1001,7 +1001,7 @@ def generate_script(channel, topic, api_key):
         result = result.split("\n", 1)[1]
     if result.endswith("```"):
         result = result.rsplit("```", 1)[0]
-    script = json.loads(result.strip())
+    script = json.loads(result.strip(), strict=False)
 
     # Validate length
     total_words = sum(len(s.get("narration", "").split()) for s in script.get("scenes", []))
@@ -1042,7 +1042,7 @@ Same JSON format as before. No markdown fences."""
         result2 = result2.rsplit("```", 1)[0]
 
     try:
-        script2 = json.loads(result2.strip())
+        script2 = json.loads(result2.strip(), strict=False)
         total_words2 = sum(len(s.get("narration", "").split()) for s in script2.get("scenes", []))
         scene_count2 = len(script2.get("scenes", []))
         log.info(f"Expanded script: {total_words2} words, {scene_count2} scenes (was {total_words}w/{scene_count}s)")
@@ -1129,7 +1129,7 @@ Story narration:
                     char_result = char_result.split("\n", 1)[1]
                 if char_result.endswith("```"):
                     char_result = char_result.rsplit("```", 1)[0]
-                characters = json.loads(char_result.strip())
+                characters = json.loads(char_result.strip(), strict=False)
                 script["characters"] = characters
                 log.info(f"Generated character descriptions for {len(characters)} character(s): {list(characters.keys())}")
             except Exception as e:
@@ -3162,7 +3162,7 @@ Respond with ONLY valid JSON, no markdown fences:
             result = result.split("\n", 1)[1]
         if result.endswith("```"):
             result = result.rsplit("```", 1)[0]
-        yt_meta = json.loads(result.strip())
+        yt_meta = json.loads(result.strip(), strict=False)
 
         # Merge default channel tags
         existing_tags = set(t.lower() for t in yt_meta.get("tags", []))
@@ -3408,7 +3408,7 @@ Full script:
         result = result.split("\n", 1)[1]
     if result.endswith("```"):
         result = result.rsplit("```", 1)[0]
-    short_data = json.loads(result.strip())
+    short_data = json.loads(result.strip(), strict=False)
 
     emit("short", "Generating short narration...")
     short_audio = work_dir / "short_narration.mp3"
