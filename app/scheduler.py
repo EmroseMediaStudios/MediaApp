@@ -342,6 +342,7 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
         meta["youtube_url"] = result["url"]
         meta["youtube_privacy"] = "public"
         meta["youtube_uploaded_at"] = datetime.now(ET).strftime("%Y-%m-%d %I:%M %p")
+        meta["youtube_uploaded_at_utc"] = datetime.now(ET).isoformat()
         
         # Also upload Short if it exists
         short_result = None
@@ -417,15 +418,21 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
 def _scheduler_loop(app, api_keys):
     """
     Main scheduler loop. Runs as a daemon thread.
-    Checks every 60 seconds for videos to upload.
+    Holds _UPLOAD_LOCK for the ENTIRE duration of each upload (including the
+    main video + short), so the 60-second poll cycle can never start a second
+    upload while one is in flight.  After a successful upload, sleeps for a
+    5-minute cooldown before checking for more work.
     """
     log.info("[SCHEDULER] Background upload scheduler started")
     
+    UPLOAD_COOLDOWN_SECS = 300  # 5 minutes
+    
     while True:
         try:
-            # Check all scheduled videos
             now_et = datetime.now(ET)
             log.debug(f"[SCHEDULER] Checking for scheduled uploads at {now_et.isoformat()}")
+            
+            uploaded_this_cycle = False
             
             for channel_dir in generator.OUTPUT_DIR.iterdir():
                 if not channel_dir.is_dir():
@@ -442,63 +449,83 @@ def _scheduler_loop(app, api_keys):
                     if not meta:
                         continue
                     
-                    # Check if this video is scheduled and ready
-                    if meta.get("upload_status") == "scheduled" and meta.get("scheduled_upload"):
-                        # Skip if already uploaded (prevents double uploads)
-                        if meta.get("youtube_uploaded"):
-                            meta["upload_status"] = "uploaded"
-                            _save_metadata(channel_id, dir_name, meta)
+                    # Skip anything not in "scheduled" state
+                    if meta.get("upload_status") != "scheduled" or not meta.get("scheduled_upload"):
+                        continue
+                    
+                    # Skip if already uploaded (fix stale status)
+                    if meta.get("youtube_uploaded"):
+                        meta["upload_status"] = "uploaded"
+                        _save_metadata(channel_id, dir_name, meta)
+                        continue
+                    
+                    try:
+                        scheduled_dt = datetime.fromisoformat(meta["scheduled_upload"])
+                        
+                        # Not time yet
+                        if scheduled_dt > now_et:
+                            continue
+                        
+                        # --- Try to acquire the lock (non-blocking) ---
+                        if not _UPLOAD_LOCK.acquire(blocking=False):
+                            log.info(f"[SCHEDULER] Upload lock held, skipping {channel_id}/{dir_name} this cycle")
                             continue
                         
                         try:
-                            scheduled_dt = datetime.fromisoformat(meta["scheduled_upload"])
+                            # === CRITICAL SECTION (lock held) ===
+                            # Re-read metadata — manual upload or another thread may have changed it
+                            meta = _load_metadata(channel_id, dir_name)
+                            if not meta:
+                                continue
+                            if meta.get("youtube_uploaded"):
+                                log.info(f"[SCHEDULER] {channel_id}/{dir_name} already uploaded (post-lock), skipping")
+                                meta["upload_status"] = "uploaded"
+                                _save_metadata(channel_id, dir_name, meta)
+                                continue
+                            if meta.get("upload_status") not in ("scheduled",):
+                                log.info(f"[SCHEDULER] {channel_id}/{dir_name} status is '{meta.get('upload_status')}' (post-lock), skipping")
+                                continue
                             
-                            # Is it time to upload?
-                            if scheduled_dt <= now_et:
-                                # Acquire lock to prevent race with manual uploads
-                                if not _UPLOAD_LOCK.acquire(blocking=False):
-                                    log.info(f"[SCHEDULER] Upload lock held, skipping {channel_id}/{dir_name} this cycle")
-                                    continue
-                                
-                                try:
-                                    # Re-check after acquiring lock (another thread may have uploaded)
-                                    meta = _load_metadata(channel_id, dir_name)
-                                    if not meta or meta.get("youtube_uploaded"):
-                                        continue
-                                    
-                                    log.info(f"[SCHEDULER] Time to upload {channel_id}/{dir_name}")
-                                    
-                                    # Mark as uploading
-                                    meta["upload_status"] = "uploading"
-                                    _save_metadata(channel_id, dir_name, meta)
-                                    
-                                    # Do the upload
-                                    result = _do_scheduled_upload(channel_id, dir_name, api_keys)
-                                    
-                                    # Reload metadata — _do_scheduled_upload saves youtube_uploaded, video_id, url etc.
-                                    meta = _load_metadata(channel_id, dir_name) or meta
-                                    
-                                    if result["success"]:
-                                        meta["upload_status"] = "uploaded"
-                                        meta["upload_error"] = None
-                                        log.info(f"[SCHEDULER] Successfully uploaded {channel_id}/{dir_name}")
-                                    else:
-                                        meta["upload_status"] = "failed"
-                                        meta["upload_error"] = result.get("error", "Unknown error")
-                                        log.error(f"[SCHEDULER] Failed to upload {channel_id}/{dir_name}: {result.get('error')}")
-                                    
-                                    _save_metadata(channel_id, dir_name, meta)
-                                finally:
-                                    _UPLOAD_LOCK.release()
-                        
-                        except Exception as e:
-                            log.error(f"[SCHEDULER] Error processing {channel_id}/{dir_name}: {e}")
+                            log.info(f"[SCHEDULER] Time to upload {channel_id}/{dir_name}")
+                            
+                            # Mark as uploading BEFORE starting (visible to manual upload route)
+                            meta["upload_status"] = "uploading"
+                            _save_metadata(channel_id, dir_name, meta)
+                            
+                            # Do the upload (this can take many minutes — lock stays held)
+                            result = _do_scheduled_upload(channel_id, dir_name, api_keys)
+                            
+                            # Reload metadata — _do_scheduled_upload writes youtube_uploaded etc.
+                            meta = _load_metadata(channel_id, dir_name) or meta
+                            
+                            if result["success"]:
+                                meta["upload_status"] = "uploaded"
+                                meta["upload_error"] = None
+                                meta["youtube_uploaded_at_utc"] = datetime.now(ET).isoformat()
+                                log.info(f"[SCHEDULER] Successfully uploaded {channel_id}/{dir_name}")
+                                uploaded_this_cycle = True
+                            else:
+                                meta["upload_status"] = "failed"
+                                meta["upload_error"] = result.get("error", "Unknown error")
+                                log.error(f"[SCHEDULER] Failed to upload {channel_id}/{dir_name}: {result.get('error')}")
+                            
+                            _save_metadata(channel_id, dir_name, meta)
+                            # === END CRITICAL SECTION ===
+                        finally:
+                            _UPLOAD_LOCK.release()
+                    
+                    except Exception as e:
+                        log.error(f"[SCHEDULER] Error processing {channel_id}/{dir_name}: {e}")
             
         except Exception as e:
             log.error(f"[SCHEDULER] Loop error: {e}")
         
-        # Sleep for 60 seconds before checking again
-        time.sleep(60)
+        # After a successful upload, cool down 5 minutes before looking for more
+        if uploaded_this_cycle:
+            log.info(f"[SCHEDULER] Upload complete — cooling down {UPLOAD_COOLDOWN_SECS}s before next check")
+            time.sleep(UPLOAD_COOLDOWN_SECS)
+        else:
+            time.sleep(60)
 
 
 def start_scheduler(app, api_keys):
