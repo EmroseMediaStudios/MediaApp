@@ -237,6 +237,67 @@ def get_all_scheduled():
     return scheduled
 
 
+def get_last_posted():
+    """
+    Scan all channels and return the most recently uploaded video per channel.
+
+    Returns:
+        dict: {channel_id: {"title", "youtube_url", "youtube_uploaded_at", "upload_status", "upload_error", "dir_name"}}
+    """
+    last_posted = {}
+
+    for channel_dir in generator.OUTPUT_DIR.iterdir():
+        if not channel_dir.is_dir():
+            continue
+
+        channel_id = channel_dir.name
+        best = None
+        best_time = None
+
+        for video_dir in channel_dir.iterdir():
+            if not video_dir.is_dir():
+                continue
+
+            meta = _load_metadata(channel_id, video_dir.name)
+            if not meta:
+                continue
+
+            # Uploaded successfully
+            if meta.get("youtube_uploaded"):
+                uploaded_at = meta.get("youtube_uploaded_at_utc") or meta.get("youtube_uploaded_at", "")
+                try:
+                    dt = datetime.fromisoformat(uploaded_at) if uploaded_at else None
+                except Exception:
+                    dt = None
+
+                if best_time is None or (dt and dt > best_time):
+                    best_time = dt
+                    best = {
+                        "title": meta.get("title", "Untitled"),
+                        "youtube_url": meta.get("youtube_url", ""),
+                        "youtube_uploaded_at": meta.get("youtube_uploaded_at", ""),
+                        "upload_status": "uploaded",
+                        "upload_error": None,
+                        "dir_name": video_dir.name,
+                    }
+
+            # Failed upload — only use if no successful upload exists yet
+            elif meta.get("upload_status") == "failed" and best is None:
+                best = {
+                    "title": meta.get("title", "Untitled"),
+                    "youtube_url": None,
+                    "youtube_uploaded_at": None,
+                    "upload_status": "failed",
+                    "upload_error": meta.get("upload_error", "Unknown error"),
+                    "dir_name": video_dir.name,
+                }
+
+        if best:
+            last_posted[channel_id] = best
+
+    return last_posted
+
+
 def _do_scheduled_upload(channel_id, dir_name, api_keys):
     """
     Execute a scheduled upload for a video.

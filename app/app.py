@@ -76,7 +76,8 @@ def dashboard():
     last_refresh = cache.get("last_refresh")
     scheduled = scheduler.get_all_scheduled()
     boost_mode = scheduler.get_boost_mode()
-    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled, top_channel=top_channel, top_video=top_video, boost_mode=boost_mode)
+    last_posted = scheduler.get_last_posted()
+    return render_template("dashboard.html", channels=channels, metrics=metrics, last_refresh=last_refresh, scheduled=scheduled, top_channel=top_channel, top_video=top_video, boost_mode=boost_mode, last_posted=last_posted)
 
 
 @app.route("/api/boost", methods=["POST"])

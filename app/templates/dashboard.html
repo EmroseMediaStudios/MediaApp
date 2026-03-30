@@ -207,6 +207,26 @@ function toggleBoost(enabled) {
           {% endif %}
         </div>
         {% endif %}
+        {% if last_posted.get(ch.channel_id) %}
+        {% set lp = last_posted[ch.channel_id] %}
+        <div class="mt-12" style="font-size: 0.82em; line-height: 1.5;">
+          {% if lp.upload_status == 'uploaded' %}
+          <span style="color: #22c55e;">✓ Last posted:</span>
+          <span style="color: var(--text2);">{{ lp.youtube_uploaded_at }}</span>
+          {% if lp.youtube_url %}
+          · <a href="{{ lp.youtube_url }}" target="_blank" style="color: #3b82f6; text-decoration: none;" title="{{ lp.title }}">{{ lp.title[:50] }}{% if lp.title|length > 50 %}…{% endif %}</a>
+          {% else %}
+          · <span style="color: var(--text3);">{{ lp.title[:50] }}{% if lp.title|length > 50 %}…{% endif %}</span>
+          {% endif %}
+          {% elif lp.upload_status == 'failed' %}
+          <span style="color: #ef4444;">🔴 Last upload failed:</span>
+          <span style="color: var(--text3);">{{ lp.title[:50] }}{% if lp.title|length > 50 %}…{% endif %}</span>
+          {% if lp.upload_error %}
+          <span style="color: #ef4444; font-size: 0.9em;"> — {{ lp.upload_error[:80] }}{% if lp.upload_error|length > 80 %}…{% endif %}</span>
+          {% endif %}
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
   </a>
