@@ -241,6 +241,7 @@ function toggleBoost(enabled) {
       <tr style="color: var(--text3); border-bottom: 2px solid rgba(212,168,84,0.12);">
         <th style="text-align: left; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Channel</th>
         <th style="text-align: left; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Video Title</th>
+        <th style="text-align: center; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Preview</th>
         <th style="text-align: right; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Scheduled Time</th>
       </tr>
     </thead>
@@ -252,6 +253,16 @@ function toggleBoost(enabled) {
         </td>
         <td style="padding: 12px 10px; font-size: 0.95em;">
           {{ item.title }}
+        </td>
+        <td style="text-align: center; padding: 12px 10px;">
+          <div style="display: flex; gap: 6px; justify-content: center;">
+            {% if item.has_video %}
+            <a href="/video/{{ item.channel_id }}/{{ item.dir_name }}/video.mp4" target="_blank" class="btn btn-sm btn-primary" style="font-size: 0.8em; padding: 3px 10px;">▶ Video</a>
+            {% endif %}
+            {% if item.has_short %}
+            <a href="/video/{{ item.channel_id }}/{{ item.dir_name }}/short.mp4" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 0.8em; padding: 3px 10px;">📱 Short</a>
+            {% endif %}
+          </div>
         </td>
         <td style="text-align: right; padding: 12px 10px; color: var(--text2); font-size: 0.95em;">
           {{ item.display_time }}

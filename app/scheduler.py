@@ -245,6 +245,8 @@ def get_all_scheduled():
             
             # Check if scheduled
             if meta.get("upload_status") == "scheduled" and meta.get("scheduled_upload"):
+                has_video = (video_dir / "video.mp4").exists()
+                has_short = (video_dir / "short.mp4").exists()
                 scheduled.append({
                     "channel_id": channel_id,
                     "channel_name": channel_name,
@@ -252,6 +254,8 @@ def get_all_scheduled():
                     "title": meta.get("title", "Untitled"),
                     "scheduled_upload": meta["scheduled_upload"],
                     "display_time": _format_display_time(meta["scheduled_upload"]),
+                    "has_video": has_video,
+                    "has_short": has_short,
                 })
     
     # Sort by scheduled_upload datetime
