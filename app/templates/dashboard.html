@@ -179,23 +179,23 @@ function toggleBoost(enabled) {
   });
 }
 </script>
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
 {% for ch in channels %}
   <a href="/channel/{{ ch.channel_id }}" style="text-decoration: none; color: inherit;">
-    <div class="card" style="display: flex; gap: 20px; align-items: flex-start; min-height: 220px; margin-bottom: 0; padding: 32px 28px;">
+    <div class="card" style="display: flex; gap: 14px; align-items: flex-start; min-height: 0; margin-bottom: 0; padding: 20px 18px;">
       <img src="/static/img/{{ ch.channel_id }}.png" alt="{{ ch.channel_name }}"
-           class="channel-avatar" style="width: 100px; height: 100px;"
+           class="channel-avatar" style="width: 64px; height: 64px;"
            onerror="this.style.display='none'">
       <div style="flex: 1; min-width: 0;">
-        <h3 style="font-size: 1.25em; margin-bottom: 10px;">{{ ch.channel_name }}</h3>
-        <p style="margin-top: 0; font-size: 0.95em; line-height: 1.6; color: var(--text2);">{{ ch.description }}</p>
-        <div class="meta mt-12" style="gap: 10px;">
-          <span class="badge badge-gold" style="font-size: 0.82em; padding: 5px 12px;">{{ ch.narrator.name }}</span>
-          <span style="color: var(--text3); font-size: 0.82em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
+        <h3 style="font-size: 1.05em; margin-bottom: 6px;">{{ ch.channel_name }}</h3>
+        <p style="margin-top: 0; font-size: 0.82em; line-height: 1.5; color: var(--text2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ ch.description }}</p>
+        <div class="meta mt-8" style="gap: 8px;">
+          <span class="badge badge-gold" style="font-size: 0.75em; padding: 3px 9px;">{{ ch.narrator.name }}</span>
+          <span style="color: var(--text3); font-size: 0.75em;">🎙 {{ ch.voice.elevenlabs_voice_name }}</span>
         </div>
         {% if metrics.get(ch.channel_id) %}
         {% set m = metrics[ch.channel_id] %}
-        <div class="mt-12" style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.92em;">
+        <div class="mt-8" style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.82em;">
           <span style="color: var(--text2); font-weight: 600;">👥 {{ m.subscribers | compact_number }}</span>
           <span style="color: var(--text2);">▶ {{ m.full_length_views | compact_number }}</span>
           {% if m.shorts_views > 0 %}
@@ -209,21 +209,16 @@ function toggleBoost(enabled) {
         {% endif %}
         {% if last_posted.get(ch.channel_id) %}
         {% set lp = last_posted[ch.channel_id] %}
-        <div class="mt-12" style="font-size: 0.82em; line-height: 1.5;">
+        <div class="mt-6" style="font-size: 0.75em; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           {% if lp.upload_status == 'uploaded' %}
           <span style="color: #22c55e;">✓ Last posted:</span>
-          <span style="color: var(--text2);">{{ lp.youtube_uploaded_at }}</span>
+          <span style="color: var(--text3);">{{ lp.youtube_uploaded_at }}</span>
           {% if lp.youtube_url %}
-          · <a href="{{ lp.youtube_url }}" target="_blank" style="color: #3b82f6; text-decoration: none;" title="{{ lp.title }}">{{ lp.title[:50] }}{% if lp.title|length > 50 %}…{% endif %}</a>
-          {% else %}
-          · <span style="color: var(--text3);">{{ lp.title[:50] }}{% if lp.title|length > 50 %}…{% endif %}</span>
+          · <span style="color: #3b82f6;" title="{{ lp.title }}">{{ lp.title[:40] }}{% if lp.title|length > 40 %}…{% endif %}</span>
           {% endif %}
           {% elif lp.upload_status == 'failed' %}
-          <span style="color: #ef4444;">🔴 Last upload failed:</span>
-          <span style="color: var(--text3);">{{ lp.title[:50] }}{% if lp.title|length > 50 %}…{% endif %}</span>
-          {% if lp.upload_error %}
-          <span style="color: #ef4444; font-size: 0.9em;"> — {{ lp.upload_error[:80] }}{% if lp.upload_error|length > 80 %}…{% endif %}</span>
-          {% endif %}
+          <span style="color: #ef4444;">🔴 Failed:</span>
+          <span style="color: var(--text3);" title="{{ lp.upload_error }}">{{ lp.title[:35] }}{% if lp.title|length > 35 %}…{% endif %}</span>
           {% endif %}
         </div>
         {% endif %}
