@@ -298,10 +298,17 @@ def get_last_posted():
 
                 if best_time is None or (dt and dt > best_time):
                     best_time = dt
+                    # Build a display-friendly uploaded_at string
+                    display_at = meta.get("youtube_uploaded_at", "")
+                    if not display_at and dt:
+                        # Format from the UTC ISO timestamp
+                        display_at = dt.astimezone(ET).strftime("%Y-%m-%d %I:%M %p ET")
+                    if not display_at:
+                        display_at = "Date unavailable"
                     best = {
                         "title": meta.get("title", "Untitled"),
                         "youtube_url": meta.get("youtube_url", ""),
-                        "youtube_uploaded_at": meta.get("youtube_uploaded_at", ""),
+                        "youtube_uploaded_at": display_at,
                         "upload_status": "uploaded",
                         "upload_error": None,
                         "dir_name": video_dir.name,
