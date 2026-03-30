@@ -290,35 +290,47 @@ def get_last_posted():
 
             # Uploaded successfully
             if meta.get("youtube_uploaded"):
-                uploaded_at = meta.get("youtube_uploaded_at_utc") or meta.get("youtube_uploaded_at", "")
-                # Fallback chain: try created_at, then directory name timestamp
-                if not uploaded_at:
-                    uploaded_at = meta.get("created_at", "")
-                if not uploaded_at:
-                    # Dir names are like 20260327_153045_Title
+                # Try to get the most accurate upload timestamp
+                # Priority: youtube_uploaded_at (human-readable) → youtube_uploaded_at_utc → created_at → dir name
+                raw_at = meta.get("youtube_uploaded_at", "")  # e.g. "2026-03-30 12:20 PM"
+                raw_utc = meta.get("youtube_uploaded_at_utc", "")  # e.g. ISO with tz
+                raw_created = meta.get("created_at", "")  # e.g. ISO
+
+                # Parse to datetime for sorting — normalize everything to ET-aware
+                dt = None
+                for raw in [raw_utc, raw_at, raw_created]:
+                    if not raw:
+                        continue
                     try:
-                        ts_part = video_dir.name[:15]  # 20260327_153045
-                        dt_fallback = datetime.strptime(ts_part, "%Y%m%d_%H%M%S")
-                        uploaded_at = dt_fallback.isoformat()
+                        parsed = datetime.fromisoformat(raw)
+                        if parsed.tzinfo is None:
+                            parsed = parsed.replace(tzinfo=ET)
+                        dt = parsed
+                        break
                     except Exception:
                         pass
-                try:
-                    dt = datetime.fromisoformat(uploaded_at) if uploaded_at else None
-                except Exception:
-                    dt = None
 
-                if best_time is None or (dt and dt > best_time):
+                # Last resort: parse directory name (20260327_153045_Title)
+                if dt is None:
+                    try:
+                        ts_part = video_dir.name[:15]
+                        dt = datetime.strptime(ts_part, "%Y%m%d_%H%M%S").replace(tzinfo=ET)
+                    except Exception:
+                        pass
+
+                if best_time is None or (dt is not None and (best_time is None or dt > best_time)):
                     best_time = dt
-                    # Build a display-friendly uploaded_at string in ET
+                    # Build display string in ET
                     display_at = ""
-                    if dt:
+                    if raw_at:
+                        display_at = raw_at
+                    elif dt:
                         try:
-                            et_dt = dt.astimezone(ET) if dt.tzinfo else dt.replace(tzinfo=ET)
-                            display_at = et_dt.strftime("%b %d, %Y %I:%M %p ET")
+                            display_at = dt.astimezone(ET).strftime("%b %d, %Y %I:%M %p ET")
                         except Exception:
-                            display_at = meta.get("youtube_uploaded_at", str(dt))
+                            display_at = str(dt)
                     if not display_at:
-                        display_at = meta.get("youtube_uploaded_at", "Date unavailable")
+                        display_at = "Date unavailable"
                     best = {
                         "title": meta.get("title", "Untitled"),
                         "youtube_url": meta.get("youtube_url", ""),
