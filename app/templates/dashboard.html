@@ -243,11 +243,12 @@ function toggleBoost(enabled) {
         <th style="text-align: left; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Video Title</th>
         <th style="text-align: center; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Preview</th>
         <th style="text-align: right; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;">Scheduled Time</th>
+        <th style="text-align: center; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.9em; letter-spacing: 1.5px;"></th>
       </tr>
     </thead>
     <tbody>
       {% for item in scheduled %}
-      <tr style="border-bottom: 1px solid var(--border);">
+      <tr style="border-bottom: 1px solid var(--border);" id="sched-row-{{ item.channel_id }}-{{ item.dir_name }}">
         <td style="padding: 12px 10px;">
           <a href="/channel/{{ item.channel_id }}" style="color: var(--gold); font-weight: 600; font-size: 0.95em;">{{ item.channel_name }}</a>
         </td>
@@ -264,8 +265,27 @@ function toggleBoost(enabled) {
             {% endif %}
           </div>
         </td>
-        <td style="text-align: right; padding: 12px 10px; color: var(--text2); font-size: 0.95em;">
+        <td style="text-align: right; padding: 12px 10px; color: var(--text2); font-size: 0.95em;" id="sched-time-{{ item.channel_id }}-{{ item.dir_name }}">
           {{ item.display_time }}
+        </td>
+        <td style="text-align: center; padding: 12px 10px; white-space: nowrap;">
+          <button class="btn btn-sm" style="color: var(--text2); font-size: 0.85em; padding: 3px 8px;" title="Edit schedule"
+            onclick="dashEditSchedule('{{ item.channel_id }}', '{{ item.dir_name }}', '{{ item.scheduled_upload }}', this)">✏️</button>
+          <button class="btn btn-sm" style="color: #ef4444; font-size: 0.85em; padding: 3px 8px;" title="Cancel schedule"
+            onclick="dashCancelSchedule('{{ item.channel_id }}', '{{ item.dir_name }}', this)">✕</button>
+        </td>
+      </tr>
+      <tr id="sched-edit-{{ item.channel_id }}-{{ item.dir_name }}" style="display: none;">
+        <td colspan="5" style="padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <label style="font-size: 0.85em; color: var(--text2);">Reschedule (ET):</label>
+            <input type="datetime-local" id="sched-input-{{ item.channel_id }}-{{ item.dir_name }}"
+              style="padding: 6px 10px; background-color: var(--bg); color: var(--text1); border: 1px solid var(--border2); border-radius: 4px; font-size: 0.9em;">
+            <button class="btn btn-sm btn-primary" style="font-size: 0.85em; padding: 4px 12px;"
+              onclick="dashConfirmSchedule('{{ item.channel_id }}', '{{ item.dir_name }}')">✓ Save</button>
+            <button class="btn btn-sm" style="background-color: var(--border2); color: var(--text1); font-size: 0.85em; padding: 4px 12px;"
+              onclick="dashCloseEdit('{{ item.channel_id }}', '{{ item.dir_name }}')">Cancel</button>
+          </div>
         </td>
       </tr>
       {% endfor %}
@@ -273,4 +293,71 @@ function toggleBoost(enabled) {
   </table>
 </div>
 {% endif %}
+
+{% if scheduled %}
+<script>
+function dashEditSchedule(channelId, dirName, currentScheduled, btn) {
+  // Close any other open edit rows
+  document.querySelectorAll('[id^="sched-edit-"]').forEach(r => r.style.display = 'none');
+
+  const editRow = document.getElementById(`sched-edit-${channelId}-${dirName}`);
+  const input = document.getElementById(`sched-input-${channelId}-${dirName}`);
+
+  // Parse ISO to ET datetime-local
+  try {
+    const d = new Date(currentScheduled);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(d);
+    const p = {};
+    parts.forEach(x => p[x.type] = x.value);
+    input.value = `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+  } catch(e) {
+    input.value = currentScheduled.slice(0, 16);
+  }
+
+  editRow.style.display = '';
+}
+
+function dashCloseEdit(channelId, dirName) {
+  document.getElementById(`sched-edit-${channelId}-${dirName}`).style.display = 'none';
+}
+
+function dashConfirmSchedule(channelId, dirName) {
+  const input = document.getElementById(`sched-input-${channelId}-${dirName}`);
+  const val = input.value;
+  if (!val) { alert('Pick a date/time'); return; }
+
+  fetch('/api/schedule/set', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ channel_id: channelId, dir_name: dirName, scheduled_upload: val })
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      // Update the displayed time inline
+      const timeCell = document.getElementById(`sched-time-${channelId}-${dirName}`);
+      if (timeCell) timeCell.textContent = data.display;
+      dashCloseEdit(channelId, dirName);
+    } else {
+      alert('Failed: ' + (data.error || 'unknown'));
+    }
+  }).catch(e => alert('Error: ' + e));
+}
+
+function dashCancelSchedule(channelId, dirName, btn) {
+  if (!confirm('Cancel scheduled upload?')) return;
+  fetch('/api/schedule/cancel', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ channel_id: channelId, dir_name: dirName })
+  }).then(r => r.json()).then(data => {
+    if (data.ok) location.reload();
+    else alert('Failed: ' + (data.error || 'unknown'));
+  }).catch(e => alert('Error: ' + e));
+}
+</script>
+{% endif %}
+
 {% endblock %}

@@ -176,6 +176,10 @@
       <span class="badge" style="background-color: var(--gold); color: var(--bg); padding: 6px 10px; font-size: 0.85em; display: inline-flex; align-items: center; gap: 6px;">
         📅 Scheduled: {{ v.scheduled_upload|format_iso_time }}
       </span>
+      <button class="btn btn-sm" style="color: var(--text2);" title="Edit scheduled time"
+        data-channel="{{ channel.channel_id }}" data-dir="{{ v.dir_name }}"
+        data-scheduled="{{ v.scheduled_upload }}"
+        data-action="edit-schedule">✏️</button>
       <button class="btn btn-sm" style="color: #ef4444;" title="Cancel scheduled upload"
         data-channel="{{ channel.channel_id }}" data-dir="{{ v.dir_name }}"
         data-action="cancel-schedule">✕</button>
@@ -296,42 +300,67 @@ function openScheduleForm(channelId, dirName, btn) {
         return;
       }
       
-      // Create form UI
-      const form = document.createElement('div');
-      form.className = 'schedule-form';
-      form.style.cssText = `
-        background-color: var(--card);
-        border: 1px solid var(--border2);
-        border-radius: 10px;
-        padding: 16px;
-        margin-top: 12px;
-        display: grid;
-        gap: 12px;
-      `;
-      
       // Use the ET datetime-local string from the server (no timezone conversion)
       const localStr = data.datetime_local || data.datetime.slice(0, 16);
       
-      form.innerHTML = `
-        <div style="font-size: 0.9em; color: var(--text2);">
-          <strong>Recommended:</strong> ${data.display}<br>
-          <em>${data.reasoning}</em>
-        </div>
-        <div>
-          <label style="font-size: 0.85em; color: var(--text2); display: block; margin-bottom: 4px;">Select date/time (ET):</label>
-          <input type="datetime-local" class="schedule-input" value="${localStr}" 
-            style="width: 100%; padding: 8px; background-color: var(--bg); color: var(--text1); border: 1px solid var(--border2); border-radius: 4px;">
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-sm btn-primary" onclick="confirmSchedule('${channelId}', '${dirName}');">✓ Confirm</button>
-          <button class="btn btn-sm" style="background-color: var(--border2); color: var(--text1);" onclick="closeScheduleForm();">✕ Cancel</button>
-        </div>
-      `;
-      
-      btn.closest('.video-item').appendChild(form);
-      activeScheduleForm = form;
+      _showScheduleForm(channelId, dirName, btn, localStr, `<strong>Recommended:</strong> ${data.display}<br><em>${data.reasoning}</em>`);
     })
     .catch(e => alert('Error: ' + e));
+}
+
+function openEditScheduleForm(channelId, dirName, currentScheduled, btn) {
+  if (activeScheduleForm) closeScheduleForm();
+  
+  // Parse the ISO scheduled time to ET datetime-local format
+  let localStr = '';
+  try {
+    const d = new Date(currentScheduled);
+    // Format as ET using explicit parts
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(d);
+    const p = {};
+    parts.forEach(x => p[x.type] = x.value);
+    localStr = `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+  } catch(e) {
+    localStr = currentScheduled.slice(0, 16);
+  }
+  
+  _showScheduleForm(channelId, dirName, btn, localStr, `<strong>Current schedule:</strong> Edit the date/time below`);
+}
+
+function _showScheduleForm(channelId, dirName, btn, datetimeValue, headerHtml) {
+  const form = document.createElement('div');
+  form.className = 'schedule-form';
+  form.style.cssText = `
+    background-color: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 12px;
+    display: grid;
+    gap: 12px;
+  `;
+  
+  form.innerHTML = `
+    <div style="font-size: 0.9em; color: var(--text2);">
+      ${headerHtml}
+    </div>
+    <div>
+      <label style="font-size: 0.85em; color: var(--text2); display: block; margin-bottom: 4px;">Select date/time (ET):</label>
+      <input type="datetime-local" class="schedule-input" value="${datetimeValue}" 
+        style="width: 100%; padding: 8px; background-color: var(--bg); color: var(--text1); border: 1px solid var(--border2); border-radius: 4px;">
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn btn-sm btn-primary" onclick="confirmSchedule('${channelId}', '${dirName}');">✓ Confirm</button>
+      <button class="btn btn-sm" style="background-color: var(--border2); color: var(--text1);" onclick="closeScheduleForm();">✕ Cancel</button>
+    </div>
+  `;
+  
+  btn.closest('.video-item').appendChild(form);
+  activeScheduleForm = form;
 }
 
 function closeScheduleForm() {
@@ -424,6 +453,9 @@ document.addEventListener('click', function(e) {
       break;
     case 'schedule':
       openScheduleForm(channelId, dirName, btn);
+      break;
+    case 'edit-schedule':
+      openEditScheduleForm(channelId, dirName, btn.dataset.scheduled, btn);
       break;
     case 'cancel-schedule':
       cancelSchedule(channelId, dirName, btn);
