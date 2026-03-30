@@ -16,6 +16,28 @@ from . import youtube_upload
 
 log = logging.getLogger("scheduler")
 
+import re
+
+def _clean_hashtag(tag):
+    """Strip all special characters from a hashtag, keeping only # prefix + alphanumeric."""
+    # Ensure # prefix
+    raw = tag.lstrip("#")
+    cleaned = re.sub(r'[^a-zA-Z0-9]', '', raw)
+    return f"#{cleaned}" if cleaned else ""
+
+
+def _clean_hashtags(tags):
+    """Clean a list of hashtags, removing empties and duplicates."""
+    seen = set()
+    result = []
+    for t in tags:
+        c = _clean_hashtag(t)
+        if c and c.lower() not in seen:
+            seen.add(c.lower())
+            result.append(c)
+    return result
+
+
 # Posting schedule configuration (days: 0=Mon, 6=Sun)
 # ---- BOOST MODE ----
 # Persisted to boost_mode.json so it survives restarts.
@@ -350,8 +372,8 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
             elif "0:00" not in description:
                 description += f"\n\n📑 Chapters:\n{chapters_block}"
         
-        # Add hashtags
-        hashtags = yt_meta.get("hashtags", [])
+        # Add hashtags (strip special chars — hyphens etc. break YouTube hashtags)
+        hashtags = _clean_hashtags(yt_meta.get("hashtags", []))
         if hashtags:
             description = " ".join(hashtags) + "\n\n" + description
         
@@ -359,7 +381,7 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
         
         # Also inject top tags as hashtags at the bottom of description (fallback if keyword tags rejected)
         if tags:
-            tag_hashtags = [f"#{t.replace(' ', '')}" for t in tags[:8] if t.strip()]
+            tag_hashtags = _clean_hashtags([f"#{t.replace(' ', '')}" for t in tags[:8] if t.strip()])
             description = description.rstrip() + "\n\n" + " ".join(tag_hashtags)
         category = youtube_upload.CATEGORIES.get(
             yt_meta.get("category", meta.get("youtube", {}).get("category", "Entertainment")),
@@ -428,6 +450,7 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
                         if dh.lower() not in existing:
                             short_hashtags.append(dh)
                 
+                short_hashtags = _clean_hashtags(short_hashtags)
                 short_desc = " ".join(short_hashtags) + "\n\n"
                 if short_caption:
                     short_desc += short_caption + "\n\n"
