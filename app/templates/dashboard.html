@@ -209,16 +209,19 @@ function toggleBoost(enabled) {
         {% endif %}
         {% if last_posted.get(ch.channel_id) %}
         {% set lp = last_posted[ch.channel_id] %}
-        <div class="mt-6" style="font-size: 0.75em; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div class="mt-6" style="font-size: 0.75em; line-height: 1.6; overflow: hidden;">
           {% if lp.upload_status == 'uploaded' %}
-          <span style="color: #22c55e;">✓ Last posted:</span>
-          <span style="color: var(--text3);">{{ lp.youtube_uploaded_at }}</span>
-          {% if lp.youtube_url %}
-          · <span style="color: #3b82f6;" title="{{ lp.title }}">{{ lp.title[:40] }}{% if lp.title|length > 40 %}…{% endif %}</span>
-          {% endif %}
+          <div style="color: #22c55e;">✓ Last posted: <span style="color: var(--text2);">{{ lp.youtube_uploaded_at }}</span></div>
+          <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            {% if lp.youtube_url %}
+            <span style="color: #3b82f6;" title="{{ lp.title }}">{{ lp.title[:40] }}{% if lp.title|length > 40 %}…{% endif %}</span>
+            {% else %}
+            <span style="color: var(--text3);" title="{{ lp.title }}">{{ lp.title[:40] }}{% if lp.title|length > 40 %}…{% endif %}</span>
+            {% endif %}
+          </div>
           {% elif lp.upload_status == 'failed' %}
-          <span style="color: #ef4444;">🔴 Failed:</span>
-          <span style="color: var(--text3);" title="{{ lp.upload_error }}">{{ lp.title[:35] }}{% if lp.title|length > 35 %}…{% endif %}</span>
+          <div style="color: #ef4444;">🔴 Last upload failed</div>
+          <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text3);" title="{{ lp.upload_error }}">{{ lp.title[:35] }}{% if lp.title|length > 35 %}…{% endif %}</div>
           {% endif %}
         </div>
         {% endif %}
