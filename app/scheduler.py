@@ -691,6 +691,10 @@ def _scheduler_loop(app, api_keys):
                     
                     except Exception as e:
                         log.error(f"[SCHEDULER] Error processing {channel_id}/{dir_name}: {e}")
+                
+                # Break out of channel loop too if we uploaded something this cycle
+                if uploaded_this_cycle:
+                    break
             
         except Exception as e:
             log.error(f"[SCHEDULER] Loop error: {e}")
