@@ -47,7 +47,41 @@ BOOST_GAP_DAYS = 3   # Min days between uploads in boost mode
 NORMAL_GAP_DAYS = 7  # Min days between uploads in normal mode (true 1x/week)
 
 _BOOST_FILE = Path(__file__).parent.parent / "boost_mode.json"
-_UPLOAD_LOCK = threading.Lock()  # Prevents simultaneous uploads (scheduler + manual)
+_UPLOAD_LOCK = threading.Lock()  # Prevents simultaneous uploads (scheduler + manual) within a single process
+
+# Cross-process file lock — prevents duplicate uploads when multiple app instances run
+# (e.g. Flask debug=True reloader + KeepAlive restart overlap)
+_FILE_LOCK_PATH = Path(__file__).parent.parent / ".upload.lock"
+
+import fcntl
+
+class _FileLock:
+    """Cross-process lock using fcntl.flock. Non-blocking acquire returns False if held."""
+    def __init__(self, path):
+        self._path = path
+        self._fd = None
+
+    def acquire(self, blocking=True):
+        self._fd = open(self._path, "w")
+        try:
+            flags = fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB)
+            fcntl.flock(self._fd, flags)
+            return True
+        except (OSError, IOError):
+            self._fd.close()
+            self._fd = None
+            return False
+
+    def release(self):
+        if self._fd:
+            try:
+                fcntl.flock(self._fd, fcntl.LOCK_UN)
+                self._fd.close()
+            except Exception:
+                pass
+            self._fd = None
+
+_PROCESS_UPLOAD_LOCK = _FileLock(_FILE_LOCK_PATH)
 
 def get_boost_mode():
     """Read boost mode from persistent file."""
@@ -442,6 +476,13 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
             log.info(f"[SCHEDULER] Tags disabled (API bug): dropping {len(tags)} tags for {channel_id}")
             tags = []
         
+        # --- Final dedup check RIGHT before upload ---
+        # Re-read metadata from disk to catch cross-process races
+        fresh_meta = _load_metadata(channel_id, dir_name)
+        if fresh_meta and fresh_meta.get("youtube_uploaded"):
+            log.warning(f"[SCHEDULER] DEDUP: {channel_id}/{dir_name} already uploaded (pre-upload check), aborting")
+            return {"success": True, "video_id": fresh_meta.get("youtube_video_id", "?"), "url": fresh_meta.get("youtube_url", "?")}
+        
         # Upload main video
         log.info(f"[SCHEDULER] Uploading {channel_id}/{dir_name}: {title}")
         result = youtube_upload.upload_video(
@@ -456,13 +497,18 @@ def _do_scheduled_upload(channel_id, dir_name, api_keys):
             made_for_kids=made_for_kids,
         )
         
-        # Update metadata with upload info
+        # Update metadata with upload info — SAVE IMMEDIATELY to prevent duplicate uploads
+        # This is critical: if another process checks metadata while we upload the Short,
+        # it must see youtube_uploaded=True to avoid re-uploading the main video.
         meta["youtube_uploaded"] = True
         meta["youtube_video_id"] = result["video_id"]
         meta["youtube_url"] = result["url"]
         meta["youtube_privacy"] = "public"
         meta["youtube_uploaded_at"] = datetime.now(ET).strftime("%Y-%m-%d %I:%M %p")
         meta["youtube_uploaded_at_utc"] = datetime.now(ET).isoformat()
+        meta["upload_status"] = "uploaded"
+        _save_metadata(channel_id, dir_name, meta)
+        log.info(f"[SCHEDULER] Main video uploaded, metadata saved immediately: {result['url']}")
         
         # Also upload Short if it exists
         short_result = None
@@ -587,9 +633,16 @@ def _scheduler_loop(app, api_keys):
                         if scheduled_dt > now_et:
                             continue
                         
-                        # --- Try to acquire the lock (non-blocking) ---
+                        # --- Try to acquire BOTH locks (non-blocking) ---
+                        # Thread lock prevents races within this process
                         if not _UPLOAD_LOCK.acquire(blocking=False):
-                            log.info(f"[SCHEDULER] Upload lock held, skipping {channel_id}/{dir_name} this cycle")
+                            log.info(f"[SCHEDULER] Thread lock held, skipping {channel_id}/{dir_name} this cycle")
+                            continue
+                        
+                        # File lock prevents races across processes (e.g. Flask reloader overlap)
+                        if not _PROCESS_UPLOAD_LOCK.acquire(blocking=False):
+                            _UPLOAD_LOCK.release()
+                            log.info(f"[SCHEDULER] File lock held (another process uploading), skipping {channel_id}/{dir_name} this cycle")
                             continue
                         
                         try:
@@ -633,6 +686,7 @@ def _scheduler_loop(app, api_keys):
                             _save_metadata(channel_id, dir_name, meta)
                             # === END CRITICAL SECTION ===
                         finally:
+                            _PROCESS_UPLOAD_LOCK.release()
                             _UPLOAD_LOCK.release()
                     
                     except Exception as e:

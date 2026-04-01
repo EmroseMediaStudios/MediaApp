@@ -419,18 +419,34 @@ def youtube_upload_video():
     if meta.get("youtube_uploaded") and not force_reupload:
         return jsonify({"ok": False, "error": "Already uploaded. Use re-upload to upload again."})
 
-    # Mark as uploading immediately to prevent scheduler race condition
-    meta["upload_status"] = "uploading"
-    meta_path.write_text(json.dumps(meta, indent=2))
-
-    # Use the shared upload helper (same logic as scheduler)
-    # but override privacy since this is a manual upload request
+    # Acquire BOTH locks before touching metadata — prevents races with scheduler
+    # and with other app processes (Flask reloader, KeepAlive restarts)
     if not scheduler._UPLOAD_LOCK.acquire(blocking=False):
         return jsonify({"ok": False, "error": "Another upload is in progress. Try again in a moment."})
     
+    if not scheduler._PROCESS_UPLOAD_LOCK.acquire(blocking=False):
+        scheduler._UPLOAD_LOCK.release()
+        return jsonify({"ok": False, "error": "Another process is uploading. Try again in a moment."})
+
     try:
+        # Re-read metadata after acquiring locks (another thread/process may have uploaded)
+        if meta_path.exists():
+            meta = json.loads(meta_path.read_text())
+        if meta.get("youtube_uploaded") and not force_reupload:
+            return jsonify({"ok": False, "error": "Already uploaded (detected after lock). Use re-upload to upload again."})
+
+        # Mark as uploading AFTER acquiring locks (so we don't leak this state on lock failure)
+        meta["upload_status"] = "uploading"
+        meta_path.write_text(json.dumps(meta, indent=2))
+
         result = scheduler._do_scheduled_upload(channel_id, dir_name, API_KEYS)
         if not result["success"]:
+            # Restore status on failure
+            meta = scheduler._load_metadata(channel_id, dir_name) or meta
+            if meta.get("upload_status") == "uploading":
+                meta["upload_status"] = "failed"
+                meta["upload_error"] = result.get("error", "Upload failed")
+                scheduler._save_metadata(channel_id, dir_name, meta)
             return jsonify({"ok": False, "error": result.get("error", "Upload failed")})
         
         # If manual upload was with different privacy, update it
@@ -446,6 +462,7 @@ def youtube_upload_video():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
     finally:
+        scheduler._PROCESS_UPLOAD_LOCK.release()
         scheduler._UPLOAD_LOCK.release()
 
 
