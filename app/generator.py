@@ -1500,14 +1500,14 @@ def _generate_procedural_ambient(duration, out_path, channel_id=None):
 
 # --- Image generation ---
 
-def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
-    """Generate image. Tries DALL-E 3 first (best quality), falls back to FLUX via HuggingFace."""
+def _generate_image(prompt, out_path, hf_token, width=1536, height=1024):
+    """Generate image. Tries GPT Image 1.5 first (best quality), falls back to FLUX via HuggingFace."""
 
     # Append no-text instruction to the raw prompt (affects all generators including FLUX fallbacks)
     prompt = prompt.rstrip() + " No text, no words, no letters, no writing of any kind in the image."
 
-    # Soften prompts for DALL-E to avoid safety filter rejections.
-    # DALL-E's content filter is aggressive — it blocks many words that are
+    # Soften prompts for GPT Image to avoid safety filter rejections.
+    # OpenAI's image content filter is aggressive — it blocks many words that are
     # perfectly fine in context. This replacement map handles known triggers
     # across ALL channel types (horror, kids, sports, documentary, etc.)
     dalle_prompt = prompt
@@ -1611,7 +1611,7 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
         "nude": "unclothed figure",
         "exposed": "revealed",
 
-        # Children / minors — DALL-E is very strict about these
+        # Children / minors — OpenAI is very strict about these
         "child": "young character",
         "children": "young characters",
         "kid": "young character",
@@ -1726,24 +1726,24 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
         dalle_prompt = pattern.sub(new_word, dalle_prompt)
 
     # GLOBAL: Append no-text instruction to ALL image prompts
-    # AI image generators (DALL-E, FLUX, etc.) produce garbled misspelled text
+    # AI image generators (GPT Image, FLUX, etc.) produce garbled misspelled text
     # that looks terrible in videos. Explicitly forbid all text in every image.
     dalle_prompt += " Do not include any text, words, letters, numbers, writing, captions, labels, signs, titles, or readable symbols anywhere in the image."
 
-    # PRIMARY: OpenAI DALL-E 3 (consistent high quality)
+    # PRIMARY: OpenAI GPT Image 1.5 (consistent high quality)
     openai_key = os.environ.get("OPENAI_API_KEY", "")
     if openai_key:
         try:
             import httpx as hx
-            # DALL-E 3 generates at fixed sizes — use 1792x1024 (landscape, closest to 16:9)
-            dalle_size = "1792x1024"
+            # GPT Image 1.5 sizes — use 1536x1024 (landscape, closest to 16:9)
+            dalle_size = "1536x1024"
             if width < height:
-                dalle_size = "1024x1792"  # vertical for Shorts
+                dalle_size = "1024x1536"  # vertical for Shorts
 
-            log.info(f"Generating image via DALL-E 3 ({dalle_size})...")
+            log.info(f"Generating image via GPT Image 1.5 ({dalle_size})...")
             
-            # Try DALL-E up to 3 times — on content filter blocks, progressively
-            # strip the prompt down to pass the filter while staying on DALL-E
+            # Try GPT Image up to 3 times — on content filter blocks, progressively
+            # strip the prompt down to pass the filter while staying on GPT Image
             dalle_attempts = [
                 dalle_prompt,  # Attempt 1: already-softened prompt
                 None,          # Attempt 2: further stripped (built on failure)
@@ -1758,37 +1758,34 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
                     "https://api.openai.com/v1/images/generations",
                     headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
                     json={
-                        "model": "dall-e-3",
+                        "model": "gpt-image-1.5",
                         "prompt": attempt_prompt,
                         "n": 1,
                         "size": dalle_size,
-                        "quality": "hd",
-                        "response_format": "url",
+                        "quality": "high",
+                        "response_format": "b64_json",
                     },
                     timeout=120,
                 )
                 if r.status_code == 200:
-                    img_url = r.json()["data"][0]["url"]
-                    img_resp = hx.get(img_url, timeout=60)
-                    if img_resp.status_code == 200:
-                        with open(str(out_path), "wb") as f:
-                            f.write(img_resp.content)
-                        img = Image.open(str(out_path))
-                        img.save(str(out_path), "PNG")
-                        if attempt_idx > 0:
-                            log.info(f"Image generated via DALL-E 3 (attempt {attempt_idx+1}, softened): {img.size[0]}x{img.size[1]}")
-                        else:
-                            log.info(f"Image generated via DALL-E 3: {img.size[0]}x{img.size[1]}")
-                        return True
+                    import base64 as _b64
+                    img_b64 = r.json()["data"][0]["b64_json"]
+                    img_bytes = _b64.b64decode(img_b64)
+                    with open(str(out_path), "wb") as f:
+                        f.write(img_bytes)
+                    img = Image.open(str(out_path))
+                    img.save(str(out_path), "PNG")
+                    if attempt_idx > 0:
+                        log.info(f"Image generated via GPT Image 1.5 (attempt {attempt_idx+1}, softened): {img.size[0]}x{img.size[1]}")
                     else:
-                        log.warning(f"DALL-E 3 image download failed: {img_resp.status_code}")
-                        break  # download issue, not content filter — move to fallback
+                        log.info(f"Image generated via GPT Image 1.5: {img.size[0]}x{img.size[1]}")
+                    return True
                 else:
                     error_msg = r.text[:300]
                     
                     # Content filter block — retry with progressively softer prompt
                     if r.status_code == 400 and "content" in error_msg.lower() and "filter" in error_msg.lower():
-                        log.warning(f"DALL-E 3 content filter block (attempt {attempt_idx+1}/3)")
+                        log.warning(f"GPT Image 1.5 content filter block (attempt {attempt_idx+1}/3)")
                         
                         if attempt_idx == 0:
                             # Attempt 2: Strip to just visual descriptors, remove narrative elements
@@ -1796,7 +1793,7 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
                             stripped = re.sub(r'(?i)(abandoned|decaying|rotting|crumbling|ruined|decrepit|desolate|forsaken)', 'weathered', stripped)
                             stripped = re.sub(r'(?i)(figure|silhouette|shadow figure|shadowy|lurking|watching|stalking)', 'form', stripped)
                             dalle_attempts[1] = stripped
-                            log.info("Retrying DALL-E with further softened prompt...")
+                            log.info("Retrying GPT Image with further softened prompt...")
                         elif attempt_idx == 1:
                             # Attempt 3: Maximally generic — just the visual style and setting
                             # Extract the image_prompt_suffix (always at end) and build minimal prompt
@@ -1808,18 +1805,18 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
                             else:
                                 generic += "4k, film grain, cinematic photography"
                             dalle_attempts[2] = generic
-                            log.info("Retrying DALL-E with generic fallback prompt...")
+                            log.info("Retrying GPT Image with generic fallback prompt...")
                         continue
                     
                     # Non-content-filter error
-                    log.warning(f"DALL-E 3 failed ({r.status_code}): {error_msg[:200]}")
+                    log.warning(f"GPT Image 1.5 failed ({r.status_code}): {error_msg[:200]}")
                     if r.status_code == 401:
-                        log.error("OpenAI API key invalid for DALL-E 3")
+                        log.error("OpenAI API key invalid for GPT Image 1.5")
                     elif "billing" in error_msg.lower() or "quota" in error_msg.lower():
                         log.warning("OpenAI billing/quota issue — falling back to FLUX")
                     break  # Don't retry on auth/billing errors
         except Exception as e:
-            log.warning(f"DALL-E 3 failed: {str(e)[:150]}")
+            log.warning(f"GPT Image 1.5 failed: {str(e)[:150]}")
 
     # FALLBACK 1: HuggingFace Inference API (free with HF Pro)
     # NOTE: FLUX.1-dev deprecated on HF Inference as of March 2026
@@ -1914,7 +1911,7 @@ def _generate_image(prompt, out_path, hf_token, width=1792, height=1024):
     return False
 
 
-def _generate_fallback_image(out_path, scene_index, width=1792, height=1024):
+def _generate_fallback_image(out_path, scene_index, width=1536, height=1024):
     img = np.zeros((height, width, 3), dtype=np.float32)
     for y in range(height):
         v = 0.02 + 0.03 * math.exp(-((y - height * 0.4) ** 2) / (2 * (height * 0.3) ** 2))
@@ -2149,7 +2146,7 @@ def _generate_title_card(channel, title, duration, out_path, api_keys, hf_token,
     title_bg_prompt += f" Relating to the concept of '{title}'. Dark, atmospheric, space for text overlay in center. No text, no letters, no words, no readable symbols."
 
     bg_path = str(out_path).replace(".png", "_bg.png")
-    ok = _generate_image(title_bg_prompt, bg_path, hf_token, width=1792, height=1024)
+    ok = _generate_image(title_bg_prompt, bg_path, hf_token, width=1536, height=1024)
 
     if ok:
         pil_img = Image.open(bg_path)
@@ -2667,10 +2664,10 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
         emit("error", f"Cannot reach ElevenLabs API: {e}")
         raise RuntimeError(f"Cannot reach ElevenLabs: {e}")
 
-    # Image cost estimate (DALL-E 3 HD: $0.080 per image, title card + scenes)
+    # Image cost estimate (GPT Image 1.5: token-based, ~$0.04-0.08 per image)
     num_images = len(scenes)  # scenes only (title card reuses thumbnail)
-    dalle_cost = num_images * 0.080
-    emit("preflight", f"DALL-E 3 image estimate: {num_images} images × $0.08 = ~${dalle_cost:.2f}")
+    dalle_cost = num_images * 0.060  # estimate; actual cost is token-based
+    emit("preflight", f"GPT Image 1.5 estimate: {num_images} images × ~$0.06 = ~${dalle_cost:.2f} (token-based, actual may vary)")
 
     vs = channel.get("video_settings", {})
     res = tuple(vs.get("resolution", [1920, 1080]))
@@ -2723,16 +2720,16 @@ def generate_video(channel, scenes, title, topic, api_keys, generate_short=False
     for i, scene in enumerate(scenes):
         emit("images", f"Generating image for scene {i+1}/{len(scenes)}...")
         img_path = images_dir / f"scene_{i:03d}.png"
-        # Generate at 1792x1024 to match DALL-E 3 output size across all sources
+        # Generate at 1536x1024 to match GPT Image 1.5 output size across all sources
         ok = _generate_image(
             scene["image_prompt"], str(img_path),
             api_keys.get("hf_token", ""),
-            width=1792, height=1024,
+            width=1536, height=1024,
         )
         if not ok:
             fallback_count += 1
             emit("images", f"⚠ Scene {i+1}: Using fallback image")
-            _generate_fallback_image(str(img_path), i, width=1792, height=1024)
+            _generate_fallback_image(str(img_path), i, width=1536, height=1024)
 
         # Upscale for Ken Burns headroom — use per-channel size if configured,
         # otherwise default 2688x1536 (~71% visible at 1080p).
