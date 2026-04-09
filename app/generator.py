@@ -1763,7 +1763,6 @@ def _generate_image(prompt, out_path, hf_token, width=1536, height=1024):
                         "n": 1,
                         "size": dalle_size,
                         "quality": "high",
-                        "response_format": "b64_json",
                     },
                     timeout=120,
                 )
